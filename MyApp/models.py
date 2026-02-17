@@ -13,7 +13,7 @@ class Role(models.Model):
 
 class Profile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    roles = models.ManyToManyField(Role, blank=True)
+    role = models.ForeignKey(Role, null=True, blank=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return f"Profile: {self.user.username}"
