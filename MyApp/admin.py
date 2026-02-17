@@ -8,6 +8,6 @@ class RoleAdmin(admin.ModelAdmin):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ("user",)
+    list_display = ("user", "role")
     search_fields = ("user__username", "user__email")
-    filter_horizontal = ("roles",)
+    list_filter = ("role",)
