@@ -29,9 +29,12 @@ class Register(View):
         password = form.cleaned_data["password1"]
         role_name = form.cleaned_data["role"]
 
+        display_username = form.cleaned_data["display_username"]
+        phone_number = form.cleaned_data.get("phone_number", "")
+
         try:
             user = User.objects.create_user(
-                username=email,
+                username=email,   # keep this as email so your login flow stays the same
                 email=email,
                 password=password
             )
@@ -39,11 +42,20 @@ class Register(View):
             form.add_error("email", "An account with this email already exists.")
             return render(request, "register.html", {"form": form})
 
-        profile = Profile.objects.create(user=user)
-
         role, _ = Role.objects.get_or_create(name=role_name)
-        profile.role = role
-        profile.save()
+
+        try:
+            profile = Profile.objects.create(
+                user=user,
+                role=role,
+                display_username=display_username,
+                phone_number=phone_number or ""
+            )
+        except IntegrityError:
+            # this is most likely display_username duplicate
+            user.delete()  # cleanup, since profile creation failed
+            form.add_error("display_username", "That username is already taken.")
+            return render(request, "register.html", {"form": form})
 
         login(request, user)
         return redirect("home")
