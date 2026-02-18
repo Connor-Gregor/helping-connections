@@ -83,6 +83,8 @@ body {
     cursor: pointer;
     border-radius: 4px;
     transition: background 0.3s ease;
+    text-decoration: none;
+
 }
 
 .cta-btn:hover {
