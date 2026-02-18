@@ -16,7 +16,8 @@
             <li><a href="#">Find Help</a></li>
             <li><a href="#">Volunteer</a></li>
             <li><a href="#">About</a></li>
-            <li><a href="#">Login</a></li>
+            <li><a href="{% url 'login' %}">Login</a></li>
+
         </ul>
     </nav>
 
@@ -25,7 +26,8 @@
         <div class="hero-overlay">
             <h1>Welcome to Helping Connections</h1>
             <p>Connecting people with the resources they need.</p>
-            <button class="cta-btn">Get Started</button>
+            <a href="{% url 'login' %}" class="cta-btn">Get Started</a>
+
         </div>
     </main>
 
