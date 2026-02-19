@@ -23,4 +23,3 @@ urlpatterns = [
     path("", include("MyApp.urls")),
 ]
 
-

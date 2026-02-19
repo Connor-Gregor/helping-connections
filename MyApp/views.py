@@ -13,6 +13,9 @@ from .models import Profile, Role
 def home(request):
     return render(request, "home.html")
 
+def find_help(request):
+    return render(request, "find_help.html")
+
 def resources(request):
     return render(request, "resources.html")
 
