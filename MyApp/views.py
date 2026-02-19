@@ -1,9 +1,11 @@
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.shortcuts import render, redirect
 from django.views import View
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login, logout
-from .forms import RegisterForm, LoginForm
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from .forms import RegisterForm, LoginForm, ChangePasswordForm, ProfileSettingsForm
 from .models import Profile, Role
 
 
@@ -92,3 +94,74 @@ class LoginView(View):
 def logout_view(request):
     logout(request)
     return redirect("home")
+
+@login_required
+def settings_page(request):
+    profile = Profile.objects.get(user=request.user)
+
+    profile_form = ProfileSettingsForm(
+        profile=profile,
+        initial={
+            "display_username": profile.display_username or "",
+            "phone_number": profile.phone_number or "",
+        }
+    )
+    password_form = ChangePasswordForm(user=request.user)
+
+    return render(request, "settings.html", {
+        "profile_form": profile_form,
+        "password_form": password_form,
+    })
+
+@login_required
+def update_profile_settings(request):
+    if request.method != "POST":
+        return redirect("settings")
+
+    profile = Profile.objects.get(user=request.user)
+    form = ProfileSettingsForm(request.POST, profile=profile)
+
+    if not form.is_valid():
+        password_form = ChangePasswordForm(user=request.user)
+        return render(request, "settings.html", {
+            "profile_form": form,
+            "password_form": password_form,
+        })
+
+    profile.display_username = form.cleaned_data["display_username"]
+    profile.phone_number = form.cleaned_data.get("phone_number", "")
+    profile.save()
+
+    messages.success(request, "Profile updated.")
+    return redirect("settings")
+
+@login_required
+def change_password(request):
+    if request.method != "POST":
+        return redirect("settings")
+
+    profile = Profile.objects.get(user=request.user)
+    form = ChangePasswordForm(request.POST, user=request.user)
+
+    if not form.is_valid():
+        profile_form = ProfileSettingsForm(
+            profile=profile,
+            initial={
+                "display_username": profile.display_username or "",
+                "phone_number": profile.phone_number or "",
+            }
+        )
+        return render(request, "settings.html", {
+            "profile_form": profile_form,
+            "password_form": form,
+        })
+
+    new_pw = form.cleaned_data["new_password1"]
+    request.user.set_password(new_pw)
+    request.user.save()
+
+    # Keep them logged in after password change
+    update_session_auth_hash(request, request.user)
+
+    messages.success(request, "Password changed.")
+    return redirect("settings")
