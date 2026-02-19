@@ -1,6 +1,7 @@
 from django.urls import path
-from .views import home
+from . import views
 
 urlpatterns = [
-    path("", home, name="home.html"),
+    path("", views.home, name="home"),
+    path("find-help/", views.find_help, name="find_help"),
 ]
