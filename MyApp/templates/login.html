@@ -1,0 +1,64 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login | Helping Connections</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- This is using a different CSS file compared to the home page -->
+    <link rel="stylesheet" href="{% static 'login.css' %}">
+</head>
+<body>
+
+<header class="nav">
+    <a class="brand" href="{% url 'home' %}">Helping Connections</a>
+
+    <div class="nav-spacer"></div>
+
+  <nav aria-label="Primary">
+    <ul class="nav-links">
+      <li><a href="{% url 'home' %}">Home</a></li>
+      <li><a href="#">Find Help</a></li>
+      <li><a href="#">Volunteer</a></li>
+      <li><a href="#">About</a></li>
+      <li><a class="active" href="{% url 'login' %}">Login</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main class="login-hero">
+    <section class="card">
+        <div class="card-header">
+            <h2 class="title">Welcome Back</h2>
+            <p class="subtitle">
+                Log in to connect with resources and manage your activity.
+            </p>
+        </div>
+
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+
+                <button class="btn btn-primary" type="submit">Login</button>
+
+                {% if form.non_field_errors %}
+                <div class="errors">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="meta-row">
+                    <span>New here?
+                        <a href="{% url 'register' %}">Create Account</a>
+                    </span>
+                    <a href="#">Forgot Password</a>
+                </div>
+            </form>
+        </div>
+    </section>
+</main>
+
+</body>
+</html>
