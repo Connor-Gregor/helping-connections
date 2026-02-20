@@ -13,9 +13,16 @@
     <nav class="navbar">
         <div class="logo">Helping Connections</div>
         <ul class="nav-links">
+            {% if user.is_authenticated %}
+            
+                {% if user.profile.role.name == "volunteer" %}
+                    <li><a href="{% url 'volunteer' %}">Dashboard</a></li>
+                {% elif user.profile.role.name == "unhoused" %}
+                    <li><a href="{% url 'unhoused' %}">Dashboard</a></li>
+                {% endif %}
+            {% endif %}
             <li><a href="#">Home</a></li>
             <li><a href="{% url 'find_help' %}">Find Help</a></li>
-            <li><a href="#">Volunteer</a></li>
             <li><a href="#">About</a></li>
 
             {% if user.is_authenticated %}
