@@ -1,10 +1,5 @@
 from django.urls import path
-<<<<<<< HEAD
-from .views import home, resources, Register, LoginView, logout_view, settings_page, update_profile_settings, change_password, find_help, volunteer, unhoused
-=======
-from .views import home, resources, Register, LoginView, logout_view, settings_page, update_profile_settings, change_password, find_help, account_view
-
->>>>>>> ed8364852feeb8ef9f7151e90a7167d430cd9a4d
+from .views import home, resources, Register, LoginView, logout_view, settings_page, update_profile_settings, change_password, find_help, volunteer, unhoused, account_view
 
 urlpatterns = [
     path("", home, name="home"),
