@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from .forms import RegisterForm, LoginForm
 from .models import Profile, Role
-
+from django.contrib.auth.decorators import login_required
 
 
 def home(request):
@@ -13,6 +13,10 @@ def home(request):
 
 def resources(request):
     return render(request, "resources.html")
+
+@login_required
+def account_view(request):
+    return render(request, "account.html")
 
 class Register(View):
     def get(self, request):
@@ -77,6 +81,14 @@ class LoginView(View):
             return redirect("resources")  # replace later with volunteer dashboard
         return redirect("home")
 
+@login_required
+def account_view(request):
+    return render(request, "account.html")
+
+@login_required
 def logout_view(request):
+
     logout(request)
+
     return redirect("home")
+

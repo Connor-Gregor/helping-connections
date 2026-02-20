@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'MyApp',
+    'MyApp.apps.MyappConfig',
 ]
 
 MIDDLEWARE = [
@@ -116,8 +116,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+# Auth redirects
+LOGIN_URL = "login"
+LOGOUT_REDIRECT_URL = "home"
 
 # Automatically sign the user out after 5 minutes
-SESSION_COOKIE_AGE = 20
+SESSION_COOKIE_AGE = 300
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
