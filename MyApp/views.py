@@ -9,7 +9,6 @@ from .forms import RegisterForm, LoginForm, ChangePasswordForm, ProfileSettingsF
 from .models import Profile, Role
 
 
-
 def home(request):
     return render(request, "home.html")
 
@@ -18,6 +17,10 @@ def find_help(request):
 
 def resources(request):
     return render(request, "resources.html")
+
+@login_required
+def account_view(request):
+    return render(request, "account.html")
 
 class Register(View):
     def get(self, request):
@@ -99,7 +102,7 @@ class LoginView(View):
 def logout_view(request):
     logout(request)
     return redirect("home")
-
+  
 @login_required
 def settings_page(request):
     profile = Profile.objects.get(user=request.user)
