@@ -1,4 +1,5 @@
 {% load static %}
+{% load user_extras %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,7 +17,56 @@
             <li><a href="{% url 'find_help' %}">Find Help</a></li>
             <li><a href="#">Volunteer</a></li>
             <li><a href="#">About</a></li>
-            <li><a href="{% url 'login' %}">Login</a></li>
+
+            {% if user.is_authenticated %}
+                <li class="profile-menu">
+
+                    <!-- Profile circle button -->
+                    <button class="profile-circle" id="profileBtn">
+                        {{ user|initials }}
+                    </button>
+
+                    <!-- Dropdown menu -->
+                    <div id="profileDropdown" class="profile-dropdown">
+
+                        <div class="profile-dropdown-header">
+
+                            <div class="profile-initials-large">
+                                {{ user|initials }}
+                            </div>
+
+                            <div class="profile-meta">
+
+                                <div class="profile-name">
+                                    {{ user.get_full_name|default:user.username }}
+                                </div>
+
+                                <div class="profile-email">
+                                    {{ user.email }}
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="profile-dropdown-links">
+
+                            <a class="dropdown-link" href="{% url 'account' %}">View Account</a>
+
+                            <a class="dropdown-link danger" href="{% url 'logout' %}">Sign Out</a>
+
+                        </div>
+
+                    </div>
+
+
+                </li>
+
+            {% else %}
+
+                <li><a href="{% url 'login' %}">Login</a></li>
+
+            {% endif %}
 
         </ul>
     </nav>
@@ -30,6 +80,30 @@
 
         </div>
     </main>
+    <!-- Profile dropdown script -->
+    <script>
 
+        const profileBtn = document.getElementById("profileBtn");
+        const profileDropdown = document.getElementById("profileDropdown");
+
+        if (profileBtn && profileDropdown) {
+
+            profileBtn.addEventListener("click", function(event) {
+
+                event.stopPropagation();
+
+                profileDropdown.classList.toggle("open");
+
+            });
+
+            document.addEventListener("click", function() {
+
+                profileDropdown.classList.remove("open");
+
+            });
+
+        }
+
+    </script>
 </body>
 </html>
