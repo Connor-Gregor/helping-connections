@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Account</title>
+  <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">Helping Connections</div>
+    <ul class="nav-links">
+      <li><a href="{% url 'home' %}">Home</a></li>
+      <li><a href="{% url 'logout' %}">Sign Out</a></li>
+    </ul>
+  </nav>
+
+  <div style="padding: 40px;">
+    <h1>Account</h1>
+    <p><strong>Username:</strong> {{ user.username }}</p>
+    <p><strong>Email:</strong> {{ user.email }}</p>
+
+    {% if user.profile.role %}
+      <p><strong>Role:</strong> {{ user.profile.role.name }}</p>
+    {% endif %}
+  </div>
+</body>
+</html>
