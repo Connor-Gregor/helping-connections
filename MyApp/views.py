@@ -94,7 +94,9 @@ class LoginView(View):
         # Redirect based on role (simple version)
         role = getattr(user.profile, "role", None)
         if role and role.name == "volunteer":
-            return redirect("resources")  # replace later with volunteer dashboard
+            return redirect("volunteer")  # replace later with volunteer dashboard
+        elif role and role.name == "unhoused":
+            return redirect("unhoused")
         return redirect("home")
 
 def logout_view(request):
@@ -171,3 +173,17 @@ def change_password(request):
 
     messages.success(request, "Password changed.")
     return redirect("settings")
+
+@login_required
+def volunteer(request):
+    role = getattr(request.user.profile, "role", None)
+    if role and role.name == "volunteer":
+        return render(request, "volunteer.html")
+    return redirect("home")
+
+@login_required
+def unhoused(request):
+    role = getattr(request.user.profile, "role", None)
+    if role and role.name == "unhoused":
+        return render(request, "unhoused_dash.html")
+    return redirect("home")
