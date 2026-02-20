@@ -66,7 +66,14 @@ class Register(View):
             return render(request, "register.html", {"form": form})
 
         login(request, user)
-        return redirect("home")
+        if profile.role.name == "volunteer":
+            return redirect("volunteer")
+
+        elif profile.role.name == "unhoused":
+            return redirect("unhoused")
+
+        else:
+            return redirect("home")  # fallback
 
 class LoginView(View):
     def get(self, request):
@@ -187,3 +194,17 @@ def unhoused(request):
     if role and role.name == "unhoused":
         return render(request, "unhoused_dash.html")
     return redirect("home")
+
+def get_dashboard_url(user):
+    role = user.profile.role.name.lower() if user.profile.role else None
+
+    if role == "volunteer":
+        return "volunteer"
+    elif role == "unhoused":
+        return "unhoused"
+
+    return "home"
+
+@login_required
+def dashboard_redirect(request):
+    return redirect(get_dashboard_url(request.user))
