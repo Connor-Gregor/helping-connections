@@ -1,4 +1,5 @@
 from django.apps import AppConfig
+import MyApp.signals
 
 
 class MyappConfig(AppConfig):
