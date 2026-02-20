@@ -3,11 +3,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Helping Connections</title>
+    <title>Unhoused Dashboard - Helping Connections</title>
     <link rel="stylesheet" href="{% static 'styles.css' %}">
 </head>
 <body>
-
 
     <nav class="navbar">
         <div class="logo">Helping Connections</div>
@@ -15,14 +14,14 @@
             <li><a href="{% url 'home' %}">Home</a></li>
             <li><a href="{% url 'resources' %}">Find Help</a></li>
             <li><a href="#">About</a></li>
-            <li><a href="#">Login</a></li>
+            <li><a href="{% url 'login' %}">Login</a></li>
+            <li><a href="{% url 'settings' %}">Settings</a></li>
         </ul>
     </nav>
 
-    
     <main class="content">
-        <h1>Find Help</h1>
-        <p>This page will show nearby resources such as shelters, food, and services.</p>
+        <h1>Unhoused Dashboard</h1>
+        <p>This is the unhoused Dashboard page.</p>
     </main>
 
 </body>
