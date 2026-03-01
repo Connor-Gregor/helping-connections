@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Inbox</title>
+</head>
+<body>
+    <h2>Inbox</h2>
+    <p><a href="{% url 'messaging:new_thread' %}">+ New message</a></p>
+
+    <ul>
+      {% for item in thread_data %}
+        <li>
+          <a href="{% url 'messaging:thread_detail' item.thread.id %}">
+            {{ item.display_name }}
+          </a>
+          <small> — updated {{ item.thread.updated_at }}</small>
+        </li>
+      {% empty %}
+        <li>No conversations yet.</li>
+      {% endfor %}
+    </ul>
+
+    <a href="{% url 'dashboard_redirect' %}">Back to dashboard</a>
+</body>
+</html>

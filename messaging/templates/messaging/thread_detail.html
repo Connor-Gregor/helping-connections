@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Thread Detail</title>
+</head>
+<body>
+    <h2>Conversation with {{ display_name }}</h2>
+
+    <div style="border:1px solid #ccc; padding:10px; max-width:700px;">
+      {% for m in messages %}
+        <p>
+          <strong>{{ m.sender.profile.display_username|default:m.sender.username }}:</strong>
+          {{ m.body }}
+          <small>({{ m.created_at }})</small>
+        </p>
+      {% empty %}
+        <p>No messages yet.</p>
+      {% endfor %}
+    </div>
+
+    <form method="post" style="margin-top:10px;">
+      {% csrf_token %}
+      <textarea name="body" rows="3" cols="60" placeholder="Type a message..."></textarea><br>
+      <button type="submit">Send</button>
+    </form>
+
+    <p><a href="{% url 'messaging:inbox' %}">Back to inbox</a></p>
+</body>
+</html>
