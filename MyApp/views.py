@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.shortcuts import render, redirect
 from django.views import View
 from django.contrib.auth.models import User
@@ -53,15 +53,14 @@ class Register(View):
         role, _ = Role.objects.get_or_create(name=role_name)
 
         try:
-            profile = Profile.objects.create(
-                user=user,
-                role=role,
-                display_username=display_username,
-                phone_number=phone_number or ""
-            )
+            with transaction.atomic():
+                profile, _ = Profile.objects.get_or_create(user=user)
+                profile.role = role
+                profile.display_username = display_username
+                profile.phone_number = phone_number or ""
+                profile.save()
         except IntegrityError:
-            # this is most likely display_username duplicate
-            user.delete()  # cleanup, since profile creation failed
+            user.delete()
             form.add_error("display_username", "That username is already taken.")
             return render(request, "register.html", {"form": form})
 
