@@ -7,10 +7,16 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from .forms import RegisterForm, LoginForm, ChangePasswordForm, ProfileSettingsForm
 from .models import Profile, Role
+from django.conf import settings
 
 
 def home(request):
     return render(request, "home.html")
+
+def map(request):
+    return render(request,"map.html", {
+        "google_maps_api_key": settings.GOOGLE_MAPS_API_KEY
+    })
 
 def find_help(request):
     return render(request, "find_help.html")
