@@ -7,6 +7,7 @@ ROLE_CHOICES = [
     ("volunteer", "Volunteer"),
 ]
 
+
 class RegisterForm(forms.Form):
     display_username = forms.CharField(
         max_length=30,
@@ -60,13 +61,22 @@ class RegisterForm(forms.Form):
             self.add_error("password2", "Passwords do not match.")
         return cleaned
 
+
 class LoginForm(forms.Form):
     email = forms.EmailField()
     password = forms.CharField(widget=forms.PasswordInput)
 
+
 class ProfileSettingsForm(forms.Form):
     display_username = forms.CharField(max_length=30, required=True)
+    first_name = forms.CharField(required=False)
+    last_name = forms.CharField(required=False)
     phone_number = forms.CharField(max_length=20, required=False)
+    address_line1 = forms.CharField(required=False)
+    address_line2 = forms.CharField(required=False)
+    city = forms.CharField(required=False)
+    state = forms.CharField(required=False)
+    zip_code = forms.CharField(required=False)
 
     def __init__(self, *args, profile: Profile, **kwargs):
         super().__init__(*args, **kwargs)
@@ -84,6 +94,7 @@ class ProfileSettingsForm(forms.Form):
             raise forms.ValidationError("That username is already taken.")
 
         return u
+
 
 class ChangePasswordForm(forms.Form):
     current_password = forms.CharField(widget=forms.PasswordInput, required=True)
@@ -109,3 +120,50 @@ class ChangePasswordForm(forms.Form):
             self.add_error("new_password2", "Passwords do not match.")
 
         return cleaned
+
+
+class DeleteAccountForm(forms.Form):
+    confirm = forms.BooleanField(
+        required=True,
+        label="I understand this will permanently delete my account."
+    )
+    password = forms.CharField(widget=forms.PasswordInput)
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+    def clean_password(self):
+        pw = self.cleaned_data["password"]
+        if not self.user.check_password(pw):
+            raise forms.ValidationError("Password is incorrect.")
+        return pw
+
+
+class EmailChangeForm(forms.Form):
+    email = forms.EmailField()
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+        def clean_email(self):
+            email = self.cleaned_data["email"].strip().lower()
+            if User.objects.filter(email=email).exclude(pk=self.user.pk).exists():
+                raise forms.ValidationError("That email is already in use.")
+            return email
+
+
+class RoleChangeForm(forms.Form):
+    role = forms.ChoiceField(choices=[])
+
+    def __init__(self, *args, allowed_roles=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        allowed_roles = allowed_roles or []
+        self.fields["role"].choices = [(r, r.title()) for r in allowed_roles]
+
+    def clean_role(self):
+        r = self.cleaned_data["role"]
+        if r not in self.allowed_roles:
+            raise forms.ValidationError("Invalid role selection.")
+        return r
