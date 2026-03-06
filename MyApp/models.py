@@ -19,6 +19,11 @@ class Profile(models.Model):
     role = models.ForeignKey(Role, null=True, blank=True, on_delete=models.SET_NULL)
     display_username = models.CharField(max_length=30, unique=True, null=True, blank=True)
     phone_number = models.CharField(max_length=20, blank=True)
+    address_line1 = models.CharField(max_length=120, blank=True)
+    address_line2 = models.CharField(max_length=120, blank=True)
+    city = models.CharField(max_length=60, blank=True)
+    state = models.CharField(max_length=30, blank=True)
+    zip_code = models.CharField(max_length=15, blank=True)
 
     def __str__(self):
         return f"Profile: {self.user.username}"
