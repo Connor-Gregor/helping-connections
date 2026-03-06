@@ -1,37 +1,169 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <title>Settings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: Arial, sans-serif; background:#f4f6f8; margin:0; padding:24px; }
+    .container { max-width: 860px; margin: 0 auto; }
+    h2 { margin: 0 0 16px; color:#2c3e50; }
+    h3 { margin: 0 0 10px; color:#2c3e50; }
+    p { margin: 6px 0 14px; color:#2c3e50; }
+
+    .card {
+      background:#fff;
+      border-radius: 12px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+      padding: 18px 18px;
+      margin-bottom: 16px;
+    }
+
+    .messages { margin: 0 0 16px; padding: 0; list-style: none; }
+    .messages li {
+      background:#eef2ff;
+      border: 1px solid #d6dcff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+
+    form { margin-top: 10px; }
+    form p { margin: 10px 0; }
+    label { display:block; font-weight: 700; margin-bottom: 6px; color:#2c3e50; }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 10px;
+      border: 1px solid #d6dbe1;
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+
+    .btn {
+      display:inline-block;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      background: #1abc9c;
+      color: #fff;
+      margin-top: 6px;
+    }
+    .btn:hover { background:#16a085; }
+
+    .btn-danger {
+      background: #c0392b;
+    }
+    .btn-danger:hover {
+      background: #a93226;
+    }
+
+    .danger-note {
+      color: #c0392b;
+      margin-top: 0;
+    }
+
+    .section-subtext { color:#555; margin-top: -6px; }
+    .divider { height:1px; background:#e6e6e6; margin: 14px 0; border:0; }
+  </style>
 </head>
+
 <body>
-  <h2>Account Settings</h2>
+  <div class="container">
+    <h2>Account Settings</h2>
 
-  {% if messages %}
-    <ul>
-      {% for message in messages %}
-        <li>{{ message }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
 
-  <h3>Profile</h3>
-  <p><strong>Email:</strong> {{ request.user.email }}</p>
-  <form method="post" action="{% url 'settings_profile' %}">
+    <!-- Profile -->
+    <div class="card">
+      <h3>Profile</h3>
+      <p class="section-subtext">
+        Update your public username, name, phone number, and address.
+      </p>
+
+      <p><strong>Current Email:</strong> {{ request.user.email }}</p>
+
+      <form method="post" action="{% url 'settings_profile' %}">
+        {% csrf_token %}
+        {{ profile_form.as_p }}
+        <button type="submit" class="btn">Save Profile</button>
+      </form>
+    </div>
+
+    <!-- Email -->
+    <div class="card">
+      <h3>Email</h3>
+      <p class="section-subtext">
+        Changing your email also updates your login (you log in using email).
+      </p>
+
+      <form method="post" action="{% url 'settings_email' %}">
+        {% csrf_token %}
+        {{ email_form.as_p }}
+        <button type="submit" class="btn">Update Email</button>
+      </form>
+    </div>
+
+    <!-- Role -->
+    <div class="card">
+      <h3>Role</h3>
+      <p class="section-subtext">
+        Choose how you want to use Helping Connections. (Admin role is not available here.)
+      </p>
+
+      <form method="post" action="{% url 'settings_role' %}">
+        {% csrf_token %}
+        {{ role_form.as_p }}
+        <button type="submit" class="btn">Update Role</button>
+      </form>
+    </div>
+
+    <!-- Password -->
+    <div class="card">
+      <h3>Change Password</h3>
+      <p class="section-subtext">
+        For security, enter your current password and a new password.
+      </p>
+
+      <form method="post" action="{% url 'settings_password' %}">
+        {% csrf_token %}
+        {{ password_form.as_p }}
+        <button type="submit" class="btn">Change Password</button>
+      </form>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="settings-danger-box">
+      <h3 class="danger-title">Delete Account</h3>
+<p class="danger-text">Deleting your account is permanent and cannot be undone.</p>
+
+<form method="post" action="{% url 'delete_account' %}">
     {% csrf_token %}
-    {{ profile_form.as_p }}
-    <button type="submit">Save Profile</button>
-  </form>
 
-  <hr>
+    <div class="delete-confirm-row">
+        <label>
+            I understand this will permanently delete my account.
+        </label>
+        {{ delete_form.confirm }}
+    </div>
 
-  <h3>Change Password</h3>
-  <form method="post" action="{% url 'settings_password' %}">
-    {% csrf_token %}
-    {{ password_form.as_p }}
-    <button type="submit">Change Password</button>
-  </form>
+    <div class="delete-password">
+        <label>Password:</label>
+        {{ delete_form.password }}
+    </div>
 
-    <a href="{% url 'dashboard_redirect' %}">Back to dashboard</a>
+    <button type="submit" class="danger-btn">Delete Account</button>
+
+</form>
+    </div>
+
+  </div>
 </body>
 </html>
