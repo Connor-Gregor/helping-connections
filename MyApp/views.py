@@ -5,7 +5,7 @@ from django.shortcuts import render, redirect
 from django.views import View
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
-from .forms import RegisterForm, LoginForm, ChangePasswordForm, ProfileSettingsForm
+from .forms import RegisterForm, LoginForm, ChangePasswordForm, ProfileSettingsForm, DeleteAccountForm, EmailChangeForm, RoleChangeForm
 from .models import Profile, Role
 from django.conf import settings
 
@@ -124,13 +124,35 @@ def settings_page(request):
         initial={
             "display_username": profile.display_username or "",
             "phone_number": profile.phone_number or "",
+            "first_name": request.user.first_name or "",
+            "last_name": request.user.last_name or "",
+            "address_line1": getattr(profile, "address_line1", "") or "",
+            "address_line2": getattr(profile, "address_line2", "") or "",
+            "city": getattr(profile, "city", "") or "",
+            "state": getattr(profile, "state", "") or "",
+            "zip_code": getattr(profile, "zip_code", "") or "",
+
         }
     )
+    email_form = EmailChangeForm(
+        user=request.user,
+        initial={"email": request.user.email or ""}
+    )
+
+    role_form = RoleChangeForm(
+        allowed_roles=["unhoused", "volunteer"],
+        initial={"role": profile.role.name if profile.role else "unhoused"}
+    )
+
     password_form = ChangePasswordForm(user=request.user)
+    delete_form = DeleteAccountForm(user=request.user)
 
     return render(request, "settings.html", {
         "profile_form": profile_form,
+        "email_form": email_form,
+        "role_form": role_form,
         "password_form": password_form,
+        "delete_form": delete_form,
     })
 
 @login_required
@@ -147,9 +169,21 @@ def update_profile_settings(request):
             "profile_form": form,
             "password_form": password_form,
         })
+    # Save field on User
+    request.user.first_name = form.cleaned_data.get("first_name", "").strip()
+    request.user.last_name = form.cleaned_data.get("last_name", "").strip()
+    request.user.save()
+    # Save fields on Profile
+    profile.display_username = form.cleaned_data["display_username"].strip()
+    profile.phone_number = form.cleaned_data.get("phone_number", "").strip()
+    # Save address on User
+    if "address_line1" in form.cleaned_data:
+        profile.address_line1 = form.cleaned_data.get("address_line1", "").strip()
+        profile.address_line2 = form.cleaned_data.get("address_line2", "").strip()
+        profile.city = form.cleaned_data.get("city", "").strip()
+        profile.state = form.cleaned_data.get("state", "").strip()
+        profile.zip_code = form.cleaned_data.get("zip_code", "").strip()
 
-    profile.display_username = form.cleaned_data["display_username"]
-    profile.phone_number = form.cleaned_data.get("phone_number", "")
     profile.save()
 
     messages.success(request, "Profile updated.")
@@ -213,3 +247,59 @@ def get_dashboard_url(user):
 @login_required
 def dashboard_redirect(request):
     return redirect(get_dashboard_url(request.user))
+@login_required
+def delete_account(request):
+    if request.method != "POST":
+        return redirect("settings")
+
+    form = DeleteAccountForm(request.POST, user=request.user)
+
+    if not form.is_valid():
+        messages.error(request, "Could not delete account.")
+        return redirect("settings")
+
+    user = request.user
+    logout(request) # clear session first
+    user.delete()   # remove user from database
+
+    messages.success(request, "Your account has been deleted.")
+    return redirect("home")
+@login_required
+def update_email(request):
+    if request.method != "POST":
+        return redirect("settings")
+
+    form = EmailChangeForm(request.POST, user=request.user)
+
+    if not form.is_valid():
+        messages.error(request, "Could not update email.")
+        return redirect("settings")
+
+    new_email = form.cleaned_data["email"]
+    request.user.email = new_email
+    request.user.username = new_email
+    request.user.save()
+
+    messages.success(request, "Email updated.")
+    return redirect("settings")
+@login_required
+def update_role(request):
+    if request.method != "POST":
+        return redirect("settings")
+
+    allowed = ["volunteer", "unhoused"]
+    form = RoleChangeForm(request.POST, allowed_roles=allowed)
+
+    if not form.is_valid():
+        messages.error(request, "Invalid role.")
+        return redirect("settings")
+
+    profile = Profile.objects.get(user=request.user)
+
+    new_role_name = form.cleaned_data["role"]
+    role_obj, _ = Role.objects.get_or_create(name=new_role_name)
+    profile.role = role_obj
+    profile.save()
+
+    messages.success(request, "Role updated.")
+    return redirect("settings")
