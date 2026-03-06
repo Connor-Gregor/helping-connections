@@ -326,6 +326,7 @@ body {
 
 .resource-card a:hover {
     color: #1abc9c;
+}
 /* Delete account section */
 
 .danger-title {
@@ -377,5 +378,4 @@ body {
 
 .danger-btn:hover {
     background: #a93226;
-}
 }
