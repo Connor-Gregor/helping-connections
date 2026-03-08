@@ -7,21 +7,21 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.views.decorators.http import require_POST
 
-from config import settings
-from .forms import (
-    RegisterForm, LoginForm, ChangePasswordForm, ProfileSettingsForm,
-    DeleteAccountForm, EmailChangeForm, RoleChangeForm, RequestForm
-)
+from .forms import RegisterForm, LoginForm, ChangePasswordForm, ProfileSettingsForm, DeleteAccountForm, EmailChangeForm, \
+    RoleChangeForm, RequestForm
 from .models import Profile, Role, Request
+from django.conf import settings
 
 
 def home(request):
     return render(request, "home.html")
 
+
 def map(request):
-    return render(request,"map.html", {
+    return render(request, "map.html", {
         "google_maps_api_key": settings.GOOGLE_MAPS_API_KEY
     })
+
 
 def find_help(request):
     return render(request, "find_help.html")
@@ -56,7 +56,7 @@ class Register(View):
 
         try:
             user = User.objects.create_user(
-                username=email,
+                username=email,  # keep this as email so your login flow stays the same
                 email=email,
                 password=password
             )
@@ -81,10 +81,12 @@ class Register(View):
         login(request, user)
         if profile.role.name == "volunteer":
             return redirect("volunteer")
+
         elif profile.role.name == "unhoused":
             return redirect("unhoused")
+
         else:
-            return redirect("home")
+            return redirect("home")  # fallback
 
 
 class LoginView(View):
@@ -106,11 +108,14 @@ class LoginView(View):
             return render(request, "login.html", {"form": form})
 
         login(request, user)
+
+        # Optional: force 5-min expiry from login time (absolute, not sliding)
         request.session.set_expiry(300)
 
+        # Redirect based on role (simple version)
         role = getattr(user.profile, "role", None)
         if role and role.name == "volunteer":
-            return redirect("volunteer")
+            return redirect("volunteer")  # replace later with volunteer dashboard
         elif role and role.name == "unhoused":
             return redirect("unhoused")
         return redirect("home")
@@ -130,13 +135,35 @@ def settings_page(request):
         initial={
             "display_username": profile.display_username or "",
             "phone_number": profile.phone_number or "",
+            "first_name": request.user.first_name or "",
+            "last_name": request.user.last_name or "",
+            "address_line1": getattr(profile, "address_line1", "") or "",
+            "address_line2": getattr(profile, "address_line2", "") or "",
+            "city": getattr(profile, "city", "") or "",
+            "state": getattr(profile, "state", "") or "",
+            "zip_code": getattr(profile, "zip_code", "") or "",
+
         }
     )
+    email_form = EmailChangeForm(
+        user=request.user,
+        initial={"email": request.user.email or ""}
+    )
+
+    role_form = RoleChangeForm(
+        allowed_roles=["unhoused", "volunteer"],
+        initial={"role": profile.role.name if profile.role else "unhoused"}
+    )
+
     password_form = ChangePasswordForm(user=request.user)
+    delete_form = DeleteAccountForm(user=request.user)
 
     return render(request, "settings.html", {
         "profile_form": profile_form,
+        "email_form": email_form,
+        "role_form": role_form,
         "password_form": password_form,
+        "delete_form": delete_form,
     })
 
 
@@ -154,9 +181,21 @@ def update_profile_settings(request):
             "profile_form": form,
             "password_form": password_form,
         })
+    # Save field on User
+    request.user.first_name = form.cleaned_data.get("first_name", "").strip()
+    request.user.last_name = form.cleaned_data.get("last_name", "").strip()
+    request.user.save()
+    # Save fields on Profile
+    profile.display_username = form.cleaned_data["display_username"].strip()
+    profile.phone_number = form.cleaned_data.get("phone_number", "").strip()
+    # Save address on User
+    if "address_line1" in form.cleaned_data:
+        profile.address_line1 = form.cleaned_data.get("address_line1", "").strip()
+        profile.address_line2 = form.cleaned_data.get("address_line2", "").strip()
+        profile.city = form.cleaned_data.get("city", "").strip()
+        profile.state = form.cleaned_data.get("state", "").strip()
+        profile.zip_code = form.cleaned_data.get("zip_code", "").strip()
 
-    profile.display_username = form.cleaned_data["display_username"]
-    profile.phone_number = form.cleaned_data.get("phone_number", "")
     profile.save()
 
     messages.success(request, "Profile updated.")
@@ -187,6 +226,8 @@ def change_password(request):
     new_pw = form.cleaned_data["new_password1"]
     request.user.set_password(new_pw)
     request.user.save()
+
+    # Keep them logged in after password change
     update_session_auth_hash(request, request.user)
 
     messages.success(request, "Password changed.")
@@ -237,8 +278,8 @@ def delete_account(request):
         return redirect("settings")
 
     user = request.user
-    logout(request)
-    user.delete()
+    logout(request)  # clear session first
+    user.delete()  # remove user from database
 
     messages.success(request, "Your account has been deleted.")
     return redirect("home")
@@ -285,7 +326,6 @@ def update_role(request):
 
     messages.success(request, "Role updated.")
     return redirect("settings")
-
 
 @login_required
 def create_request(request):
