@@ -66,7 +66,14 @@ class LoginForm(forms.Form):
 
 class ProfileSettingsForm(forms.Form):
     display_username = forms.CharField(max_length=30, required=True)
+    first_name = forms.CharField(required=False)
+    last_name = forms.CharField(required=False)
     phone_number = forms.CharField(max_length=20, required=False)
+    address_line1 = forms.CharField(required=False)
+    address_line2 = forms.CharField(required=False)
+    city = forms.CharField(required=False)
+    state = forms.CharField(required=False)
+    zip_code = forms.CharField(required=False)
 
     def __init__(self, *args, profile: Profile, **kwargs):
         super().__init__(*args, **kwargs)
@@ -148,8 +155,8 @@ class RoleChangeForm(forms.Form):
 
     def __init__(self, *args, allowed_roles=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.allowed_roles = allowed_roles or []
-        self.fields["role"].choices = [(r, r.title()) for r in self.allowed_roles]
+        allowed_roles = allowed_roles or []
+        self.fields["role"].choices = [(r, r.title()) for r in allowed_roles]
 
     def clean_role(self):
         r = self.cleaned_data["role"]
