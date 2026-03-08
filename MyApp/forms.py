@@ -1,11 +1,12 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Profile
+from .models import Profile, Request
 
 ROLE_CHOICES = [
     ("unhoused", "Unhoused"),
     ("volunteer", "Volunteer"),
 ]
+
 
 class RegisterForm(forms.Form):
     display_username = forms.CharField(
@@ -28,7 +29,6 @@ class RegisterForm(forms.Form):
         if len(username) < 3:
             raise forms.ValidationError("Username must be at least 3 characters.")
 
-        # simple character policy (optional but helpful)
         allowed = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.")
         if any(ch not in allowed for ch in username):
             raise forms.ValidationError("Username can only use letters, numbers, _, -, and .")
@@ -49,7 +49,6 @@ class RegisterForm(forms.Form):
 
     def clean_phone_number(self):
         phone = self.cleaned_data.get("phone_number", "").strip()
-        # keep it simple for sprint: allow blank, otherwise basic length check
         if phone and len(phone) < 7:
             raise forms.ValidationError("Phone number looks too short.")
         return phone
@@ -60,9 +59,11 @@ class RegisterForm(forms.Form):
             self.add_error("password2", "Passwords do not match.")
         return cleaned
 
+
 class LoginForm(forms.Form):
     email = forms.EmailField()
     password = forms.CharField(widget=forms.PasswordInput)
+
 
 class ProfileSettingsForm(forms.Form):
     display_username = forms.CharField(max_length=30, required=True)
@@ -78,12 +79,12 @@ class ProfileSettingsForm(forms.Form):
         if len(u) < 3:
             raise forms.ValidationError("Username must be at least 3 characters.")
 
-        # Unique check (case-insensitive)
         qs = Profile.objects.filter(display_username__iexact=u).exclude(pk=self.profile.pk)
         if qs.exists():
             raise forms.ValidationError("That username is already taken.")
 
         return u
+
 
 class ChangePasswordForm(forms.Form):
     current_password = forms.CharField(widget=forms.PasswordInput, required=True)
@@ -109,3 +110,84 @@ class ChangePasswordForm(forms.Form):
             self.add_error("new_password2", "Passwords do not match.")
 
         return cleaned
+
+
+class DeleteAccountForm(forms.Form):
+    confirm = forms.BooleanField(
+        required=True,
+        label="I understand this will permanently delete my account."
+    )
+    password = forms.CharField(widget=forms.PasswordInput)
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+    def clean_password(self):
+        pw = self.cleaned_data["password"]
+        if not self.user.check_password(pw):
+            raise forms.ValidationError("Password is incorrect.")
+        return pw
+
+
+class EmailChangeForm(forms.Form):
+    email = forms.EmailField()
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+    def clean_email(self):
+        email = self.cleaned_data["email"].strip().lower()
+        if User.objects.filter(username=email).exclude(pk=self.user.pk).exists():
+            raise forms.ValidationError("That email is already in use.")
+        return email
+
+
+class RoleChangeForm(forms.Form):
+    role = forms.ChoiceField(choices=[])
+
+    def __init__(self, *args, allowed_roles=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.allowed_roles = allowed_roles or []
+        self.fields["role"].choices = [(r, r.title()) for r in self.allowed_roles]
+
+    def clean_role(self):
+        r = self.cleaned_data["role"]
+        if r not in self.allowed_roles:
+            raise forms.ValidationError("Invalid role selection.")
+        return r
+
+
+class RequestForm(forms.ModelForm):
+    class Meta:
+        model = Request
+        fields = [
+            "title",
+            "description",
+            "category",
+            "city",
+            "location_details",
+        ]
+        widgets = {
+            "title": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Enter request title"
+            }),
+            "description": forms.Textarea(attrs={
+                "class": "form-control",
+                "placeholder": "Add any details here",
+                "rows": 4
+            }),
+            "category": forms.Select(attrs={
+                "class": "form-control"
+            }),
+            "city": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Enter city"
+            }),
+            "location_details": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Optional: near shelter, library, community center, etc."
+            }),
+        }
