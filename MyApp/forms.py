@@ -41,7 +41,6 @@ class RegisterForm(forms.Form):
     def clean_email(self):
         email = self.cleaned_data["email"].strip().lower()
 
-        # You currently store email in User.username, so check that
         if User.objects.filter(username=email).exists():
             raise forms.ValidationError("An account with this email already exists.")
 
