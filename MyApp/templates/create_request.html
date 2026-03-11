@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Request</title>
+</head>
+<body>
+
+<h2>Create a Request</h2>
+
+{% if form.errors %}
+    <div style="color:red;">
+        {{ form.errors }}
+    </div>
+{% endif %}
+
+<form method="POST">
+    {% csrf_token %}
+
+    <p>
+        <label>Title</label><br>
+        {{ form.title }}
+    </p>
+
+    <p>
+        <label>Description</label><br>
+        {{ form.description }}
+    </p>
+
+    <p>
+        <label>Category</label><br>
+        {{ form.category }}
+    </p>
+
+    <p>
+        <label>City</label><br>
+        {{ form.city }}
+    </p>
+
+    <p>
+        <label>Location Details</label><br>
+        {{ form.location_details }}
+    </p>
+
+    <button type="submit">Submit Request</button>
+
+</form>
+    <a class="back-dashboard" href="{% url 'dashboard_redirect' %}">Back to Dashboard</a>
+</body>
+</html>

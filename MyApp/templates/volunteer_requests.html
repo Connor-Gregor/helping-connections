@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Open Requests</title>
+</head>
+<body>
+    <h2>Open Requests</h2>
+
+    {% for request in requests %}
+        <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+
+            <h3>{{ request.title }}</h3>
+
+            <p><strong>Category:</strong> {{ request.get_category_display }}</p>
+
+            <p>{{ request.description }}</p>
+
+            <p><strong>City:</strong> {{ request.city }}</p>
+
+            {% if request.location_details %}
+                <p><strong>Location:</strong> {{ request.location_details }}</p>
+            {% endif %}
+
+            <p><strong>Posted:</strong> {{ request.created_at }}</p>
+
+            <form method="POST" action="{% url 'claim_request' request.id %}">
+                {% csrf_token %}
+                <button type="submit">Claim Request</button>
+            </form>
+
+        </div>
+    {% empty %}
+        <p>No open requests available.</p>
+    {% endfor %}
+
+    <a class="back-dashboard" href="{% url 'dashboard_redirect' %}">Back to Dashboard</a>
+</body>
+</html>
