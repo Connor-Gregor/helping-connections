@@ -5,11 +5,13 @@ from .views import (
     find_help, volunteer, unhoused, account_view,
     delete_account, update_email, update_role,
     dashboard_redirect, map, create_request,
-    volunteer_requests, claim_request
+    volunteer_requests, claim_request, 
+    about
 )
 
 urlpatterns = [
     path("", home, name="home"),
+    path("about/", about, name="about"),
     path("resources/", resources, name="resources"),
     path("register/", Register.as_view(), name="register"),
     path("login/", LoginView.as_view(), name="login"),
