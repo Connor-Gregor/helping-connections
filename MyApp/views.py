@@ -30,6 +30,9 @@ def find_help(request):
 def resources(request):
     return render(request, "resources.html")
 
+def about(request):
+    return render(request, "about.html")
+
 
 @login_required
 def account_view(request):
@@ -395,3 +398,4 @@ def claim_request(request, request_id):
 
     messages.success(request, "You have claimed this request.")
     return redirect("volunteer_requests")
+
