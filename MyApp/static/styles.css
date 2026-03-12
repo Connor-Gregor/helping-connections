@@ -379,3 +379,43 @@ body {
 .danger-btn:hover {
     background: #a93226;
 }
+
+/* ABOUT PAGE */
+
+.about-container {
+    max-width: 900px;
+    margin: auto;
+    padding: 40px;
+    text-align: center;
+}
+
+.about-title {
+    font-size: 36px;
+    margin-bottom: 30px;
+}
+
+.about-image img {
+    width: 100%;
+    max-width: 600px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+}
+
+.about-section {
+    margin-bottom: 35px;
+    text-align: left;
+}
+
+.about-section h2 {
+    color: #2c6e73;
+    margin-bottom: 10px;
+}
+
+.about-section p {
+    font-size: 17px;
+    line-height: 1.6;
+}
+
+.about-footer {
+    margin-top: 40px;
+}

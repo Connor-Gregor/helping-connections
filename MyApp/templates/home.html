@@ -21,9 +21,9 @@
                     <li><a href="{% url 'unhoused' %}">Dashboard</a></li>
                 {% endif %}
             {% endif %}
-            <li><a href="#">Home</a></li>
+            <li><a href="{% url 'home' %}">Home</a></li>
             <li><a href="{% url 'find_help' %}">Find Help</a></li>
-            <li><a href="#">About</a></li>
+            <li><a href="{% url 'about' %}">About</a></li>
 
             {% if user.is_authenticated %}
                 <li class="profile-menu">
