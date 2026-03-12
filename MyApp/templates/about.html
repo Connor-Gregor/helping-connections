@@ -1,0 +1,55 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>About | Helping Connections</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+
+<div class="about-container">
+
+    <h1 class="about-title">Building Positive Connections</h1>
+
+    <div class="about-image">
+        <img src="{% static 'about_hands.jpg' %}" alt="Helping hands">
+    </div>
+
+    <section class="about-section">
+        <h2>Our Mission</h2>
+        <p>
+            Helping Connections is dedicated to bridging the gap between volunteers
+            and individuals experiencing homelessness in the Milwaukee area.
+            Our platform provides a simple and accessible way for people to request
+            help and for volunteers to respond to those needs quickly.
+        </p>
+    </section>
+
+    <section class="about-section">
+        <h2>How the Platform Works</h2>
+        <p>
+            Individuals can submit requests for support such as food, clothing,
+            transportation, or other essential resources. Volunteers can browse
+            these requests, claim them, and provide assistance directly through
+            the platform.
+        </p>
+    </section>
+
+    <section class="about-section">
+        <h2>Community Impact</h2>
+        <p>
+            By connecting compassionate volunteers with those who need support,
+            Helping Connections aims to strengthen communities and create
+            meaningful opportunities for people to help one another.
+        </p>
+    </section>
+
+    <div class="about-footer">
+        <a href="{% url 'home' %}" class="cta-btn">Return Home</a>
+    </div>
+
+</div>
+
+</body>
+</html>
