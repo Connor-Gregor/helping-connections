@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Account</title>
+  <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">Helping Connections</div>
+    <ul class="nav-links">
+      <li><a href="{% url 'home' %}">Home</a></li>
+      <li><a href="{% url 'logout' %}">Sign Out</a></li>
+    </ul>
+  </nav>
+
+  <div style="padding: 40px;">
+    <h1>Account</h1>
+
+    <p><strong>Username:</strong> {{ user.username }}</p>
+    <p><strong>Email:</strong> {{ user.email }}</p>
+
+    {% if profile %}
+      {% if profile.display_username %}
+        <p><strong>Display name:</strong> {{ profile.display_username }}</p>
+      {% endif %}
+
+      {% if profile.phone_number %}
+        <p><strong>Phone:</strong> {{ profile.phone_number }}</p>
+      {% endif %}
+
+      {% if profile.role %}
+        <p><strong>Role:</strong> {{ profile.role.name }}</p>
+      {% endif %}
+
+      {% if profile.address_line1 or profile.address_line2 or profile.city %}
+        <p><strong>Address:</strong>
+          {{ profile.address_line1 }}{% if profile.address_line2 %}, {{ profile.address_line2 }}{% endif %}
+          {% if profile.city %}, {{ profile.city }}{% endif %}
+        </p>
+      {% endif %}
+    {% else %}
+      <p>No profile information available.</p>
+    {% endif %}
+
+    <p><a href="{% url 'settings' %}">Edit profile / settings</a></p>
+  </div>
+</body>
+</html>

@@ -36,7 +36,8 @@ def about(request):
 
 @login_required
 def account_view(request):
-    return render(request, "account.html")
+    profile = getattr(request.user, "profile", None)
+    return render(request, "account.html", {"profile": profile})
 
 
 class Register(View):
