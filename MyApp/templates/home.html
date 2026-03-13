@@ -85,7 +85,9 @@
         <div class="hero-overlay">
             <h1>Welcome to Helping Connections</h1>
             <p>Connecting people with the resources they need.</p>
-            <a href="{% url 'login' %}" class="cta-btn">Get Started</a>
+            {% if not user.is_authenticated %}
+                <a href="{% url 'login' %}" class="cta-btn">Get Started</a>
+            {% endif %}
 
         </div>
     </main>
