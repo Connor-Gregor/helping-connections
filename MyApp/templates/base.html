@@ -1,0 +1,108 @@
+{% load static %}
+{% load user_extras %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Helping Connections{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">Helping Connections</div>
+
+    <ul class="nav-links">
+        {% if user.is_authenticated %}
+
+            {% if user|role_name == "volunteer" %}
+                <li><a href="{% url 'volunteer' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'volunteer' %}active{% endif %}">Volunteer Dashboard</a></li>
+                <li><a href="{% url 'volunteer_requests' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'volunteer_requests' %}active{% endif %}">View Requests</a></li>
+                <li><a href="{% url 'messaging:inbox' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'inbox' %}active{% endif %}">Inbox</a></li>
+                <li><a href="{% url 'map' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'map' %}active{% endif %}">Map</a></li>
+                <li><a href="{% url 'find_help' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'find_help' %}active{% endif %}">Find Help</a></li>
+
+            {% elif user|role_name == "unhoused" %}
+                <li><a href="{% url 'unhoused' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'unhoused' %}active{% endif %}">Unhoused Dashboard</a></li>
+                <li><a href="{% url 'find_help' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'find_help' %}active{% endif %}">Find Help</a></li>
+                <li><a href="{% url 'create_request' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'create_request' %}active{% endif %}">Create Request</a></li>
+                <li><a href="{% url 'messaging:inbox' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'inbox' %}active{% endif %}">Inbox</a></li>
+                <li><a href="{% url 'map' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'map' %}active{% endif %}">Map</a></li>
+
+            {% elif user|role_name == "admin" %}
+                <li><a href="#" class="{% if request.resolver_match and request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">Admin Dashboard</a></li>
+                <li><a href="#">Manage Users</a></li>
+                <li><a href="{% url 'messaging:inbox' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'inbox' %}active{% endif %}">Inbox</a></li>
+                <li><a href="{% url 'map' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'map' %}active{% endif %}">Map</a></li>
+
+            {% else %}
+                <li><a href="{% url 'map' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'map' %}active{% endif %}">Map</a></li>
+            {% endif %}
+
+            <li><a href="{% url 'about' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'about' %}active{% endif %}">About</a></li>
+
+            <li class="profile-menu">
+                <button class="profile-circle" id="profileBtn">
+                    {{ user|initials }}
+                </button>
+
+                <div id="profileDropdown" class="profile-dropdown">
+                    <div class="profile-dropdown-header">
+                        <div class="profile-initials-large">{{ user|initials }}</div>
+
+                        <div class="profile-meta">
+                            <div class="profile-name">
+                                {{ user.get_full_name|default:user.username }}
+                            </div>
+                            <div class="profile-email">
+                                {{ user.email }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-dropdown-links">
+                        <a class="dropdown-link" href="{% url 'account' %}">View Account</a>
+                        <a class="dropdown-link" href="{% url 'settings' %}">Settings</a>
+                        <a class="dropdown-link danger" href="{% url 'logout' %}">Sign Out</a>
+                    </div>
+                </div>
+            </li>
+
+        {% else %}
+            <li><a href="{% url 'home' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a></li>
+            <li><a href="{% url 'find_help' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'find_help' %}active{% endif %}">Find Help</a></li>
+            <li><a href="{% url 'map' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'map' %}active{% endif %}">Map</a></li>
+            <li><a href="{% url 'about' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'about' %}active{% endif %}">About</a></li>
+            <li><a href="{% url 'login' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'login' %}active{% endif %}">Login</a></li>
+        {% endif %}
+    </ul>
+</nav>
+
+{% block content %}{% endblock %}
+
+<script>
+    const profileBtn = document.getElementById("profileBtn");
+    const profileDropdown = document.getElementById("profileDropdown");
+
+    if (profileBtn && profileDropdown) {
+        profileBtn.addEventListener("click", function(event) {
+            event.stopPropagation();
+            profileDropdown.classList.toggle("open");
+        });
+
+        profileDropdown.addEventListener("click", function(event) {
+            event.stopPropagation();
+        });
+
+        document.addEventListener("click", function() {
+            profileDropdown.classList.remove("open");
+        });
+    }
+</script>
+
+{% block extra_scripts %}{% endblock %}
+
+</body>
+</html>

@@ -1,18 +1,14 @@
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Find Help - Milwaukee Resources</title>
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-</head>
-<body>
-    
+{% load user_extras %}
+
+{% block title %}Find Help - Milwaukee Resources{% endblock %}
+
+{% block content %}
 <div class="find-help-container">
     <h1>Find Help in Milwaukee</h1>
-    
+
     <div class="resource-grid">
-        <!-- Shelter & Housing -->
         <div class="resource-card">
             <h2>Shelter & Housing</h2>
             <p>Call <strong>2-1-1 (Impact 2-1-1)</strong> to locate available emergency shelters</p>
@@ -23,7 +19,6 @@
             </ul>
         </div>
 
-        <!-- Food Assistance -->
         <div class="resource-card">
             <h2>Food Assistance</h2>
             <ul>
@@ -35,7 +30,6 @@
             </ul>
         </div>
 
-        <!-- Medical -->
         <div class="resource-card">
             <h2>Medical</h2>
             <ul>
@@ -44,7 +38,6 @@
             </ul>
         </div>
 
-        <!-- Employment -->
         <div class="resource-card">
             <h2>Employment</h2>
             <ul>
@@ -54,7 +47,6 @@
             </ul>
         </div>
 
-        <!-- Legal Aid -->
         <div class="resource-card">
             <h2>Legal Aid</h2>
             <ul>
@@ -62,7 +54,6 @@
             </ul>
         </div>
 
-        <!-- Hygiene -->
         <div class="resource-card">
             <h2>Hygiene</h2>
             <ul>
@@ -73,8 +64,16 @@
         </div>
     </div>
 
-    <a class="back-dashboard" href="{% url 'home' %}">Back to Home</a>
+    {% if user.is_authenticated %}
+        {% if user|role_name == "unhoused" %}
+            <a class="back-dashboard" href="{% url 'unhoused' %}">Back to Unhoused Dashboard</a>
+        {% elif user|role_name == "volunteer" %}
+            <a class="back-dashboard" href="{% url 'volunteer' %}">Back to Volunteer Dashboard</a>
+        {% else %}
+            <a class="back-dashboard" href="{% url 'home' %}">Back to Home</a>
+        {% endif %}
+    {% else %}
+        <a class="back-dashboard" href="{% url 'home' %}">Back to Home</a>
+    {% endif %}
 </div>
-
-</body>
-</html>
+{% endblock %}

@@ -1,50 +1,133 @@
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Account</title>
-  <link rel="stylesheet" href="{% static 'styles.css' %}">
-</head>
-<body>
-  <nav class="navbar">
-    <div class="logo">Helping Connections</div>
-    <ul class="nav-links">
-      <li><a href="{% url 'home' %}">Home</a></li>
-      <li><a href="{% url 'logout' %}">Sign Out</a></li>
-    </ul>
-  </nav>
 
-  <div style="padding: 40px;">
-    <h1>Account</h1>
+{% block title %}Account - Helping Connections{% endblock %}
 
-    <p><strong>Username:</strong> {{ user.username }}</p>
-    <p><strong>Email:</strong> {{ user.email }}</p>
+{% block content %}
 
-    {% if profile %}
-      {% if profile.display_username %}
-        <p><strong>Display name:</strong> {{ profile.display_username }}</p>
-      {% endif %}
+<style>
 
-      {% if profile.phone_number %}
-        <p><strong>Phone:</strong> {{ profile.phone_number }}</p>
-      {% endif %}
+.account-container{
+    max-width:700px;
+    margin:40px auto;
+    background:white;
+    padding:30px;
+    border-radius:12px;
+    box-shadow:0 8px 22px rgba(0,0,0,0.1);
+}
 
-      {% if profile.role %}
-        <p><strong>Role:</strong> {{ profile.role.name }}</p>
-      {% endif %}
+.account-title{
+    font-size:28px;
+    font-weight:700;
+    color:#2c3e50;
+    margin-bottom:20px;
+}
 
-      {% if profile.address_line1 or profile.address_line2 or profile.city %}
-        <p><strong>Address:</strong>
-          {{ profile.address_line1 }}{% if profile.address_line2 %}, {{ profile.address_line2 }}{% endif %}
-          {% if profile.city %}, {{ profile.city }}{% endif %}
-        </p>
-      {% endif %}
-    {% else %}
-      <p>No profile information available.</p>
-    {% endif %}
+.account-row{
+    margin-bottom:12px;
+}
 
-    <p><a href="{% url 'settings' %}">Edit profile / settings</a></p>
-  </div>
-</body>
-</html>
+.account-label{
+    font-weight:600;
+    color:#2c3e50;
+}
+
+.account-value{
+    color:#444;
+}
+
+.account-actions{
+    margin-top:25px;
+}
+
+.account-actions a{
+    display:inline-block;
+    padding:10px 16px;
+    background:#1abc9c;
+    color:white;
+    border-radius:6px;
+    text-decoration:none;
+}
+
+.account-actions a:hover{
+    background:#16a085;
+}
+
+</style>
+
+<div class="account-container">
+
+<div class="account-title">
+Account Information
+</div>
+
+<div class="account-row">
+<span class="account-label">Username:</span>
+<span class="account-value">{{ user.username }}</span>
+</div>
+
+<div class="account-row">
+<span class="account-label">Email:</span>
+<span class="account-value">{{ user.email }}</span>
+</div>
+
+{% if profile %}
+
+{% if profile.display_username %}
+<div class="account-row">
+<span class="account-label">Profile Name:</span>
+<span class="account-value">{{ profile.display_username }}</span>
+</div>
+{% endif %}
+
+{% if user.first_name or user.last_name %}
+<div class="account-row">
+<span class="account-label">Name:</span>
+<span class="account-value">
+{{ user.first_name }} {{ user.last_name }}
+</span>
+</div>
+{% endif %}
+
+{% if profile.phone_number %}
+<div class="account-row">
+<span class="account-label">Phone:</span>
+<span class="account-value">{{ profile.phone_number }}</span>
+</div>
+{% endif %}
+
+{% if profile.address_line1 or profile.address_line2 or profile.city %}
+<div class="account-row">
+<span class="account-label">Address:</span>
+<span class="account-value">
+{{ profile.address_line1 }}
+{% if profile.address_line2 %}, {{ profile.address_line2 }}{% endif %}
+{% if profile.city %}, {{ profile.city }}{% endif %}
+{% if profile.state %}, {{ profile.state }}{% endif %}
+{% if profile.zip_code %} {{ profile.zip_code }}{% endif %}
+</span>
+</div>
+{% endif %}
+
+{% if profile.role %}
+<div class="account-row">
+<span class="account-label">Role:</span>
+<span class="account-value">{{ profile.role.name }}</span>
+</div>
+{% endif %}
+
+{% else %}
+
+<p>No profile information available.</p>
+
+{% endif %}
+
+<div class="account-actions">
+<a href="{% url 'settings' %}">
+Edit Profile / Settings
+</a>
+</div>
+
+</div>
+
+{% endblock %}

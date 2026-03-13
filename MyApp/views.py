@@ -30,6 +30,7 @@ def find_help(request):
 def resources(request):
     return render(request, "resources.html")
 
+
 def about(request):
     return render(request, "about.html")
 
@@ -56,41 +57,50 @@ class Register(View):
         role_name = form.cleaned_data["role"]
 
         display_username = form.cleaned_data["display_username"]
+        first_name = form.cleaned_data["first_name"]
+        last_name = form.cleaned_data["last_name"]
         phone_number = form.cleaned_data.get("phone_number", "")
-
-        try:
-            user = User.objects.create_user(
-                username=email,  # keep this as email so your login flow stays the same
-                email=email,
-                password=password
-            )
-        except IntegrityError:
-            form.add_error("email", "An account with this email already exists.")
-            return render(request, "register.html", {"form": form})
-
-        role, _ = Role.objects.get_or_create(name=role_name)
+        address_line1 = form.cleaned_data["address_line1"]
+        address_line2 = form.cleaned_data.get("address_line2", "")
+        city = form.cleaned_data["city"]
+        state = form.cleaned_data["state"]
+        zip_code = form.cleaned_data["zip_code"]
 
         try:
             with transaction.atomic():
+                user = User.objects.create_user(
+                    username=email,
+                    email=email,
+                    password=password,
+                    first_name=first_name,
+                    last_name=last_name,
+                )
+
+                role, _ = Role.objects.get_or_create(name=role_name)
+
                 profile, _ = Profile.objects.get_or_create(user=user)
                 profile.role = role
                 profile.display_username = display_username
-                profile.phone_number = phone_number or ""
+                profile.phone_number = phone_number
+                profile.address_line1 = address_line1
+                profile.address_line2 = address_line2
+                profile.city = city
+                profile.state = state
+                profile.zip_code = zip_code
                 profile.save()
+
         except IntegrityError:
-            user.delete()
-            form.add_error("display_username", "That username is already taken.")
+            form.add_error("email", "An account with this email or username already exists.")
             return render(request, "register.html", {"form": form})
 
         login(request, user)
+
         if profile.role.name == "volunteer":
             return redirect("volunteer")
-
         elif profile.role.name == "unhoused":
             return redirect("unhoused")
-
         else:
-            return redirect("home")  # fallback
+            return redirect("home")
 
 
 class LoginView(View):
@@ -113,13 +123,11 @@ class LoginView(View):
 
         login(request, user)
 
-        # Optional: force 5-min expiry from login time (absolute, not sliding)
         request.session.set_expiry(300)
 
-        # Redirect based on role (simple version)
         role = getattr(user.profile, "role", None)
         if role and role.name == "volunteer":
-            return redirect("volunteer")  # replace later with volunteer dashboard
+            return redirect("volunteer")
         elif role and role.name == "unhoused":
             return redirect("unhoused")
         return redirect("home")
@@ -146,7 +154,6 @@ def settings_page(request):
             "city": getattr(profile, "city", "") or "",
             "state": getattr(profile, "state", "") or "",
             "zip_code": getattr(profile, "zip_code", "") or "",
-
         }
     )
     email_form = EmailChangeForm(
@@ -185,21 +192,18 @@ def update_profile_settings(request):
             "profile_form": form,
             "password_form": password_form,
         })
-    # Save field on User
+
     request.user.first_name = form.cleaned_data.get("first_name", "").strip()
     request.user.last_name = form.cleaned_data.get("last_name", "").strip()
     request.user.save()
-    # Save fields on Profile
+
     profile.display_username = form.cleaned_data["display_username"].strip()
     profile.phone_number = form.cleaned_data.get("phone_number", "").strip()
-    # Save address on User
-    if "address_line1" in form.cleaned_data:
-        profile.address_line1 = form.cleaned_data.get("address_line1", "").strip()
-        profile.address_line2 = form.cleaned_data.get("address_line2", "").strip()
-        profile.city = form.cleaned_data.get("city", "").strip()
-        profile.state = form.cleaned_data.get("state", "").strip()
-        profile.zip_code = form.cleaned_data.get("zip_code", "").strip()
-
+    profile.address_line1 = form.cleaned_data.get("address_line1", "").strip()
+    profile.address_line2 = form.cleaned_data.get("address_line2", "").strip()
+    profile.city = form.cleaned_data.get("city", "").strip()
+    profile.state = form.cleaned_data.get("state", "").strip()
+    profile.zip_code = form.cleaned_data.get("zip_code", "").strip()
     profile.save()
 
     messages.success(request, "Profile updated.")
@@ -220,6 +224,13 @@ def change_password(request):
             initial={
                 "display_username": profile.display_username or "",
                 "phone_number": profile.phone_number or "",
+                "first_name": request.user.first_name or "",
+                "last_name": request.user.last_name or "",
+                "address_line1": getattr(profile, "address_line1", "") or "",
+                "address_line2": getattr(profile, "address_line2", "") or "",
+                "city": getattr(profile, "city", "") or "",
+                "state": getattr(profile, "state", "") or "",
+                "zip_code": getattr(profile, "zip_code", "") or "",
             }
         )
         return render(request, "settings.html", {
@@ -231,7 +242,6 @@ def change_password(request):
     request.user.set_password(new_pw)
     request.user.save()
 
-    # Keep them logged in after password change
     update_session_auth_hash(request, request.user)
 
     messages.success(request, "Password changed.")
@@ -282,8 +292,8 @@ def delete_account(request):
         return redirect("settings")
 
     user = request.user
-    logout(request)  # clear session first
-    user.delete()  # remove user from database
+    logout(request)
+    user.delete()
 
     messages.success(request, "Your account has been deleted.")
     return redirect("home")
@@ -330,6 +340,7 @@ def update_role(request):
 
     messages.success(request, "Role updated.")
     return redirect("settings")
+
 
 @login_required
 def create_request(request):
@@ -399,4 +410,3 @@ def claim_request(request, request_id):
 
     messages.success(request, "You have claimed this request.")
     return redirect("volunteer_requests")
-
