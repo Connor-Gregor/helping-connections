@@ -1,511 +1,407 @@
+{% extends "base.html" %}
 {% load static %}
-{% load user_extras %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <title>Helping Connections - Map</title>
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <style>
+{% block title %}Helping Connections - Map{% endblock %}
+
+{% block content %}
+<style>
+    .page-wrap {
+        padding: 18px 40px;
+    }
+
+    .map-shell {
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        gap: 18px;
+        align-items: start;
+    }
+
+    .panel {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.10);
+        overflow: hidden;
+    }
+
+    .panel-header {
+        padding: 14px 16px;
+        background: #f4f6f8;
+        border-bottom: 1px solid #e6e6e6;
+        color: #2c3e50;
+        font-weight: 700;
+    }
+
+    .panel-body {
+        padding: 14px 16px;
+    }
+
+    .search-buttons {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .search-btn {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: 700;
+        background: #1abc9c;
+        color: #fff;
+        transition: background 0.2s ease;
+        text-align: left;
+    }
+
+    .search-btn:hover {
+        background: #16a085;
+    }
+
+    .helper-text {
+        font-size: 13px;
+        color: #555;
+        line-height: 1.4;
+        margin-bottom: 12px;
+    }
+
+    .status {
+        font-size: 13px;
+        color: #2c3e50;
+        background: #f4f6f8;
+        border: 1px solid #e6e6e6;
+        padding: 10px;
+        border-radius: 10px;
+    }
+
+    .results {
+        margin-top: 12px;
+        display: grid;
+        gap: 10px;
+        max-height: 56vh;
+        overflow: auto;
+        padding-right: 6px;
+    }
+
+    .result-card {
+        border: 1px solid #e6e6e6;
+        border-radius: 10px;
+        padding: 10px;
+        background: #fff;
+    }
+
+    .result-title {
+        font-weight: 800;
+        color: #2c3e50;
+        margin-bottom: 6px;
+    }
+
+    .result-meta {
+        font-size: 13px;
+        color: #555;
+        line-height: 1.35;
+    }
+
+    .result-actions {
+        margin-top: 8px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .mini-link {
+        display: inline-block;
+        font-size: 13px;
+        padding: 7px 10px;
+        border-radius: 8px;
+        text-decoration: none;
+        border: 1px solid #e6e6e6;
+        color: #2c3e50;
+        background: #f4f6f8;
+    }
+
+    .mini-link:hover {
+        background: #eef1f4;
+    }
+
+    .map-panel {
+        height: calc(85vh - 36px);
+        min-height: 520px;
+    }
+
+    #map {
+        width: 100%;
+        height: 100%;
+    }
+
+    @media (max-width: 980px) {
         .page-wrap {
-            padding: 18px 40px;
+            padding: 14px 16px;
         }
 
         .map-shell {
-            display: grid;
-            grid-template-columns: 340px 1fr;
-            gap: 18px;
-            align-items: start;
-        }
-
-        .panel {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.10);
-            overflow: hidden;
-        }
-
-        .panel-header {
-            padding: 14px 16px;
-            background: #f4f6f8;
-            border-bottom: 1px solid #e6e6e6;
-            color: #2c3e50;
-            font-weight: 700;
-        }
-
-        .panel-body {
-            padding: 14px 16px;
-        }
-
-        .search-buttons {
-            display: grid;
-            gap: 10px;
-            margin-bottom: 14px;
-        }
-
-        .search-btn {
-            width: 100%;
-            padding: 12px 14px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-weight: 700;
-            background: #1abc9c;
-            color: #fff;
-            transition: background 0.2s ease;
-            text-align: left;
-        }
-
-        .search-btn:hover {
-            background: #16a085;
-        }
-
-        .helper-text {
-            font-size: 13px;
-            color: #555;
-            line-height: 1.4;
-            margin-bottom: 12px;
-        }
-
-        .status {
-            font-size: 13px;
-            color: #2c3e50;
-            background: #f4f6f8;
-            border: 1px solid #e6e6e6;
-            padding: 10px;
-            border-radius: 10px;
-        }
-
-        .results {
-            margin-top: 12px;
-            display: grid;
-            gap: 10px;
-            max-height: 56vh;
-            overflow: auto;
-            padding-right: 6px;
-        }
-
-        .result-card {
-            border: 1px solid #e6e6e6;
-            border-radius: 10px;
-            padding: 10px;
-            background: #fff;
-        }
-
-        .result-title {
-            font-weight: 800;
-            color: #2c3e50;
-            margin-bottom: 6px;
-        }
-
-        .result-meta {
-            font-size: 13px;
-            color: #555;
-            line-height: 1.35;
-        }
-
-        .result-actions {
-            margin-top: 8px;
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .mini-link {
-            display: inline-block;
-            font-size: 13px;
-            padding: 7px 10px;
-            border-radius: 8px;
-            text-decoration: none;
-            border: 1px solid #e6e6e6;
-            color: #2c3e50;
-            background: #f4f6f8;
-        }
-
-        .mini-link:hover {
-            background: #eef1f4;
+            grid-template-columns: 1fr;
         }
 
         .map-panel {
-            height: calc(85vh - 36px);
-            min-height: 520px;
+            height: 60vh;
         }
 
-        #map {
-            width: 100%;
-            height: 100%;
+        .results {
+            max-height: 40vh;
         }
+    }
+</style>
 
-        @media (max-width: 980px) {
-            .page-wrap {
-                padding: 14px 16px;
-            }
+<div class="page-wrap">
+    <div class="map-shell">
 
-            .map-shell {
-                grid-template-columns: 1fr;
-            }
+        <aside class="panel">
+            <div class="panel-header">Nearby Resources</div>
 
-            .map-panel {
-                height: 60vh;
-            }
-
-            .results {
-                max-height: 40vh;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-    <nav class="navbar">
-        <div class="logo">Helping Connections</div>
-
-        <ul class="nav-links">
-
-            {% if user.is_authenticated %}
-                {% if user.profile.role.name == "volunteer" %}
-                    <li><a href="{% url 'volunteer' %}">Dashboard</a></li>
-                {% elif user.profile.role.name == "unhoused" %}
-                    <li><a href="{% url 'unhoused' %}">Dashboard</a></li>
-                {% endif %}
-            {% endif %}
-
-            <li><a href="{% url 'home' %}">Home</a></li>
-            <li><a href="{% url 'find_help' %}">Find Help</a></li>
-            <li><a href="#">About</a></li>
-
-            {% if user.is_authenticated %}
-                <li class="profile-menu">
-
-                    <button class="profile-circle" id="profileBtn">
-                        {{ user|initials }}
-                    </button>
-
-                    <div id="profileDropdown" class="profile-dropdown">
-
-                        <div class="profile-dropdown-header">
-
-                            <div class="profile-initials-large">
-                                {{ user|initials }}
-                            </div>
-
-                            <div class="profile-meta">
-
-                                <div class="profile-name">
-                                    {{ user.get_full_name|default:user.username }}
-                                </div>
-
-                                <div class="profile-email">
-                                    {{ user.email }}
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                        <div class="profile-dropdown-links">
-                            <a class="dropdown-link" href="{% url 'account' %}">View Account</a>
-                            <a class="dropdown-link danger" href="{% url 'logout' %}">Sign Out</a>
-                        </div>
-
-                    </div>
-
-                </li>
-            {% else %}
-                <li><a href="{% url 'login' %}">Login</a></li>
-            {% endif %}
-
-        </ul>
-    </nav>
-
-
-    <div class="page-wrap">
-
-        <div class="map-shell">
-
-            <aside class="panel">
-
-                <div class="panel-header">Nearby Resources</div>
-
-                <div class="panel-body">
-
-                    <div class="helper-text">
-                        Choose a category. We’ll use your current location to find nearby places and drop pins on the map.
-                        If location access is blocked, we’ll fall back to a default center until you allow it.
-                    </div>
-
-                    <div class="search-buttons">
-                        <button class="search-btn" data-query="food bank"> Food bank</button>
-                        <button class="search-btn" data-query="soup kitchen"> Soup kitchen</button>
-                        <button class="search-btn" data-query="dollar store OR thrift store OR goodwill OR discount store OR family dollar OR dollar tree"> Low cost stores</button>
-                    </div>
-
-                    <div id="status" class="status">Loading map…</div>
-
-                    <div id="results" class="results"></div>
-
+            <div class="panel-body">
+                <div class="helper-text">
+                    Choose a category. We’ll use your current location to find nearby places and drop pins on the map.
+                    If location access is blocked, we’ll fall back to a default center until you allow it.
                 </div>
 
-            </aside>
+                <div class="search-buttons">
+                    <button class="search-btn" data-query="food bank">Food bank</button>
+                    <button class="search-btn" data-query="soup kitchen">Soup kitchen</button>
+                    <button class="search-btn" data-query="dollar store OR thrift store OR goodwill OR discount store OR family dollar OR dollar tree">Low cost stores</button>
+                </div>
 
+                <div id="status" class="status">Loading map…</div>
+                <div id="results" class="results"></div>
+            </div>
+        </aside>
 
-            <section class="panel map-panel">
-                <div id="map"></div>
-            </section>
-
-        </div>
+        <section class="panel map-panel">
+            <div id="map"></div>
+        </section>
 
     </div>
+</div>
+{% endblock %}
 
+{% block extra_scripts %}
+<script>
+    (g => {
+        var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__", m = document, b = window;
+        b = b[c] || (b[c] = {});
+        var d = b.maps || (b.maps = {}), r = new Set, e = new URLSearchParams, u = () =>
+            h || (h = new Promise(async (f, n) => {
+                await (a = m.createElement("script"));
+                e.set("libraries", [...r] + "");
+                for (k in g) e.set(k.replace(/[A-Z]/g, t => "_" + t[0].toLowerCase()), g[k]);
+                e.set("callback", c + ".maps." + q);
+                a.src = `https://maps.${c}apis.com/maps/api/js?` + e;
+                d[q] = f;
+                a.onerror = () => h = n(Error(p + " could not load."));
+                a.nonce = m.querySelector("script[nonce]")?.nonce || "";
+                m.head.append(a);
+            }));
+        d[l] ? console.warn(p + " only loads once. Ignoring:", g) : d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n));
+    })({
+        key: "{{ google_maps_api_key }}",
+        v: "weekly"
+    });
+</script>
 
-    <script>
-        const profileBtn = document.getElementById("profileBtn");
-        const profileDropdown = document.getElementById("profileDropdown");
+<script>
+    let map;
+    let infoWindow;
+    let placesService;
 
-        if (profileBtn && profileDropdown) {
+    let userCenter = { lat: 43.0392, lng: -87.9065 };
+    let markers = [];
 
-            profileBtn.addEventListener("click", function (event) {
-                event.stopPropagation();
-                profileDropdown.classList.toggle("open");
-            });
+    const statusEl = document.getElementById("status");
+    const resultsEl = document.getElementById("results");
 
-            profileDropdown.addEventListener("click", function (event) {
-                event.stopPropagation();
-            });
+    function setStatus(msg) {
+        statusEl.textContent = msg;
+    }
 
-            document.addEventListener("click", function () {
-                profileDropdown.classList.remove("open");
-            });
-
+    function clearMarkers() {
+        for (const m of markers) {
+            m.setMap(null);
         }
-    </script>
+        markers = [];
+    }
 
+    function clearResults() {
+        resultsEl.innerHTML = "";
+    }
 
-    <script>
-        (g => {
-            var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__", m = document, b = window;
-            b = b[c] || (b[c] = {});
-            var d = b.maps || (b.maps = {}), r = new Set, e = new URLSearchParams, u = () =>
-                h || (h = new Promise(async (f, n) => {
-                    await (a = m.createElement("script"));
-                    e.set("libraries", [...r] + "");
-                    for (k in g) e.set(k.replace(/[A-Z]/g, t => "_" + t[0].toLowerCase()), g[k]);
-                    e.set("callback", c + ".maps." + q);
-                    a.src = `https://maps.${c}apis.com/maps/api/js?` + e;
-                    d[q] = f;
-                    a.onerror = () => h = n(Error(p + " could not load."));
-                    a.nonce = m.querySelector("script[nonce]")?.nonce || "";
-                    m.head.append(a);
-                }));
-            d[l] ? console.warn(p + " only loads once. Ignoring:", g) : d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n));
-        })({
-            key: "{{ google_maps_api_key }}",
-            v: "weekly"
+    function buildMapsUrl(placeId) {
+        return `https://www.google.com/maps/place/?q=place_id:${placeId}`;
+    }
+
+    function addResultCardClassic(place) {
+        const name = place.name || "Unnamed place";
+        const addr = place.vicinity || place.formatted_address || "Address not available";
+        const mapsUrl = place.place_id ? buildMapsUrl(place.place_id) : null;
+
+        const card = document.createElement("div");
+        card.className = "result-card";
+
+        const title = document.createElement("div");
+        title.className = "result-title";
+        title.textContent = name;
+
+        const meta = document.createElement("div");
+        meta.className = "result-meta";
+        meta.textContent = addr;
+
+        const actions = document.createElement("div");
+        actions.className = "result-actions";
+
+        if (mapsUrl) {
+            const a = document.createElement("a");
+            a.className = "mini-link";
+            a.href = mapsUrl;
+            a.target = "_blank";
+            a.rel = "noopener";
+            a.textContent = "Open in Google Maps";
+            actions.appendChild(a);
+        }
+
+        const focusBtn = document.createElement("a");
+        focusBtn.className = "mini-link";
+        focusBtn.href = "javascript:void(0)";
+        focusBtn.textContent = "Focus on map";
+
+        focusBtn.addEventListener("click", () => {
+            if (place.geometry && place.geometry.location) {
+                map.panTo(place.geometry.location);
+                map.setZoom(Math.max(map.getZoom(), 14));
+            }
         });
-    </script>
 
+        actions.appendChild(focusBtn);
 
-    <script>
-        let map;
-        let infoWindow;
-        let placesService;
+        card.appendChild(title);
+        card.appendChild(meta);
+        card.appendChild(actions);
 
-        let userCenter = { lat: 43.0392, lng: -87.9065 };
-        let markers = [];
+        resultsEl.appendChild(card);
+    }
 
-        const statusEl = document.getElementById("status");
-        const resultsEl = document.getElementById("results");
+    async function initMap() {
+        try {
+            const { Map, InfoWindow } = await google.maps.importLibrary("maps");
+            await google.maps.importLibrary("marker");
+            const { PlacesService } = await google.maps.importLibrary("places");
 
-        function setStatus(msg) {
-            statusEl.textContent = msg;
-        }
-
-        function clearMarkers() {
-            for (const m of markers) {
-                m.setMap(null);
-            }
-            markers = [];
-        }
-
-        function clearResults() {
-            resultsEl.innerHTML = "";
-        }
-
-        function buildMapsUrl(placeId) {
-            return `https://www.google.com/maps/place/?q=place_id:${placeId}`;
-        }
-
-        function addResultCardClassic(place) {
-            const name = place.name || "Unnamed place";
-            const addr = place.vicinity || place.formatted_address || "Address not available";
-            const mapsUrl = place.place_id ? buildMapsUrl(place.place_id) : null;
-
-            const card = document.createElement("div");
-            card.className = "result-card";
-
-            const title = document.createElement("div");
-            title.className = "result-title";
-            title.textContent = name;
-
-            const meta = document.createElement("div");
-            meta.className = "result-meta";
-            meta.textContent = addr;
-
-            const actions = document.createElement("div");
-            actions.className = "result-actions";
-
-            if (mapsUrl) {
-                const a = document.createElement("a");
-                a.className = "mini-link";
-                a.href = mapsUrl;
-                a.target = "_blank";
-                a.rel = "noopener";
-                a.textContent = "Open in Google Maps";
-                actions.appendChild(a);
-            }
-
-            const focusBtn = document.createElement("a");
-            focusBtn.className = "mini-link";
-            focusBtn.href = "javascript:void(0)";
-            focusBtn.textContent = "Focus on map";
-
-            focusBtn.addEventListener("click", () => {
-                if (place.geometry && place.geometry.location) {
-                    map.panTo(place.geometry.location);
-                    map.setZoom(Math.max(map.getZoom(), 14));
-                }
+            map = new Map(document.getElementById("map"), {
+                center: userCenter,
+                zoom: 12,
+                mapTypeControl: false,
+                streetViewControl: false
             });
 
-            actions.appendChild(focusBtn);
+            infoWindow = new InfoWindow();
+            placesService = new PlacesService(map);
 
-            card.appendChild(title);
-            card.appendChild(meta);
-            card.appendChild(actions);
+            setStatus("Getting your location…");
 
-            resultsEl.appendChild(card);
-        }
-
-        async function initMap() {
-            try {
-                const { Map, InfoWindow } = await google.maps.importLibrary("maps");
-                await google.maps.importLibrary("marker");
-                const { PlacesService } = await google.maps.importLibrary("places");
-
-                map = new Map(document.getElementById("map"), {
-                    center: userCenter,
-                    zoom: 12,
-                    mapTypeControl: false,
-                    streetViewControl: false
-                });
-
-                infoWindow = new InfoWindow();
-                placesService = new PlacesService(map);
-
-                setStatus("Getting your location…");
-
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                            userCenter = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                            map.setCenter(userCenter);
-                            map.setZoom(13);
-                            setStatus("Ready. Pick a category to search nearby.");
-                        },
-                        () => {
-                            setStatus("Location blocked. Using default center — you can still search.");
-                        },
-                        { enableHighAccuracy: true, timeout: 8000 }
-                    );
-                } else {
-                    setStatus("Geolocation not supported. Using default center.");
-                }
-
-                document.querySelectorAll(".search-btn").forEach(btn => {
-                    btn.addEventListener("click", () => runNearbySearch(btn.dataset.query));
-                });
-
-            } catch (err) {
-                console.error(err);
-                setStatus("Map failed to load. Check API key + enabled APIs.");
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        userCenter = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                        map.setCenter(userCenter);
+                        map.setZoom(13);
+                        setStatus("Ready. Pick a category to search nearby.");
+                    },
+                    () => {
+                        setStatus("Location blocked. Using default center — you can still search.");
+                    },
+                    { enableHighAccuracy: true, timeout: 8000 }
+                );
+            } else {
+                setStatus("Geolocation not supported. Using default center.");
             }
+
+            document.querySelectorAll(".search-btn").forEach(btn => {
+                btn.addEventListener("click", () => runNearbySearch(btn.dataset.query));
+            });
+
+        } catch (err) {
+            console.error(err);
+            setStatus("Map failed to load. Check API key + enabled APIs.");
+        }
+    }
+
+    function runNearbySearch(textQuery) {
+        clearMarkers();
+        clearResults();
+        setStatus(`Searching nearby: ${textQuery}…`);
+
+        if (!placesService || !map) {
+            setStatus("Map not ready yet. Try again in a second.");
+            return;
         }
 
-        function runNearbySearch(textQuery) {
-            clearMarkers();
-            clearResults();
-            setStatus(`Searching nearby: ${textQuery}…`);
+        if (!userCenter || typeof userCenter.lat !== "number" || typeof userCenter.lng !== "number") {
+            setStatus("Location not ready yet. Try again in a second.");
+            return;
+        }
 
-            if (!placesService || !map) {
-                setStatus("Map not ready yet. Try again in a second.");
+        const request = {
+            location: userCenter,
+            radius: 8000,
+            keyword: textQuery
+        };
+
+        placesService.nearbySearch(request, (results, status) => {
+
+            if (status !== google.maps.places.PlacesServiceStatus.OK || !results || !results.length) {
+                setStatus("No results found nearby. Try another category.");
                 return;
             }
 
-            if (!userCenter || typeof userCenter.lat !== "number" || typeof userCenter.lng !== "number") {
-                setStatus("Location not ready yet. Try again in a second.");
-                return;
-            }
+            setStatus(`Found ${results.length} result(s). Click pins or items in the list.`);
 
-            const request = {
-                location: userCenter,
-                radius: 8000,
-                keyword: textQuery
-            };
+            const bounds = new google.maps.LatLngBounds();
 
-            placesService.nearbySearch(request, (results, status) => {
+            results.slice(0, 20).forEach(place => {
 
-                if (status !== google.maps.places.PlacesServiceStatus.OK || !results || !results.length) {
-                    setStatus("No results found nearby. Try another category.");
+                if (!place.geometry || !place.geometry.location) {
                     return;
                 }
 
-                setStatus(`Found ${results.length} result(s). Click pins or items in the list.`);
-
-                const bounds = new google.maps.LatLngBounds();
-
-                results.slice(0, 20).forEach(place => {
-
-                    if (!place.geometry || !place.geometry.location) {
-                        return;
-                    }
-
-                    const marker = new google.maps.Marker({
-                        map: map,
-                        position: place.geometry.location
-                    });
-
-                    marker.addListener("click", () => {
-                        const name = place.name || "Place";
-                        const addr = place.vicinity || place.formatted_address || "";
-                        const mapsUrl = place.place_id ? buildMapsUrl(place.place_id) : "";
-
-                        infoWindow.setContent(`
-                            <div style="font-family: Arial, sans-serif; max-width: 240px;">
-                                <div style="font-weight: 700; margin-bottom: 6px;">${name}</div>
-                                <div style="font-size: 13px; color: #555; margin-bottom: 8px;">${addr}</div>
-                                ${mapsUrl ? `<div style="font-size: 13px;"><a href="${mapsUrl}" target="_blank" rel="noopener">Open in Google Maps</a></div>` : ""}
-                            </div>
-                        `);
-
-                        infoWindow.open(map, marker);
-                    });
-
-                    markers.push(marker);
-                    bounds.extend(place.geometry.location);
-
-                    addResultCardClassic(place);
-
+                const marker = new google.maps.Marker({
+                    map: map,
+                    position: place.geometry.location
                 });
 
-                map.fitBounds(bounds);
+                marker.addListener("click", () => {
+                    const name = place.name || "Place";
+                    const addr = place.vicinity || place.formatted_address || "";
+                    const mapsUrl = place.place_id ? buildMapsUrl(place.place_id) : "";
 
+                    infoWindow.setContent(`
+                        <div style="font-family: Arial, sans-serif; max-width: 240px;">
+                            <div style="font-weight: 700; margin-bottom: 6px;">${name}</div>
+                            <div style="font-size: 13px; color: #555; margin-bottom: 8px;">${addr}</div>
+                            ${mapsUrl ? `<div style="font-size: 13px;"><a href="${mapsUrl}" target="_blank" rel="noopener">Open in Google Maps</a></div>` : ""}
+                        </div>
+                    `);
+
+                    infoWindow.open(map, marker);
+                });
+
+                markers.push(marker);
+                bounds.extend(place.geometry.location);
+
+                addResultCardClassic(place);
             });
-        }
 
-        initMap();
-    </script>
+            map.fitBounds(bounds);
+        });
+    }
 
-</body>
-</html>
+    initMap();
+</script>
+{% endblock %}

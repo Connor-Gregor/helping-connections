@@ -1,31 +1,10 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Volunteer Dashboard - Helping Connections</title>
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-</head>
-<body>
+{% extends "base.html" %}
 
-    <nav class="navbar">
-        <div class="logo">Helping Connections</div>
-        <ul class="nav-links">
-            <li><a href="{% url 'home' %}">Home</a></li>
-            <li><a href="{% url 'find_help' %}">Find Help</a></li>
-            <li><a href="{% url 'volunteer_requests' %}">View Requests</a></li>
-            <li><a href="{% url 'volunteer' %}">Volunteer</a></li>
-            <li><a href="{% url 'messaging:inbox' %}">Inbox</a></li>
-            <li><a href="#">About</a></li>
-            <li><a href="{% url 'settings' %}">Settings</a></li>
-            <li><a href="{% url 'logout' %}">Log Out</a></li>
-        </ul>
-    </nav>
+{% block title %}Volunteer Dashboard - Helping Connections{% endblock %}
 
-    <main class="content">
-        <h1>Volunteer Dashboard</h1>
-        <p>This is the Volunteer Dashboard page.</p>
-    </main>
-
-</body>
-</html>
+{% block content %}
+<main class="content">
+    <h1>Volunteer Dashboard</h1>
+    <p>This is the Volunteer Dashboard page.</p>
+</main>
+{% endblock %}

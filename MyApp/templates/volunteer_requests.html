@@ -1,14 +1,69 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Open Requests</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Open Requests - Helping Connections{% endblock %}
+
+{% block content %}
+
+<style>
+
+.page-wrap {
+    padding: 40px;
+    max-width: 900px;
+    margin: auto;
+}
+
+.request-card {
+    border: 1px solid #e0e0e0;
+    padding: 18px;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.request-card h3 {
+    margin-top: 0;
+    color: #2c3e50;
+}
+
+.claim-btn {
+    background: #1abc9c;
+    border: none;
+    padding: 10px 16px;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.claim-btn:hover {
+    background: #16a085;
+}
+
+.back-dashboard {
+    display: inline-block;
+    margin-top: 20px;
+    text-decoration: none;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.back-dashboard:hover {
+    color: #1abc9c;
+}
+
+</style>
+
+
+<div class="page-wrap">
+
     <h2>Open Requests</h2>
 
     {% for request in requests %}
-        <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+
+        <div class="request-card">
 
             <h3>{{ request.title }}</h3>
 
@@ -26,14 +81,23 @@
 
             <form method="POST" action="{% url 'claim_request' request.id %}">
                 {% csrf_token %}
-                <button type="submit">Claim Request</button>
+                <button class="claim-btn" type="submit">
+                    Claim Request
+                </button>
             </form>
 
         </div>
+
     {% empty %}
+
         <p>No open requests available.</p>
+
     {% endfor %}
 
-    <a class="back-dashboard" href="{% url 'dashboard_redirect' %}">Back to Dashboard</a>
-</body>
-</html>
+    <a class="back-dashboard" href="{% url 'dashboard_redirect' %}">
+        ← Back to Dashboard
+    </a>
+
+</div>
+
+{% endblock %}

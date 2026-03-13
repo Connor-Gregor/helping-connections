@@ -1,13 +1,10 @@
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>About | Helping Connections</title>
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-</head>
-<body>
+{% load user_extras %}
 
+{% block title %}About | Helping Connections{% endblock %}
+
+{% block content %}
 <div class="about-container">
 
     <h1 class="about-title">Building Positive Connections</h1>
@@ -46,10 +43,18 @@
     </section>
 
     <div class="about-footer">
-        <a href="{% url 'home' %}" class="cta-btn">Return Home</a>
+        {% if user.is_authenticated %}
+            {% if user|role_name == "unhoused" %}
+                <a href="{% url 'unhoused' %}" class="cta-btn">Back to Dashboard</a>
+            {% elif user|role_name == "volunteer" %}
+                <a href="{% url 'volunteer' %}" class="cta-btn">Back to Dashboard</a>
+            {% else %}
+                <a href="{% url 'home' %}" class="cta-btn">Return Home</a>
+            {% endif %}
+        {% else %}
+            <a href="{% url 'home' %}" class="cta-btn">Return Home</a>
+        {% endif %}
     </div>
 
 </div>
-
-</body>
-</html>
+{% endblock %}

@@ -19,3 +19,12 @@ def initials(user):
 
     username = (getattr(user, "username", "") or "").strip()
     return username[:2].upper()
+
+
+@register.filter
+def role_name(user):
+    if not user or not getattr(user, "is_authenticated", False):
+        return ""
+    profile = getattr(user, "profile", None)
+    role = getattr(profile, "role", None)
+    return getattr(role, "name", "") or ""

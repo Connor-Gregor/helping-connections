@@ -14,11 +14,43 @@ class RegisterForm(forms.Form):
         help_text="Public username (ex: Firstname_Lastname)",
     )
     email = forms.EmailField()
+
+    first_name = forms.CharField(
+        max_length=150,
+        required=True,
+    )
+    last_name = forms.CharField(
+        max_length=150,
+        required=True,
+    )
+
     phone_number = forms.CharField(
         max_length=20,
         required=False,
+    )
+
+    address_line1 = forms.CharField(
+        max_length=255,
+        required=True,
+    )
+    address_line2 = forms.CharField(
+        max_length=255,
+        required=False,
         help_text="Optional",
     )
+    city = forms.CharField(
+        max_length=100,
+        required=True,
+    )
+    state = forms.CharField(
+        max_length=100,
+        required=True,
+    )
+    zip_code = forms.CharField(
+        max_length=20,
+        required=True,
+    )
+
     password1 = forms.CharField(widget=forms.PasswordInput)
     password2 = forms.CharField(widget=forms.PasswordInput)
     role = forms.ChoiceField(choices=ROLE_CHOICES, widget=forms.RadioSelect)
@@ -46,11 +78,32 @@ class RegisterForm(forms.Form):
 
         return email
 
+    def clean_first_name(self):
+        return self.cleaned_data["first_name"].strip()
+
+    def clean_last_name(self):
+        return self.cleaned_data["last_name"].strip()
+
     def clean_phone_number(self):
         phone = self.cleaned_data.get("phone_number", "").strip()
         if phone and len(phone) < 7:
             raise forms.ValidationError("Phone number looks too short.")
         return phone
+
+    def clean_address_line1(self):
+        return self.cleaned_data["address_line1"].strip()
+
+    def clean_address_line2(self):
+        return self.cleaned_data.get("address_line2", "").strip()
+
+    def clean_city(self):
+        return self.cleaned_data["city"].strip()
+
+    def clean_state(self):
+        return self.cleaned_data["state"].strip()
+
+    def clean_zip_code(self):
+        return self.cleaned_data["zip_code"].strip()
 
     def clean(self):
         cleaned = super().clean()
@@ -155,8 +208,8 @@ class RoleChangeForm(forms.Form):
 
     def __init__(self, *args, allowed_roles=None, **kwargs):
         super().__init__(*args, **kwargs)
-        allowed_roles = allowed_roles or []
-        self.fields["role"].choices = [(r, r.title()) for r in allowed_roles]
+        self.allowed_roles = allowed_roles or []
+        self.fields["role"].choices = [(r, r.title()) for r in self.allowed_roles]
 
     def clean_role(self):
         r = self.cleaned_data["role"]

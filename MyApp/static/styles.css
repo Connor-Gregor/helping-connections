@@ -1,9 +1,16 @@
+/* =========================
+GLOBAL
+========================= */
 
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f6f8;
+    margin: 0;
 }
 
+/* =========================
+NAVBAR
+========================= */
 
 .navbar {
     display: flex;
@@ -22,6 +29,9 @@ body {
 .nav-links {
     list-style: none;
     display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
 }
 
 .nav-links li {
@@ -29,16 +39,28 @@ body {
 }
 
 .nav-links a {
+    display: inline-block;
+    padding: 6px 10px;
     text-decoration: none;
     color: white;
     font-weight: 500;
-    transition: color 0.2s ease;
+    transition: color 0.2s ease, background 0.2s ease;
 }
 
 .nav-links a:hover {
     color: #1abc9c;
 }
 
+/* Active page highlight */
+.nav-links a.active {
+    background: #1abc9c;
+    color: white;
+    border-radius: 6px;
+}
+
+/* =========================
+HERO SECTION
+========================= */
 
 .hero {
     height: 85vh;
@@ -54,9 +76,8 @@ body {
     position: absolute;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0,0,0,0.5);
 }
-
 
 .hero-overlay {
     position: relative;
@@ -84,24 +105,27 @@ body {
     border-radius: 4px;
     transition: background 0.3s ease;
     text-decoration: none;
-
 }
 
 .cta-btn:hover {
     background-color: #16a085;
 }
-/* ===== Profile Menu (Outlook-style) ===== */
+
+/* =========================
+PROFILE MENU
+========================= */
 
 .profile-menu {
     position: relative;
 }
 
 /* Profile circle button */
+
 .profile-circle {
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    background-color: #1abc9c; /* matches your accent */
+    background-color: #1abc9c;
     color: white;
     font-weight: bold;
     border: none;
@@ -109,14 +133,14 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s ease;
 }
 
 .profile-circle:hover {
-    background-color: #16a085; /* matches your hover */
+    background-color: #16a085;
 }
 
-/* Dropdown card */
+/* Dropdown container */
+
 .profile-dropdown {
     position: absolute;
     top: 55px;
@@ -130,17 +154,19 @@ body {
     z-index: 9999;
 }
 
-/* When open */
+/* Show dropdown */
+
 .profile-dropdown.open {
     display: block;
 }
 
-/* Header inside dropdown */
+/* Dropdown header */
+
 .profile-dropdown-header {
     display: flex;
     gap: 12px;
     padding: 18px 20px;
-    background: #f4f6f8; /* matches your page background */
+    background: #f4f6f8;
     border-bottom: 1px solid #e6e6e6;
 }
 
@@ -148,18 +174,16 @@ body {
     width: 58px;
     height: 58px;
     border-radius: 50%;
-    background: #2c3e50; /* matches navbar */
+    background: #2c3e50;
     color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 20px;
     font-weight: 700;
-    flex-shrink: 0;
 }
 
 .profile-meta {
-    padding-right: 8px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -169,53 +193,55 @@ body {
     font-size: 18px;
     font-weight: 700;
     color: #2c3e50;
-    line-height: 1.2;
 }
 
 .profile-email {
     font-size: 14px;
     color: #555;
-    margin-top: 4px;
-    word-break: break-word;
 }
 
-/* Links */
+/* =========================
+DROPDOWN LINKS FIX
+========================= */
+
 .profile-dropdown-links {
+    display: block;
     padding: 8px 0;
 }
 
-.dropdown-link {
+/* Force vertical layout */
+
+.profile-dropdown-links .dropdown-link {
     display: block;
+    width: 100%;
     padding: 12px 16px;
     text-decoration: none;
     color: #2c3e50;
     font-weight: 500;
-    transition: background 0.2s ease;
+    box-sizing: border-box;
 }
 
-.dropdown-link:hover {
+.profile-dropdown-links .dropdown-link:hover {
     background: #f0f2f4;
 }
 
-.dropdown-link.danger {
+.profile-dropdown-links .dropdown-link.danger {
     color: #c0392b;
 }
-/* Override navbar link color inside the profile dropdown */
+
+/* Prevent navbar styling from affecting dropdown */
+
 .nav-links .profile-dropdown a.dropdown-link {
     color: #2c3e50 !important;
 }
 
-/* Keep sign out red */
 .nav-links .profile-dropdown a.dropdown-link.danger {
     color: #c0392b !important;
 }
 
-/* Optional: keep hover effect */
-.nav-links .profile-dropdown a.dropdown-link:hover {
-    background: #f0f2f4;
-}
-
-/* ===== Find Help Page ===== */
+/* =========================
+FIND HELP PAGE
+========================= */
 
 .find-help-container {
     max-width: 1000px;
@@ -259,12 +285,6 @@ body {
     color: #1abc9c;
 }
 
-.find-help-container p {
-    margin-bottom: 10px;
-}
-
-/* Back button */
-
 .back-dashboard {
     display: inline-block;
     margin-top: 30px;
@@ -273,14 +293,15 @@ body {
     color: white;
     border-radius: 6px;
     text-decoration: none;
-    transition: background 0.2s ease;
 }
 
 .back-dashboard:hover {
     background: #16a085;
 }
 
-/* ===== Resource Grid & Cards ===== */
+/* =========================
+RESOURCE GRID
+========================= */
 
 .resource-grid {
     display: grid;
@@ -305,82 +326,41 @@ body {
 .resource-card h2 {
     color: #1abc9c;
     margin-bottom: 12px;
-    border-bottom: 2px solid #e0e0e0;
-    padding-bottom: 4px;
 }
 
-.resource-card ul {
-    padding-left: 0;
-    list-style: none;
-}
-
-.resource-card li {
-    margin-bottom: 8px;
-}
-
-.resource-card a {
-    text-decoration: none;
-    color: #2c3e50;
-    font-weight: 500;
-}
-
-.resource-card a:hover {
-    color: #1abc9c;
-}
-/* Delete account section */
-
-.danger-title {
-    color: #2c3e50;
-}
-.settings-danger-box {
-    background: #fff;
-    border: 1px solid #e3e6e8;
-    border-radius: 10px;
-    padding: 20px;
-    margin-top: 20px;
-}
+/* =========================
+SETTINGS / DANGER
+========================= */
 
 .danger-text {
     color: #c0392b;
-    margin-bottom: 15px;
 }
 
-/* Row with text + checkbox */
 .delete-confirm-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
 }
 
-/* Make checkbox bigger */
 .delete-confirm-row input[type="checkbox"] {
     transform: scale(1.6);
-    margin-left: 20px;
-    cursor: pointer;
 }
 
-/* Password section */
-.delete-password {
-    margin-bottom: 15px;
-}
-
-/* Delete button */
 .danger-btn {
     background: #c0392b;
     color: white;
     border: none;
     padding: 10px 18px;
     border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
 }
 
 .danger-btn:hover {
     background: #a93226;
 }
 
-/* ABOUT PAGE */
+/* =========================
+ABOUT PAGE
+========================= */
 
 .about-container {
     max-width: 900px;
@@ -408,7 +388,6 @@ body {
 
 .about-section h2 {
     color: #2c6e73;
-    margin-bottom: 10px;
 }
 
 .about-section p {
@@ -418,4 +397,34 @@ body {
 
 .about-footer {
     margin-top: 40px;
+}
+/* Role selection box */
+
+.role-box{
+    border: 1px solid #dcdcdc;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 18px;
+    background: #fafafa;
+}
+
+.role-title{
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.role-options ul{
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.role-options li{
+    margin-bottom: 8px;
+}
+
+.role-options label{
+    margin-left: 6px;
+    cursor: pointer;
 }
