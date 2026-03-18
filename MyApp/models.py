@@ -95,3 +95,67 @@ class Request(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.status})"
+
+class Offer(models.Model):
+    STATUS_OPEN = "open"
+    STATUS_CLAIMED = "claimed"
+    STATUS_FULFILLED = "fulfilled"
+    STATUS_CANCELLED = "cancelled"
+
+    STATUS_CHOICES = [
+        (STATUS_OPEN, "Open"),
+        (STATUS_CLAIMED, "Claimed"),
+        (STATUS_FULFILLED, "Fulfilled"),
+        (STATUS_CANCELLED, "Cancelled"),
+    ]
+
+    CATEGORY_FOOD = "food"
+    CATEGORY_CLOTHING = "clothing"
+    CATEGORY_BLANKETS = "blankets"
+    CATEGORY_HYGIENE = "hygiene"
+    CATEGORY_TRANSPORT = "transport"
+    CATEGORY_MEDICAL = "medical"
+
+    CATEGORY_CHOICES = [
+        (CATEGORY_FOOD, "Food"),
+        (CATEGORY_CLOTHING, "Clothing"),
+        (CATEGORY_BLANKETS, "Blankets / Bedding"),
+        (CATEGORY_HYGIENE, "Hygiene Items"),
+        (CATEGORY_TRANSPORT, "Transportation"),
+        (CATEGORY_MEDICAL, "Medical Supplies"),
+    ]
+
+    offered_by = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="offers_made"
+    )
+    claimed_by = models.ForeignKey(
+        Profile,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="offers_claimed"
+    )
+
+    title = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+
+    city = models.CharField(max_length=60)
+    location_details = models.CharField(max_length=150, blank=True)
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_OPEN
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.title} ({self.status})"
