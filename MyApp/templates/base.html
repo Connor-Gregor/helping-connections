@@ -22,7 +22,6 @@
                 <li><a href="{% url 'volunteer_requests' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'volunteer_requests' %}active{% endif %}">View Requests</a></li>
                 <li><a href="{% url 'create_offer' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'create_offer' %}active{% endif %}">Create Offer</a></li>
                 <li><a href="{% url 'my_offers' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'my_offers' %}active{% endif %}">My Offers</a></li>
-                <li><a href="{% url 'messaging:inbox' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'inbox' %}active{% endif %}">Inbox</a></li>
                 <li><a href="{% url 'map' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'map' %}active{% endif %}">Map</a></li>
                 <li><a href="{% url 'find_help' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'find_help' %}active{% endif %}">Find Help</a></li>
 
@@ -31,13 +30,11 @@
                 <li><a href="{% url 'find_help' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'find_help' %}active{% endif %}">Find Help</a></li>
                 <li><a href="{% url 'create_request' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'create_request' %}active{% endif %}">Requests</a></li>
                 <li><a href="{% url 'available_offers' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'available_offers' %}active{% endif %}">View Offers</a></li>
-                <li><a href="{% url 'messaging:inbox' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'inbox' %}active{% endif %}">Inbox</a></li>
                 <li><a href="{% url 'map' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'map' %}active{% endif %}">Map</a></li>
 
             {% elif user|role_name == "admin" %}
                 <li><a href="#" class="{% if request.resolver_match and request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">Admin Dashboard</a></li>
                 <li><a href="#">Manage Users</a></li>
-                <li><a href="{% url 'messaging:inbox' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'inbox' %}active{% endif %}">Inbox</a></li>
                 <li><a href="{% url 'map' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'map' %}active{% endif %}">Map</a></li>
 
             {% else %}
@@ -49,6 +46,9 @@
             <li class="profile-menu">
                 <button class="profile-circle" id="profileBtn">
                     {{ user|initials }}
+                    {% if unread_message_count > 0 %}
+                        <span class="profile-badge">{{ unread_message_count }}</span>
+                    {% endif %}
                 </button>
 
                 <div id="profileDropdown" class="profile-dropdown">
@@ -57,7 +57,7 @@
 
                         <div class="profile-meta">
                             <div class="profile-name">
-                                {{ user.get_full_name|default:user.username }}
+                                {{ user.profile.display_username|default:user.username }}
                             </div>
                             <div class="profile-email">
                                 {{ user.email }}
@@ -67,6 +67,12 @@
 
                     <div class="profile-dropdown-links">
                         <a class="dropdown-link" href="{% url 'account' %}">View Account</a>
+                        <a class="dropdown-link" href="{% url 'messaging:inbox' %}">
+                            Inbox
+                            {% if unread_message_count > 0 %}
+                                <span class="dropdown-badge">{{ unread_message_count }}</span>
+                            {% endif %}
+                        </a>
                         <a class="dropdown-link" href="{% url 'settings' %}">Settings</a>
                         <a class="dropdown-link danger" href="{% url 'logout' %}">Sign Out</a>
                     </div>
