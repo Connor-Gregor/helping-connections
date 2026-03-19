@@ -43,10 +43,8 @@ class RegisterPageTests(TestCase):
     def test_register_valid_user_creation(self):
         response = self.client.post(self.url, self.valid_user_data)
 
-        # Check redirect (adjust if your app redirects somewhere else)
         self.assertEqual(response.status_code, 302)
 
-        # Check user exists in DB
         self.assertTrue(User.objects.filter(username='test@example.com').exists())
 
     """Password mismatch does not create user"""
@@ -56,13 +54,10 @@ class RegisterPageTests(TestCase):
 
         response = self.client.post(self.url, invalid_data)
 
-        # Should not redirect (form reload)
         self.assertEqual(response.status_code, 200)
 
-        # User should NOT be created
         self.assertFalse(User.objects.filter(username='test@example.com').exists())
 
-        # Optional: check error message appears
         self.assertContains(response, "password")
 
     """Duplicate username rejected"""
