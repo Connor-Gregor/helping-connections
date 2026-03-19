@@ -6,7 +6,6 @@
 {% block content %}
 
 <style>
-
 .page-wrap {
     padding: 40px;
     max-width: 900px;
@@ -27,6 +26,16 @@
     color: #2c3e50;
 }
 
+/* Buttons container */
+.request-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+/* Claim button */
 .claim-btn {
     background: #1abc9c;
     border: none;
@@ -35,13 +44,49 @@
     border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
-    margin-top: 10px;
+    font-size: 14px;
+    font-family: inherit;
 }
 
 .claim-btn:hover {
     background: #16a085;
 }
 
+/* Message buttons */
+.message-btn {
+    display: inline-block;
+    background: #2c3e50;
+    color: white;
+    text-decoration: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+
+    font-weight: 600;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.message-btn:hover {
+    background: #1f2d3a;
+}
+
+/* Secondary message button (claimed user) */
+.message-secondary {
+    background: #7f8c8d;
+}
+
+.message-secondary:hover {
+    background: #626e70;
+}
+
+/* Claimed info */
+.claimed-info {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #555;
+}
+
+/* Back button */
 .back-dashboard {
     display: inline-block;
     margin-top: 20px;
@@ -53,24 +98,19 @@
 .back-dashboard:hover {
     color: #1abc9c;
 }
-
 </style>
-
 
 <div class="page-wrap">
 
     <h2>Open Requests</h2>
 
     {% for request in requests %}
-
         <div class="request-card">
 
             <h3>{{ request.title }}</h3>
 
             <p><strong>Category:</strong> {{ request.get_category_display }}</p>
-
             <p>{{ request.description }}</p>
-
             <p><strong>City:</strong> {{ request.city }}</p>
 
             {% if request.location_details %}
@@ -79,19 +119,48 @@
 
             <p><strong>Posted:</strong> {{ request.created_at }}</p>
 
-            <form method="POST" action="{% url 'claim_request' request.id %}">
-                {% csrf_token %}
-                <button class="claim-btn" type="submit">
-                    Claim Request
-                </button>
-            </form>
+            <!-- Claimed Info -->
+            {% if request.claimed_by %}
+                <div class="claimed-info">
+                    <strong>Claimed by:</strong>
+                    {{ request.claimed_by.display_username|default:request.claimed_by.user.username }}
+                </div>
+            {% endif %}
+
+            <div class="request-actions">
+
+                <!-- CLAIM BUTTON (only if not claimed) -->
+                {% if not request.claimed_by %}
+                    <form method="POST" action="{% url 'claim_request' request.id %}">
+                        {% csrf_token %}
+                        <button class="claim-btn" type="submit">
+                            Claim Request
+                        </button>
+                    </form>
+                {% endif %}
+
+                <!-- MESSAGE REQUESTER -->
+                {% if request.requester.user.id != user.id %}
+                    <a class="message-btn"
+                       href="{% url 'messaging:start_dm' request.requester.user.id %}">
+                        Message Requester
+                    </a>
+                {% endif %}
+
+                <!-- OPTIONAL: MESSAGE CLAIMED VOLUNTEER -->
+                {% if request.claimed_by and request.claimed_by.user.id != user.id %}
+                    <a class="message-btn message-secondary"
+                       href="{% url 'messaging:start_dm' request.claimed_by.user.id %}">
+                        Message Volunteer
+                    </a>
+                {% endif %}
+
+            </div>
 
         </div>
 
     {% empty %}
-
         <p>No open requests available.</p>
-
     {% endfor %}
 
     <a class="back-dashboard" href="{% url 'dashboard_redirect' %}">
