@@ -260,7 +260,16 @@ def volunteer(request):
 def unhoused(request):
     role = getattr(request.user.profile, "role", None)
     if role and role.name == "unhoused":
-        return render(request, "unhoused_dash.html")
+
+        processing_requests = Request.objects.filter(
+            requester=request.user.profile,
+            status=Request.STATUS_CLAIMED
+        )
+
+        return render(request, "unhoused_dash.html", {
+            "processing_requests": processing_requests
+        })
+
     return redirect("home")
 
 
@@ -367,8 +376,27 @@ def create_request(request):
     else:
         form = RequestForm()
 
-    return render(request, "create_request.html", {"form": form})
+    open_requests = Request.objects.filter(
+    requester=profile,
+    status=Request.STATUS_OPEN
+    )
 
+    processing_requests = Request.objects.filter(
+    requester=profile,
+    status=Request.STATUS_CLAIMED
+    )
+
+    completed_requests = Request.objects.filter(
+    requester=profile,
+    status=Request.STATUS_FULFILLED
+    )
+
+    return render(request, "create_request.html", {
+       "form": form,
+        "open_requests": open_requests,
+        "processing_requests": processing_requests,
+        "completed_requests": completed_requests,
+    })
 
 @login_required
 def volunteer_requests(request):

@@ -87,7 +87,7 @@
 
 <div class="page-wrap">
     <div class="request-card">
-        <div class="request-title">Create a Request</div>
+        <div class="request-title">Requests</div>
 
         {% if form.errors %}
             <div class="error-box">
@@ -126,9 +126,61 @@
             <button class="submit-btn" type="submit">
                 Submit Request
             </button>
-        </form>
+</form>
 
-        <a class="back-dashboard" href="{% url 'dashboard_redirect' %}">
+<!-- 🔽 ADD THIS -->
+<hr style="margin: 30px 0;">
+
+<h3>Open Requests</h3>
+{% if open_requests %}
+    <div class="request-card" style="margin-top:15px;">
+        {% for req in open_requests %}
+            <p>
+                <strong>{{ req.title }}</strong><br>
+                {{ req.description }}
+            </p>
+            <hr>
+        {% endfor %}
+    </div>
+{% else %}
+    <p>No open requests.</p>
+{% endif %}
+
+<hr style="margin: 20px 0;">
+
+<h3>Processing Requests</h3>
+{% if processing_requests %}
+    <div class="request-card" style="margin-top:15px;">
+        {% for req in processing_requests %}
+            <p>
+                <strong>{{ req.title }}</strong><br>
+                {{ req.description }}
+            </p>
+            <hr>
+        {% endfor %}
+    </div>
+{% else %}
+    <p>No processing requests.</p>
+{% endif %}
+
+<hr style="margin: 20px 0;">
+
+<h3>Completed Requests</h3>
+{% if completed_requests %}
+    <div class="request-card" style="margin-top:15px;">
+        {% for req in completed_requests %}
+            <p>
+                <strong>{{ req.title }}</strong><br>
+                {{ req.description }}
+            </p>
+            <hr>
+        {% endfor %}
+    </div>
+{% else %}
+    <p>No completed requests.</p>
+{% endif %}
+
+<a class="back-dashboard" href="{% url 'dashboard_redirect' %}">
             ← Back to Dashboard
         </a>
     </div>
