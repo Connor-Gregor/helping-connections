@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Offers</title>
+</head>
+<body>
+    {% extends "base.html" %}
+
+    {% block content %}
+    <div class="container mt-4">
+        <h2>My Offers</h2>
+
+        {% if offers %}
+            <div class="row">
+                {% for offer in offers %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ offer.title }}</h5>
+                                <p><strong>Category:</strong> {{ offer.get_category_display }}</p>
+                                <p><strong>Description:</strong> {{ offer.description|default:"No description provided." }}</p>
+                                <p><strong>City:</strong> {{ offer.city }}</p>
+                                <p><strong>Status:</strong> {{ offer.get_status_display }}</p>
+
+                                {% if offer.claimed_by %}
+                                    <p><strong>Claimed By:</strong> {{ offer.claimed_by.display_username|default:offer.claimed_by.user.username }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>You have not created any offers yet.</p>
+        {% endif %}
+    </div>
+    {% endblock %}
+</body>
+</html>

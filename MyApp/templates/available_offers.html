@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Available Offers</title>
+</head>
+<body>
+{% extends "base.html" %}
+
+    {% block content %}
+    <div class="container mt-4">
+        <h2>Available Offers</h2>
+        <p>Browse items that volunteers have offered.</p>
+
+        {% if offers %}
+            <div class="row">
+                {% for offer in offers %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ offer.title }}</h5>
+                                <p class="card-text"><strong>Category:</strong> {{ offer.get_category_display }}</p>
+                                <p class="card-text"><strong>Description:</strong> {{ offer.description|default:"No description provided." }}</p>
+                                <p class="card-text"><strong>City:</strong> {{ offer.city }}</p>
+                                <p class="card-text"><strong>Location Details:</strong> {{ offer.location_details|default:"N/A" }}</p>
+                                <p class="card-text"><strong>Status:</strong> {{ offer.get_status_display }}</p>
+
+                                <form method="post" action="{% url 'claim_offer' offer.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-success">Claim Offer</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>No offers are currently available.</p>
+        {% endif %}
+    </div>
+    {% endblock %}
+</body>
+</html>

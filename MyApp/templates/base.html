@@ -20,6 +20,8 @@
             {% if user|role_name == "volunteer" %}
                 <li><a href="{% url 'volunteer' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'volunteer' %}active{% endif %}">Volunteer Dashboard</a></li>
                 <li><a href="{% url 'volunteer_requests' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'volunteer_requests' %}active{% endif %}">View Requests</a></li>
+                <li><a href="{% url 'create_offer' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'create_offer' %}active{% endif %}">Create Offer</a></li>
+                <li><a href="{% url 'my_offers' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'my_offers' %}active{% endif %}">My Offers</a></li>
                 <li><a href="{% url 'messaging:inbox' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'inbox' %}active{% endif %}">Inbox</a></li>
                 <li><a href="{% url 'map' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'map' %}active{% endif %}">Map</a></li>
                 <li><a href="{% url 'find_help' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'find_help' %}active{% endif %}">Find Help</a></li>
@@ -28,6 +30,7 @@
                 <li><a href="{% url 'unhoused' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'unhoused' %}active{% endif %}">Unhoused Dashboard</a></li>
                 <li><a href="{% url 'find_help' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'find_help' %}active{% endif %}">Find Help</a></li>
                 <li><a href="{% url 'create_request' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'create_request' %}active{% endif %}">Create Request</a></li>
+                <li><a href="{% url 'available_offers' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'available_offers' %}active{% endif %}">View Offers</a></li>
                 <li><a href="{% url 'messaging:inbox' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'inbox' %}active{% endif %}">Inbox</a></li>
                 <li><a href="{% url 'map' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'map' %}active{% endif %}">Map</a></li>
 

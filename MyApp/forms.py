@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Profile, Request
+from .models import Profile, Request, Offer
 
 ROLE_CHOICES = [
     ("unhoused", "Unhoused"),
@@ -248,5 +248,38 @@ class RequestForm(forms.ModelForm):
             "location_details": forms.TextInput(attrs={
                 "class": "form-control",
                 "placeholder": "Optional: near shelter, library, community center, etc."
+            }),
+        }
+
+class OfferForm(forms.ModelForm):
+    class Meta:
+        model = Offer
+        fields = [
+            "title",
+            "description",
+            "category",
+            "city",
+            "location_details",
+        ]
+        widgets = {
+            "title": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Enter offered item title"
+            }),
+            "description": forms.Textarea(attrs={
+                "class": "form-control",
+                "placeholder": "Add any details here",
+                "rows": 4
+            }),
+            "category": forms.Select(attrs={
+                "class": "form-control"
+            }),
+            "city": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Enter city"
+            }),
+            "location_details": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Optional: shelter, library, church, community center, etc."
             }),
         }
