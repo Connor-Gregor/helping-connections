@@ -99,6 +99,7 @@ def thread_detail(request, thread_id):
             defaults={"last_read_at": timezone.now()}
         )
 
+        messages.success(request, "Message sent.")
         return redirect("messaging:thread_detail", thread_id=thread.id)
 
     ThreadReadState.objects.update_or_create(
@@ -147,6 +148,7 @@ def new_thread(request):
                 defaults={"last_read_at": timezone.now()}
             )
 
+            messages.success(request, "Message sent.")
             return redirect("messaging:thread_detail", thread_id=thread.id)
     else:
         form = NewThreadForm(user=request.user)
@@ -175,4 +177,26 @@ def delete_thread(request, thread_id):
         thread.delete()
 
     messages.success(request, "Thread deleted from your inbox.")
+    return redirect("messaging:inbox")
+@login_required
+def delete_all_threads(request):
+    if request.method != "POST":
+        return redirect("messaging:inbox")
+
+    threads = Thread.objects.filter(participants=request.user).distinct()
+
+    deleted_count = threads.count()
+
+    for thread in threads:
+        thread.participants.remove(request.user)
+        ThreadReadState.objects.filter(thread=thread, user=request.user).delete()
+
+        if thread.participants.count() == 0:
+            thread.delete()
+
+    if deleted_count == 0:
+        messages.info(request, "No threads to delete.")
+    else:
+        messages.success(request, f"{deleted_count} thread(s) deleted from your inbox.")
+
     return redirect("messaging:inbox")
