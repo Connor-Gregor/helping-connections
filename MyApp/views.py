@@ -8,8 +8,8 @@ from django.contrib.auth import authenticate, login, logout, update_session_auth
 from django.views.decorators.http import require_POST
 
 from .forms import RegisterForm, LoginForm, ChangePasswordForm, ProfileSettingsForm, DeleteAccountForm, EmailChangeForm, \
-    RoleChangeForm, RequestForm
-from .models import Profile, Role, Request
+    RoleChangeForm, RequestForm, OfferForm
+from .models import Profile, Role, Request, Offer
 from django.conf import settings
 
 
@@ -410,3 +410,84 @@ def claim_request(request, request_id):
 
     messages.success(request, "You have claimed this request.")
     return redirect("volunteer_requests")
+
+@login_required
+def create_offer(request):
+    try:
+        profile = request.user.profile
+    except Profile.DoesNotExist:
+        messages.error(request, "You must have a profile to create an offer.")
+        return redirect("home")
+
+    if profile.role is None or profile.role.name.lower() != "volunteer":
+        messages.error(request, "Only volunteers can create offers.")
+        return redirect("home")
+
+    if request.method == "POST":
+        form = OfferForm(request.POST)
+        if form.is_valid():
+            offer = form.save(commit=False)
+            offer.offered_by = profile
+            offer.status = Offer.STATUS_OPEN
+            offer.save()
+
+            messages.success(request, "Your offer was submitted successfully.")
+            return redirect("create_offer")
+    else:
+        form = OfferForm()
+
+    return render(request, "create_offer.html", {"form": form})
+
+@login_required
+def available_offers(request):
+    try:
+        profile = request.user.profile
+    except Profile.DoesNotExist:
+        messages.error(request, "You must have a profile to view offers.")
+        return redirect("home")
+
+    if profile.role is None or profile.role.name.lower() != "unhoused":
+        messages.error(request, "Only unhoused users can view offers.")
+        return redirect("home")
+
+    offers = Offer.objects.filter(status=Offer.STATUS_OPEN)
+
+    return render(request, "available_offers.html", {
+        "offers": offers
+    })
+
+@login_required
+@require_POST
+def claim_offer(request, offer_id):
+    profile = request.user.profile
+
+    if profile.role is None or profile.role.name.lower() != "unhoused":
+        messages.error(request, "Only unhoused users can claim offers.")
+        return redirect("home")
+
+    offer = get_object_or_404(Offer, id=offer_id)
+
+    if offer.status != Offer.STATUS_OPEN:
+        messages.error(request, "This offer has already been claimed.")
+        return redirect("available_offers")
+
+    offer.status = Offer.STATUS_CLAIMED
+    offer.claimed_by = profile
+    offer.save()
+
+    messages.success(request, "You have claimed this offer.")
+    return redirect("available_offers")
+
+@login_required
+def my_offers(request):
+    profile = request.user.profile
+
+    if profile.role is None or profile.role.name.lower() != "volunteer":
+        messages.error(request, "Only volunteers can view their offers.")
+        return redirect("home")
+
+    offers = Offer.objects.filter(offered_by=profile)
+
+    return render(request, "my_offers.html", {
+        "offers": offers
+    })

@@ -5,8 +5,8 @@ from .views import (
     find_help, volunteer, unhoused, account_view,
     delete_account, update_email, update_role,
     dashboard_redirect, map, create_request,
-    volunteer_requests, claim_request, 
-    about
+    volunteer_requests, claim_request,
+    about, create_offer, available_offers, claim_offer, my_offers
 )
 
 urlpatterns = [
@@ -35,4 +35,9 @@ urlpatterns = [
     path("requests/create/", create_request, name="create_request"),
     path("requests/", volunteer_requests, name="volunteer_requests"),
     path("requests/claim/<int:request_id>/", claim_request, name="claim_request"),
+
+    path("offers/create/", create_offer, name="create_offer"),
+    path("offers/", available_offers, name="available_offers"),
+    path("offers/<int:offer_id>/claim/", claim_offer, name="claim_offer"),
+    path("offers/mine/", my_offers, name="my_offers"),
 ]
