@@ -28,7 +28,7 @@
             {% elif user|role_name == "unhoused" %}
                 <li><a href="{% url 'unhoused' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'unhoused' %}active{% endif %}">Unhoused Dashboard</a></li>
                 <li><a href="{% url 'find_help' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'find_help' %}active{% endif %}">Find Help</a></li>
-                <li><a href="{% url 'create_request' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'create_request' %}active{% endif %}">Create Request</a></li>
+                <li><a href="{% url 'create_request' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'create_request' %}active{% endif %}">Requests</a></li>
                 <li><a href="{% url 'available_offers' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'available_offers' %}active{% endif %}">View Offers</a></li>
                 <li><a href="{% url 'map' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'map' %}active{% endif %}">Map</a></li>
 
