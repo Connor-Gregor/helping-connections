@@ -152,3 +152,70 @@ class DashBoardAndLoginTests(TestCase):
         resp = self.client.get(reverse("dashboard_redirect"))
         self.assertEqual(resp.status_code, 302)
         self.assertRedirects(resp, reverse("home"))
+
+    """volunteer redirect"""        
+    def test_dashboard_redirect_volunteer(self):
+        user = User.objects.create_user(
+            username='vol@test.com',
+            password='pass123'
+        )
+
+        role = Role.objects.create(name='volunteer')
+        Profile.objects.create(user=user, role=role)
+
+        self.client.login(username='vol@test.com', password='pass123')
+
+        response = self.client.get(reverse('dashboard_redirect'))
+
+        self.assertRedirects(response, reverse('volunteer'))
+        
+    """unhoused redirect"""
+    def test_dashboard_redirect_volunteer(self):
+        user = User.objects.create_user(
+            username='vol@test.com',
+            password='pass123'
+        )
+
+        role = Role.objects.create(name='volunteer')
+        Profile.objects.create(user=user, role=role)
+
+        self.client.login(username='vol@test.com', password='pass123')
+
+        response = self.client.get(reverse('dashboard_redirect'))
+
+        self.assertRedirects(response, reverse('volunteer'))
+        
+    """no role"""
+    def test_dashboard_redirect_no_role(self):
+        user = User.objects.create_user(
+            username='norole@test.com',
+            password='pass123'
+        )
+
+        Profile.objects.create(user=user, role=None)
+
+        self.client.login(username='norole@test.com', password='pass123')
+
+        response = self.client.get(reverse('dashboard_redirect'))
+
+        self.assertRedirects(response, reverse('home'))
+        
+    """Unauthenticated users redirected to login"""
+    def test_dashboard_redirect_requires_login(self):
+        response = self.client.get(reverse('dashboard_redirect'))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login', response.url)     
+    
+    """Logged in volunteers dashboard"""
+    def test_home_shows_volunteer_dashboard_link_for_volunteer_user(self):
+        self.CreateUserWithRole("navvol@example.com", "pw123", role_name="volunteer")
+        self.client.login(username="navvol@example.com", password="pw123")
+
+        resp = self.client.get(reverse("home"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, reverse("volunteer"))
+        
+        
+        
+        """can i see this"""
