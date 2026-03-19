@@ -1,23 +1,146 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Create Offer</title>
-</head>
-<body>
-    {% extends "base.html" %}
+{% extends "base.html" %}
 
-    {% block content %}
-    <div class="container mt-4">
-        <h2>Create an Offer</h2>
-        <p>Volunteers can offer items for unhoused users to claim.</p>
+{% block title %}Create Offer | Helping Connections{% endblock %}
 
-        <form method="post">
+{% block content %}
+<style>
+    .offer-wrapper {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .offer-card {
+        background: #ffffff;
+        border-radius: 18px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        padding: 32px;
+        border: 1px solid #e6ece8;
+    }
+
+    .offer-header {
+        margin-bottom: 24px;
+        text-align: center;
+    }
+
+    .offer-header h2 {
+        font-size: 2rem;
+        color: #2f6b4f;
+        margin-bottom: 8px;
+    }
+
+    .offer-header p {
+        color: #5f6b64;
+        font-size: 1rem;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    .offer-form p {
+        margin-bottom: 18px;
+    }
+
+    .offer-form label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #2d2d2d;
+    }
+
+    .offer-form input,
+    .offer-form textarea,
+    .offer-form select {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #cfd8d3;
+        border-radius: 10px;
+        font-size: 1rem;
+        background: #fcfcfc;
+        box-sizing: border-box;
+    }
+
+    .offer-form textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    .offer-form input:focus,
+    .offer-form textarea:focus,
+    .offer-form select:focus {
+        outline: none;
+        border-color: #2f6b4f;
+        box-shadow: 0 0 0 3px rgba(47, 107, 79, 0.15);
+    }
+
+    .form-errors {
+        background: #fdecec;
+        color: #a94442;
+        border: 1px solid #f5c2c0;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 20px;
+    }
+
+    .offer-actions {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 24px;
+    }
+
+    .offer-submit-btn {
+        background: #2f6b4f;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 12px 22px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .offer-submit-btn:hover {
+        background: #25563f;
+    }
+
+    .offer-back-link {
+        color: #2f6b4f;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .offer-back-link:hover {
+        text-decoration: underline;
+    }
+</style>
+
+<div class="offer-wrapper">
+    <div class="offer-card">
+        <div class="offer-header">
+            <h2>Create an Offer</h2>
+            <p>
+                Share available items with unhoused users in your community.
+                Every offer helps build stronger local support.
+            </p>
+        </div>
+
+        {% if form.errors %}
+            <div class="form-errors">
+                {{ form.errors }}
+            </div>
+        {% endif %}
+
+        <form method="post" class="offer-form">
             {% csrf_token %}
             {{ form.as_p }}
-            <button type="submit" class="btn btn-primary">Submit Offer</button>
+
+            <div class="offer-actions">
+                <button type="submit" class="offer-submit-btn">Submit Offer</button>
+                <a href="{% url 'volunteer' %}" class="offer-back-link">Back to Dashboard</a>
+            </div>
         </form>
     </div>
-    {% endblock %}
-</body>
-</html>
+</div>
+{% endblock %}
