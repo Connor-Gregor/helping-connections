@@ -5,6 +5,15 @@
 {% block content %}
 <main class="content">
     <h1>Unhoused Dashboard</h1>
-    <p>This is the unhoused Dashboard page.</p>
-</main>
+<h2>Requests Being Processed</h2>
+
+{% if processing_requests %}
+    <ul>
+        {% for req in processing_requests %}
+            <li>{{ req.title }}</li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No requests are currently being processed.</p>
+{% endif %}</main>
 {% endblock %}
