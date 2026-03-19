@@ -1,40 +1,142 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>My Offers</title>
-</head>
-<body>
-    {% extends "base.html" %}
+{% extends "base.html" %}
 
-    {% block content %}
-    <div class="container mt-4">
+{% block title %}My Offers | Helping Connections{% endblock %}
+
+{% block content %}
+<style>
+    .offers-wrapper {
+        max-width: 1100px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .offers-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .offers-header h2 {
+        font-size: 2rem;
+        color: #2f6b4f;
+        margin-bottom: 8px;
+    }
+
+    .offers-header p {
+        color: #5f6b64;
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    .offers-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 24px;
+    }
+
+    .offer-card {
+        background: #ffffff;
+        border: 1px solid #e6ece8;
+        border-radius: 18px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .offer-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+    }
+
+    .offer-title {
+        font-size: 1.3rem;
+        color: #2f6b4f;
+        margin-bottom: 14px;
+    }
+
+    .offer-details p {
+        margin: 10px 0;
+        color: #333;
+        line-height: 1.5;
+    }
+
+    .offer-details strong {
+        color: #1f3f30;
+    }
+
+    .claimed-user {
+        margin-top: 14px;
+        padding: 10px 12px;
+        background: #f4f9f6;
+        border-left: 4px solid #2f6b4f;
+        border-radius: 8px;
+    }
+
+    .empty-offers {
+        max-width: 700px;
+        margin: 0 auto;
+        background: #ffffff;
+        border: 1px solid #e6ece8;
+        border-radius: 18px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        padding: 32px;
+        text-align: center;
+    }
+
+    .empty-offers p {
+        color: #5f6b64;
+        font-size: 1rem;
+        margin-bottom: 20px;
+    }
+
+    .create-offer-link {
+        display: inline-block;
+        background: #2f6b4f;
+        color: white;
+        text-decoration: none;
+        padding: 12px 22px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: background 0.2s ease;
+    }
+
+    .create-offer-link:hover {
+        background: #25563f;
+    }
+</style>
+
+<div class="offers-wrapper">
+    <div class="offers-header">
         <h2>My Offers</h2>
-
-        {% if offers %}
-            <div class="row">
-                {% for offer in offers %}
-                    <div class="col-md-6 mb-3">
-                        <div class="card h-100">
-                            <div class="card-body">
-                                <h5 class="card-title">{{ offer.title }}</h5>
-                                <p><strong>Category:</strong> {{ offer.get_category_display }}</p>
-                                <p><strong>Description:</strong> {{ offer.description|default:"No description provided." }}</p>
-                                <p><strong>City:</strong> {{ offer.city }}</p>
-                                <p><strong>Status:</strong> {{ offer.get_status_display }}</p>
-
-                                {% if offer.claimed_by %}
-                                    <p><strong>Claimed By:</strong> {{ offer.claimed_by.display_username|default:offer.claimed_by.user.username }}</p>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p>You have not created any offers yet.</p>
-        {% endif %}
+        <p>View the offers you’ve created and track their current status.</p>
     </div>
-    {% endblock %}
-</body>
-</html>
+
+    {% if offers %}
+        <div class="offers-grid">
+            {% for offer in offers %}
+                <div class="offer-card">
+                    <h3 class="offer-title">{{ offer.title }}</h3>
+
+                    <div class="offer-details">
+                        <p><strong>Category:</strong> {{ offer.get_category_display }}</p>
+                        <p><strong>Description:</strong> {{ offer.description|default:"No description provided." }}</p>
+                        <p><strong>City:</strong> {{ offer.city }}</p>
+                        <p><strong>Status:</strong> {{ offer.get_status_display }}</p>
+
+                        {% if offer.claimed_by %}
+                            <div class="claimed-user">
+                                <strong>Claimed By:</strong>
+                                {{ offer.claimed_by.display_username|default:offer.claimed_by.user.username }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-offers">
+            <p>You have not created any offers yet.</p>
+            <a href="{% url 'create_offer' %}" class="create-offer-link">Create an Offer</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
