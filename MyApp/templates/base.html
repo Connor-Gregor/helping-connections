@@ -89,7 +89,22 @@
     </ul>
 </nav>
 
-{% block content %}{% endblock %}
+<main class="page-content">
+
+    {% if messages %}
+        <div class="flash-messages">
+            {% for message in messages %}
+                <div class="flash-message flash-{{ message.tags|default:'info' }}">
+                    <span>{{ message }}</span>
+                    <button type="button" class="flash-close" onclick="this.parentElement.remove();">&times;</button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+</main>
 
 <script>
     const profileBtn = document.getElementById("profileBtn");
@@ -109,6 +124,12 @@
             profileDropdown.classList.remove("open");
         });
     }
+
+   setTimeout(() => {
+        document.querySelectorAll('.flash-message').forEach(msg => {
+            msg.remove();
+        });
+    }, 4000);
 </script>
 
 {% block extra_scripts %}{% endblock %}
