@@ -252,7 +252,28 @@ def change_password(request):
 def volunteer(request):
     role = getattr(request.user.profile, "role", None)
     if role and role.name == "volunteer":
-        return render(request, "volunteer.html")
+
+        # Open requests available to claim
+        open_requests = Request.objects.filter(status=Request.STATUS_OPEN)
+
+        # Requests claimed by this volunteer (Pending)
+        pending_requests = Request.objects.filter(
+            claimed_by=request.user.profile,
+            status=Request.STATUS_CLAIMED
+        )
+
+        # Requests completed by this volunteer
+        completed_requests = Request.objects.filter(
+            claimed_by=request.user.profile,
+            status=Request.STATUS_FULFILLED
+        )
+
+        return render(request, "volunteer.html", {
+            "open_requests": open_requests,
+            "pending_requests": pending_requests,
+            "completed_requests": completed_requests
+        })
+
     return redirect("home")
 
 
@@ -410,10 +431,22 @@ def volunteer_requests(request):
         messages.error(request, "Only volunteers can view requests.")
         return redirect("home")
 
-    requests = Request.objects.filter(status=Request.STATUS_OPEN)
+    open_requests = Request.objects.filter(status=Request.STATUS_OPEN)
+
+    pending_requests = Request.objects.filter(
+        claimed_by=profile,
+        status=Request.STATUS_CLAIMED
+    )
+
+    completed_requests = Request.objects.filter(
+        claimed_by=profile,
+        status=Request.STATUS_FULFILLED
+    )
 
     return render(request, "volunteer_requests.html", {
-        "requests": requests
+        "open_requests": open_requests,
+        "pending_requests": pending_requests,
+        "completed_requests": completed_requests
     })
 
 

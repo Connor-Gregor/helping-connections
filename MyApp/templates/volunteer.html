@@ -5,6 +5,25 @@
 {% block content %}
 <main class="content">
     <h1>Volunteer Dashboard</h1>
-    <p>This is the Volunteer Dashboard page.</p>
+
+    <h2>Your Pending Requests</h2>
+
+    {% if pending_requests %}
+        <ul>
+            {% for req in pending_requests %}
+                <li>
+                    <strong>{{ req.title }}</strong><br>
+                    {{ req.description }}<br>
+                    {{ req.city }}<br>
+
+                    <!-- Removed the claim button for pending requests -->
+                    <p><em>This request has already been claimed by you.</em></p>
+                </li>
+                <hr>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>You have no pending requests.</p>
+    {% endif %}
 </main>
 {% endblock %}
