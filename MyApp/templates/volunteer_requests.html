@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Open Requests - Helping Connections{% endblock %}
+{% block title %}Requests - Helping Connections{% endblock %}
 
 {% block content %}
 
@@ -26,7 +26,6 @@
     color: #2c3e50;
 }
 
-/* Buttons container */
 .request-actions {
     display: flex;
     gap: 10px;
@@ -35,7 +34,6 @@
     flex-wrap: wrap;
 }
 
-/* Claim button */
 .claim-btn {
     background: #1abc9c;
     border: none;
@@ -45,14 +43,12 @@
     cursor: pointer;
     font-weight: 600;
     font-size: 14px;
-    font-family: inherit;
 }
 
 .claim-btn:hover {
     background: #16a085;
 }
 
-/* Message buttons */
 .message-btn {
     display: inline-block;
     background: #2c3e50;
@@ -60,17 +56,14 @@
     text-decoration: none;
     padding: 10px 16px;
     border-radius: 6px;
-
     font-weight: 600;
     font-size: 14px;
-    font-family: inherit;
 }
 
 .message-btn:hover {
     background: #1f2d3a;
 }
 
-/* Secondary message button (claimed user) */
 .message-secondary {
     background: #7f8c8d;
 }
@@ -79,14 +72,17 @@
     background: #626e70;
 }
 
-/* Claimed info */
 .claimed-info {
     margin-top: 10px;
     font-size: 14px;
     color: #555;
 }
 
-/* Back button */
+.section-title {
+    margin-top: 40px;
+    color: #2c3e50;
+}
+
 .back-dashboard {
     display: inline-block;
     margin-top: 20px;
@@ -102,13 +98,13 @@
 
 <div class="page-wrap">
 
+    <!-- ================= OPEN REQUESTS ================= -->
     <h2>Open Requests</h2>
 
-    {% for request in requests %}
+    {% for request in open_requests %}
         <div class="request-card">
 
             <h3>{{ request.title }}</h3>
-
             <p><strong>Category:</strong> {{ request.get_category_display }}</p>
             <p>{{ request.description }}</p>
             <p><strong>City:</strong> {{ request.city }}</p>
@@ -119,39 +115,19 @@
 
             <p><strong>Posted:</strong> {{ request.created_at }}</p>
 
-            <!-- Claimed Info -->
-            {% if request.claimed_by %}
-                <div class="claimed-info">
-                    <strong>Claimed by:</strong>
-                    {{ request.claimed_by.display_username|default:request.claimed_by.user.username }}
-                </div>
-            {% endif %}
-
             <div class="request-actions">
 
-                <!-- CLAIM BUTTON (only if not claimed) -->
-                {% if not request.claimed_by %}
-                    <form method="POST" action="{% url 'claim_request' request.id %}">
-                        {% csrf_token %}
-                        <button class="claim-btn" type="submit">
-                            Claim Request
-                        </button>
-                    </form>
-                {% endif %}
+                <form method="POST" action="{% url 'claim_request' request.id %}">
+                    {% csrf_token %}
+                    <button class="claim-btn" type="submit">
+                        Claim Request
+                    </button>
+                </form>
 
-                <!-- MESSAGE REQUESTER -->
                 {% if request.requester.user.id != user.id %}
                     <a class="message-btn"
                        href="{% url 'messaging:start_dm' request.requester.user.id %}">
                         Message Requester
-                    </a>
-                {% endif %}
-
-                <!-- OPTIONAL: MESSAGE CLAIMED VOLUNTEER -->
-                {% if request.claimed_by and request.claimed_by.user.id != user.id %}
-                    <a class="message-btn message-secondary"
-                       href="{% url 'messaging:start_dm' request.claimed_by.user.id %}">
-                        Message Volunteer
                     </a>
                 {% endif %}
 
@@ -162,6 +138,62 @@
     {% empty %}
         <p>No open requests available.</p>
     {% endfor %}
+
+
+    <!-- ================= PENDING REQUESTS ================= -->
+    <h2 class="section-title">Your Pending Requests</h2>
+
+    {% for request in pending_requests %}
+        <div class="request-card">
+
+            <h3>{{ request.title }}</h3>
+            <p><strong>Category:</strong> {{ request.get_category_display }}</p>
+            <p>{{ request.description }}</p>
+            <p><strong>City:</strong> {{ request.city }}</p>
+
+            <div class="claimed-info">
+                <strong>Status:</strong> In Progress
+            </div>
+
+            <div class="request-actions">
+
+                {% if request.requester.user.id != user.id %}
+                    <a class="message-btn"
+                       href="{% url 'messaging:start_dm' request.requester.user.id %}">
+                        Message Requester
+                    </a>
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    {% empty %}
+        <p>You have no pending requests.</p>
+    {% endfor %}
+
+
+    <!-- ================= COMPLETED REQUESTS ================= -->
+    <h2 class="section-title">Completed Requests</h2>
+
+    {% for request in completed_requests %}
+        <div class="request-card">
+
+            <h3>{{ request.title }}</h3>
+            <p><strong>Category:</strong> {{ request.get_category_display }}</p>
+            <p>{{ request.description }}</p>
+            <p><strong>City:</strong> {{ request.city }}</p>
+
+            <div class="claimed-info">
+                <strong>Status:</strong> Completed
+            </div>
+
+        </div>
+
+    {% empty %}
+        <p>No completed requests yet.</p>
+    {% endfor %}
+
 
     <a class="back-dashboard" href="{% url 'dashboard_redirect' %}">
         ← Back to Dashboard
