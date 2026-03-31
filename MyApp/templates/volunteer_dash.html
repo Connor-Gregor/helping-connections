@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+{% load static %}
+{% load user_extras %}
+
+{% block title %}Volunteer Dashboard | Helping Connections{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/item_modal.css' %}">
+{% endblock %}
+
+{% block content %}
+    <style>
+        .dashboard-wrapper {
+            max-width: 1280px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 2rem;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .dashboard-header p {
+            color: #555;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        .dashboard-section {
+            margin-bottom: 42px;
+        }
+
+        .dashboard-section-title {
+            font-size: 1.4rem;
+            color: #1f3b4d;
+            margin: 0 0 18px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 24px;
+            justify-items: center;
+            align-items: start;
+        }
+
+        .offer-compact-card {
+            width: 100%;
+            max-width: 380px;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+            border: 1px solid #d6dbe1;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            box-sizing: border-box;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            overflow: hidden;
+        }
+
+        .offer-compact-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+        }
+
+        .offer-card-main {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            padding: 14px 14px 8px;
+            height: 170px;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .offer-compact-photo {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 1px solid #d6dbe1;
+            flex-shrink: 0;
+            display: block;
+            background: #f4f6f8;
+        }
+
+        .offer-compact-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .offer-compact-title {
+            font-size: 1.05rem;
+            color: #2c3e50;
+            margin: 0 0 8px;
+            line-height: 1.25;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            height: 1.3em;
+        }
+
+        .offer-compact-details p {
+            margin: 4px 0;
+            color: #333;
+            line-height: 1.35;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .offer-compact-details strong {
+            color: #1f3b4d;
+        }
+
+        .offer-description-line {
+            display: flex;
+            gap: 6px;
+            align-items: flex-start;
+        }
+
+        .offer-description-text {
+            flex: 1;
+            min-width: 0;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .claimed-user-footer {
+            margin: 0 14px 14px;
+            padding: 8px 12px;
+            background: #f4f6f8;
+            border-left: 4px solid #1abc9c;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            color: #1f3f30;
+        }
+
+        .dashboard-empty {
+            background: #ffffff;
+            border: 1px solid #d6dbe1;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            color: #555;
+            text-align: center;
+        }
+
+        @media (max-width: 1180px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 760px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .offer-compact-card {
+                max-width: 100%;
+            }
+
+            .offer-card-main {
+                align-items: flex-start;
+            }
+        }
+    </style>
+
+    <div class="dashboard-wrapper">
+        <div class="dashboard-header">
+            <h1>Volunteer Dashboard</h1>
+            <p>Track the requests you’ve accepted and the offers that have been claimed.</p>
+        </div>
+
+        <section class="dashboard-section">
+            <h2 class="dashboard-section-title">Accepted Requests</h2>
+
+            {% if accepted_requests %}
+                <div class="dashboard-grid">
+                    {% for req in accepted_requests %}
+                        <div
+                            id="item-card-processing-{{ req.id }}"
+                            class="offer-compact-card js-item-card"
+                            data-item-id="{{ req.id }}"
+                            data-current-user-id="{{ request.user.id }}"
+                            data-owner-id="{{ req.requester.user.id }}"
+                            data-owner-report-id="{{ req.requester.user.id }}"
+                            data-owner-name="{{ req.requester.display_username|default:req.requester.user.get_full_name|default:req.requester.user.email|escape }}"
+                            data-owner-initials="{{ req.requester.display_username|initials }}"
+                            {% if req.requester.profile_photo %}
+                                data-owner-photo="{{ req.requester.profile_photo.url }}"
+                            {% endif %}
+                            data-title="{{ req.title|escape }}"
+                            data-category="{{ req.get_category_display|escape }}"
+                            data-category-value="{{ req.category }}"
+                            data-city="{{ req.city|escape }}"
+                            data-status="{{ req.get_status_display|escape }}"
+                            data-description="{{ req.description|default:'No description provided.'|escape }}"
+                            data-location="{{ req.location_details|default:'No location details provided.'|escape }}"
+                            data-created="{{ req.created_at|date:'c' }}"
+                            data-claimed-by="{{ req.claimed_by.display_username|default:req.claimed_by.user.get_full_name|default:req.claimed_by.user.email|escape }}"
+                            data-claimed-at="{{ req.claimed_at|date:'c' }}"
+                            data-action-mode="volunteer_request_claimed"
+                            data-images="[]"
+                        >
+                            <div class="offer-card-main">
+                                {% if req.category == "food" %}
+                                    <img src="{% static 'images/food.jpg' %}" alt="{{ req.title }}" class="offer-compact-photo">
+                                {% elif req.category == "clothing" %}
+                                    <img src="{% static 'images/clothes.jpg' %}" alt="{{ req.title }}" class="offer-compact-photo">
+                                {% elif req.category == "blankets" %}
+                                    <img src="{% static 'images/blanket.jpg' %}" alt="{{ req.title }}" class="offer-compact-photo">
+                                {% elif req.category == "hygiene" %}
+                                    <img src="{% static 'images/hygiene.jpg' %}" alt="{{ req.title }}" class="offer-compact-photo">
+                                {% elif req.category == "transport" %}
+                                    <img src="{% static 'images/transportation.jpg' %}" alt="{{ req.title }}" class="offer-compact-photo">
+                                {% elif req.category == "medical" %}
+                                    <img src="{% static 'images/medical.jpg' %}" alt="{{ req.title }}" class="offer-compact-photo">
+                                {% else %}
+                                    <img src="{% static 'images/food.jpg' %}" alt="{{ req.title }}" class="offer-compact-photo">
+                                {% endif %}
+
+                                <div class="offer-compact-content">
+                                    <h3 class="offer-compact-title">{{ req.title }}</h3>
+
+                                    <div class="offer-compact-details">
+                                        <p><strong>Category:</strong> {{ req.get_category_display }}</p>
+                                        <p><strong>City:</strong> {{ req.city }}</p>
+                                        <p><strong>Status:</strong> {{ req.get_status_display }}</p>
+                                        <p class="offer-description-line">
+                                            <strong>Description:</strong>
+                                            <span class="offer-description-text">
+                                                {{ req.description|default:"No description provided." }}
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="claimed-user-footer">
+                                Accepted from {{ req.requester.display_username|default:req.requester.user.get_full_name|default:req.requester.user.email }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="dashboard-empty">
+                    You have not accepted any requests yet.
+                </div>
+            {% endif %}
+        </section>
+
+        <section class="dashboard-section">
+            <h2 class="dashboard-section-title">Accepted Offers</h2>
+
+            {% if accepted_offers %}
+                <div class="dashboard-grid">
+                    {% for offer in accepted_offers %}
+                        {% with first_image=offer.images.first %}
+                            <div
+                                id="item-card-{{ offer.id }}"
+                                class="offer-compact-card js-item-card"
+                                data-item-id="{{ offer.id }}"
+                                data-owner-id="{{ offer.offered_by.user.id }}"
+                                data-owner-report-id="{{ offer.offered_by.user.id }}"
+                                data-owner-name="{{ offer.offered_by.display_username|default:offer.offered_by.user.get_full_name|default:offer.offered_by.user.email|escape }}"
+                                data-owner-initials="{{ offer.offered_by.display_username|initials }}"
+                                {% if offer.offered_by.profile_photo %}
+                                    data-owner-photo="{{ offer.offered_by.profile_photo.url }}"
+                                {% endif %}
+                                data-title="{{ offer.title|escape }}"
+                                data-category="{{ offer.get_category_display|escape }}"
+                                data-category-value="{{ offer.category }}"
+                                data-city="{{ offer.city|escape }}"
+                                data-status="{{ offer.get_status_display|escape }}"
+                                data-description="{{ offer.description|default:'No description provided.'|escape }}"
+                                data-location="{{ offer.location_details|default:'No location details provided.'|escape }}"
+                                data-created="{{ offer.created_at|date:'c' }}"
+                                {% if offer.claimed_by %}
+                                    data-claimer-id="{{ offer.claimed_by.user.id }}"
+                                    data-claimed-by="{{ offer.claimed_by.display_username|default:offer.claimed_by.user.get_full_name|default:offer.claimed_by.user.email|escape }}"
+                                {% endif %}
+                                {% if offer.claimed_at %}
+                                    data-claimed-at="{{ offer.claimed_at|date:'c' }}"
+                                {% endif %}
+                                data-action-mode="mine"
+                                data-edit-url="{% url 'update_offer' offer.id %}"
+                                data-delete-url="{% url 'delete_offer' offer.id %}"
+                                data-images='[{% for image in offer.images.all %}"{{ image.image.url }}"{% if not forloop.last %},{% endif %}{% endfor %}]'
+                            >
+                                <div class="offer-card-main">
+                                    {% if first_image %}
+                                        <img src="{{ first_image.image.url }}" alt="{{ offer.title }}" class="offer-compact-photo">
+                                    {% elif offer.category == "food" %}
+                                        <img src="{% static 'images/food.jpg' %}" alt="{{ offer.title }}" class="offer-compact-photo">
+                                    {% elif offer.category == "clothing" %}
+                                        <img src="{% static 'images/clothes.jpg' %}" alt="{{ offer.title }}" class="offer-compact-photo">
+                                    {% elif offer.category == "blankets" %}
+                                        <img src="{% static 'images/blanket.jpg' %}" alt="{{ offer.title }}" class="offer-compact-photo">
+                                    {% elif offer.category == "hygiene" %}
+                                        <img src="{% static 'images/hygiene.jpg' %}" alt="{{ offer.title }}" class="offer-compact-photo">
+                                    {% elif offer.category == "transport" %}
+                                        <img src="{% static 'images/transportation.jpg' %}" alt="{{ offer.title }}" class="offer-compact-photo">
+                                    {% elif offer.category == "medical" %}
+                                        <img src="{% static 'images/medical.jpg' %}" alt="{{ offer.title }}" class="offer-compact-photo">
+                                    {% else %}
+                                        <img src="{% static 'images/food.jpg' %}" alt="{{ offer.title }}" class="offer-compact-photo">
+                                    {% endif %}
+
+                                    <div class="offer-compact-content">
+                                        <h3 class="offer-compact-title">{{ offer.title }}</h3>
+
+                                        <div class="offer-compact-details">
+                                            <p><strong>Category:</strong> {{ offer.get_category_display }}</p>
+                                            <p><strong>City:</strong> {{ offer.city }}</p>
+                                            <p><strong>Status:</strong> {{ offer.get_status_display }}</p>
+                                            <p class="offer-description-line">
+                                                <strong>Description:</strong>
+                                                <span class="offer-description-text">
+                                                    {{ offer.description|default:"No description provided." }}
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {% if offer.claimed_by %}
+                                    <div class="claimed-user-footer">
+                                        Claimed by {{ offer.claimed_by.display_username|default:offer.claimed_by.user.get_full_name|default:offer.claimed_by.user.email }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endwith %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="dashboard-empty">
+                    None of your offers have been claimed yet.
+                </div>
+            {% endif %}
+        </section>
+    </div>
+
+    {% include "components/item_modal.html" %}
+{% endblock %}
+
+{% block extra_scripts %}
+    <script src="{% static 'js/item_modal.js' %}"></script>
+{% endblock %}

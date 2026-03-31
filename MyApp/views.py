@@ -4,13 +4,53 @@ from django.db import IntegrityError, transaction
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import views as auth_views
 from django.views.decorators.http import require_POST
+from django.utils import timezone
+from datetime import timedelta
+from django.urls import reverse
+from django.core.paginator import Paginator
 
-from .forms import RegisterForm, LoginForm, ChangePasswordForm, ProfileSettingsForm, DeleteAccountForm, EmailChangeForm, \
-    RoleChangeForm, RequestForm, OfferForm
-from .models import Profile, Role, Request, Offer
+from .forms import (
+    RegisterForm,
+    LoginForm,
+    ChangePasswordForm,
+    ProfileSettingsForm,
+    DeleteAccountForm,
+    EmailChangeForm,
+    RoleChangeForm,
+    RequestForm,
+    OfferForm
+)
+from .models import (
+    Profile,
+    Role,
+    Request,
+    Offer,
+    OfferImage,
+    EmailVerificationCode,
+    OfferReport,
+    RequestReport,
+)
 from django.conf import settings
+from .utils import generate_verification_code, send_verification_email
+
+
+# =========================================
+# Helping Connections - Views
+# =========================================
+# This file handles all main application logic, including:
+# - Authentication (register, login, verification)
+# - Profile & settings management
+# - Role-based dashboards (volunteer / unhoused)
+# - Requests & Offers workflows (create, update, claim, delete)
+# - Reporting system (offers + requests)
+#
+# NOTE:
+# - Role-based access is enforced in many views
+# - Messaging/redirect feedback is handled using Django messages
+# - Most forms are validated in forms.py before saving
 
 
 def home(request):
@@ -39,6 +79,17 @@ def about(request):
 def account_view(request):
     profile = getattr(request.user, "profile", None)
     return render(request, "account.html", {"profile": profile})
+
+# Handles user registration + email verification setup.
+# Flow:
+# 1. Validate form
+# 2. Create inactive user (is_active=False)
+# 3. Create Profile + assign role
+# 4. Generate verification code
+# 5. Send email
+# 6. Store user ID in session for verification step
+#
+# Uses transaction.atomic() to ensure everything is created safely.
 
 
 class Register(View):
@@ -74,6 +125,7 @@ class Register(View):
                     password=password,
                     first_name=first_name,
                     last_name=last_name,
+                    is_active=False,
                 )
 
                 role, _ = Role.objects.get_or_create(name=role_name)
@@ -89,19 +141,242 @@ class Register(View):
                 profile.zip_code = zip_code
                 profile.save()
 
+                code = generate_verification_code()
+
+                EmailVerificationCode.objects.create(
+                    user=user,
+                    code=code,
+                    expires_at=timezone.now() + timedelta(minutes=10)
+                )
+
+                send_verification_email(user, code)
+
         except IntegrityError:
             form.add_error("email", "An account with this email or username already exists.")
             return render(request, "register.html", {"form": form})
 
+        except Exception:
+            form.add_error(None, "Account was created, but the verification email could not be sent. Please try again.")
+            return render(request, "register.html", {"form": form})
+
+        request.session["pending_verification_user_id"] = user.id
+        messages.success(request, "Account created. Please check your email for the verification code.")
+        return redirect("verify_email")
+
+# Handles email verification after registration.
+# Uses session-stored user ID to identify which account to verify.
+#
+# Logic:
+# - Fetch latest unverified code
+# - Check expiration
+# - Match user input
+# - Activate user + log them in
+#
+# Redirects user based on role after successful verification.
+
+
+class VerifyEmailView(View):
+    def get(self, request):
+        user_id = request.session.get("pending_verification_user_id")
+
+        if not user_id:
+            messages.error(request, "No account is waiting for verification.")
+            return redirect("register")
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            messages.error(request, "User not found.")
+            return redirect("register")
+
+        return render(request, "verify_email.html", {"email": user.email})
+
+    def post(self, request):
+        user_id = request.session.get("pending_verification_user_id")
+
+        if not user_id:
+            messages.error(request, "No account is waiting for verification.")
+            return redirect("register")
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            messages.error(request, "User not found.")
+            return redirect("register")
+
+        entered_code = request.POST.get("code", "").strip()
+
+        verification = (
+            EmailVerificationCode.objects
+                .filter(user=user, verified=False)
+                .order_by("-created_at")
+                .first()
+        )
+
+        if not verification:
+            messages.error(request, "No verification code found. Please request a new one.")
+            return redirect("verify_email")
+
+        if verification.is_expired():
+            messages.error(request, "This verification code has expired.")
+            return redirect("verify_email")
+
+        if verification.code != entered_code:
+            messages.error(request, "Invalid verification code.")
+            return redirect("verify_email")
+
+        verification.verified = True
+        verification.save()
+
+        user.is_active = True
+        user.save()
+
+        request.session.pop("pending_verification_user_id", None)
         login(request, user)
 
-        if profile.role.name == "volunteer":
-            return redirect("volunteer")
-        elif profile.role.name == "unhoused":
-            return redirect("unhoused")
-        else:
-            return redirect("home")
+        messages.success(request, "Email verified successfully. Welcome to Helping Connections!")
 
+        role = getattr(user.profile, "role", None)
+        if role and role.name == "volunteer":
+            return redirect("volunteer")
+        elif role and role.name == "unhoused":
+            return redirect("unhoused")
+        return redirect("home")
+
+
+class VerifyEmailChangeView(View):
+    def get(self, request):
+        pending_email = request.session.get("pending_new_email")
+
+        if not pending_email:
+            messages.error(request, "No email change request found.")
+            return redirect("settings")
+
+        return render(request, "verify_email_change.html", {
+            "email": pending_email
+        })
+
+    def post(self, request):
+        pending_email = request.session.get("pending_new_email")
+
+        if not pending_email:
+            messages.error(request, "No email change request found.")
+            return redirect("settings")
+
+        entered_code = request.POST.get("code", "").strip()
+
+        verification = (
+            EmailVerificationCode.objects
+                .filter(user=request.user, verified=False)
+                .order_by("-created_at")
+                .first()
+        )
+
+        if not verification:
+            messages.error(request, "No verification code found.")
+            return redirect("verify_email_change")
+
+        if verification.is_expired():
+            messages.error(request, "Verification code expired.")
+            return redirect("verify_email_change")
+
+        if verification.code != entered_code:
+            messages.error(request, "Invalid verification code.")
+            return redirect("verify_email_change")
+
+        verification.verified = True
+        verification.save()
+
+        # UPDATE happens here
+        request.user.email = pending_email
+        request.user.username = pending_email
+        request.user.save()
+
+        request.session.pop("pending_new_email", None)
+        request.session.pop("last_email_change_verification_sent", None)
+
+        messages.success(request, "Email updated successfully.")
+        return redirect(f"{reverse('settings')}?tab=security-tab")
+
+# Allows user to request a new verification code.
+#
+# Includes:
+# - 30-second cooldown (prevents spam)
+# - Marks previous codes as used
+# - Generates and sends new code
+# - Stores timestamp in session
+
+def resend_verification_code(request):
+    # Get the user ID from session (set during registration)
+    user_id = request.session.get("pending_verification_user_id")
+
+    if not user_id:
+        messages.error(request, "No account is waiting for verification.")
+        return redirect("register")
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect("register")
+
+    # COOLDOWN CHECK (30 seconds)
+
+    last_sent = request.session.get("last_verification_sent")
+
+    if last_sent:
+        last_sent_time = timezone.datetime.fromisoformat(last_sent)
+
+        # If 30 seconds hasn't passed yet → block resend
+        if timezone.now() < last_sent_time + timedelta(seconds=30):
+            remaining = int(
+                (last_sent_time + timedelta(seconds=30) - timezone.now()).total_seconds()
+            )
+            messages.error(request, f"Please wait {remaining}s before requesting another code.")
+            return redirect("verify_email")
+
+    # Mark all previous unverified codes as "used"
+    EmailVerificationCode.objects.filter(user=user, verified=False).update(verified=True)
+
+    # Generate new code
+
+    code = generate_verification_code()
+
+    EmailVerificationCode.objects.create(
+        user=user,
+        code=code,
+        expires_at=timezone.now() + timedelta(minutes=10)  # expires in 10 min
+    )
+
+    # send email
+
+    send_verification_email(user, code)
+
+    # Save cooldown timestamp
+
+    request.session["last_verification_sent"] = timezone.now().isoformat()
+
+    # Success message
+    messages.success(request, "A new verification code was sent to your email.")
+    return redirect("verify_email")
+
+
+class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
+    template_name = "password_reset_confirm.html"
+    success_url = "/reset/done/"
+
+    def form_invalid(self, form):
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(self.request, error)
+        return self.render_to_response(self.get_context_data(form=form))
+
+# Handles user login.
+#
+# Special behavior:
+# - If account exists but is not verified → redirect to verification
+# - Session expires after 5 minutes (security)
+# - Redirects user based on role after login
 
 class LoginView(View):
     def get(self, request):
@@ -110,19 +385,34 @@ class LoginView(View):
 
     def post(self, request):
         form = LoginForm(request.POST)
+
         if not form.is_valid():
+            messages.error(request, "Please enter a valid email and password.")
             return render(request, "login.html", {"form": form})
 
-        email = form.cleaned_data["email"]
+        email = form.cleaned_data["email"].strip().lower()
         password = form.cleaned_data["password"]
+
+        try:
+            existing_user = User.objects.get(username__iexact=email)
+
+            if not existing_user.is_active:
+                request.session["pending_verification_user_id"] = existing_user.id
+                messages.warning(
+                    request,
+                    "Your account has not been verified yet. Please enter the verification code sent to your email."
+                )
+                return redirect("verify_email")
+
+        except User.DoesNotExist:
+            pass
 
         user = authenticate(request, username=email, password=password)
         if user is None:
-            form.add_error(None, "Invalid email or password.")
+            messages.error(request, "Invalid email or password.")
             return render(request, "login.html", {"form": form})
 
         login(request, user)
-
         request.session.set_expiry(300)
 
         role = getattr(user.profile, "role", None)
@@ -138,44 +428,78 @@ def logout_view(request):
     return redirect("home")
 
 
-@login_required
-def settings_page(request):
+# This helper formats stored 10-digit phone numbers for display in the settings form.
+# The form can store digits only in the database, but users still see a clean U.S. format.
+def format_phone_number(phone):
+    if not phone:
+        return ""
+
+    digits = "".join(filter(str.isdigit, phone))
+
+    if len(digits) == 10:
+        return f"({digits[:3]}) {digits[3:6]}-{digits[6:]}"
+
+    return phone
+
+# Helper function to build consistent context for settings page.
+# Ensures all forms (profile, email, password, role, delete) are always available.
+#
+# This prevents duplication across settings views and keeps UI consistent.
+
+def build_settings_context(request, *, profile_form=None, email_form=None,
+                           password_form=None, role_form=None,
+                           delete_form=None, active_tab="profile-tab"):
     profile = Profile.objects.get(user=request.user)
 
-    profile_form = ProfileSettingsForm(
-        profile=profile,
-        initial={
-            "display_username": profile.display_username or "",
-            "phone_number": profile.phone_number or "",
-            "first_name": request.user.first_name or "",
-            "last_name": request.user.last_name or "",
-            "address_line1": getattr(profile, "address_line1", "") or "",
-            "address_line2": getattr(profile, "address_line2", "") or "",
-            "city": getattr(profile, "city", "") or "",
-            "state": getattr(profile, "state", "") or "",
-            "zip_code": getattr(profile, "zip_code", "") or "",
-        }
-    )
-    email_form = EmailChangeForm(
-        user=request.user,
-        initial={"email": request.user.email or ""}
-    )
+    if profile_form is None:
+        profile_form = ProfileSettingsForm(
+            profile=profile,
+            initial={
+                "display_username": profile.display_username,
+                "first_name": request.user.first_name,
+                "last_name": request.user.last_name,
+                "phone_number": format_phone_number(profile.phone_number),
+                "address_line1": profile.address_line1,
+                "address_line2": profile.address_line2,
+                "city": profile.city,
+                "state": profile.state,
+                "zip_code": profile.zip_code,
+            }
+        )
 
-    role_form = RoleChangeForm(
-        allowed_roles=["unhoused", "volunteer"],
-        initial={"role": profile.role.name if profile.role else "unhoused"}
-    )
+    if email_form is None:
+        email_form = EmailChangeForm(
+            user=request.user,
+            initial={"email": request.user.email}
+        )
 
-    password_form = ChangePasswordForm(user=request.user)
-    delete_form = DeleteAccountForm(user=request.user)
+    if password_form is None:
+        password_form = ChangePasswordForm(user=request.user)
 
-    return render(request, "settings.html", {
+    if role_form is None:
+        role_form = RoleChangeForm(
+            allowed_roles=["unhoused", "volunteer"],
+            initial={"role": profile.role.name if profile.role else ""}
+        )
+
+    if delete_form is None:
+        delete_form = DeleteAccountForm(user=request.user)
+
+    return {
         "profile_form": profile_form,
         "email_form": email_form,
-        "role_form": role_form,
         "password_form": password_form,
+        "role_form": role_form,
         "delete_form": delete_form,
-    })
+        "active_tab": active_tab,
+    }
+
+
+@login_required
+def settings_page(request):
+    active_tab = request.GET.get("tab", "profile-tab")
+    context = build_settings_context(request, active_tab=active_tab)
+    return render(request, "settings.html", context)
 
 
 @login_required
@@ -184,26 +508,34 @@ def update_profile_settings(request):
         return redirect("settings")
 
     profile = Profile.objects.get(user=request.user)
-    form = ProfileSettingsForm(request.POST, profile=profile)
+    form = ProfileSettingsForm(request.POST, request.FILES, profile=profile)
 
     if not form.is_valid():
-        password_form = ChangePasswordForm(user=request.user)
-        return render(request, "settings.html", {
-            "profile_form": form,
-            "password_form": password_form,
-        })
+        for field, errors in form.errors.items():
+            for error in errors:
+                if field == "__all__":
+                    messages.error(request, error)
+                else:
+                    label = form.fields[field].label or field.replace("_", " ").title()
+                    messages.error(request, f"{label}: {error}")
+
+        return redirect(f"{reverse('settings')}?tab=profile-tab")
 
     request.user.first_name = form.cleaned_data.get("first_name", "").strip()
     request.user.last_name = form.cleaned_data.get("last_name", "").strip()
     request.user.save()
 
     profile.display_username = form.cleaned_data["display_username"].strip()
-    profile.phone_number = form.cleaned_data.get("phone_number", "").strip()
+    profile.phone_number = form.cleaned_data.get("phone_number", "")
     profile.address_line1 = form.cleaned_data.get("address_line1", "").strip()
     profile.address_line2 = form.cleaned_data.get("address_line2", "").strip()
     profile.city = form.cleaned_data.get("city", "").strip()
     profile.state = form.cleaned_data.get("state", "").strip()
     profile.zip_code = form.cleaned_data.get("zip_code", "").strip()
+
+    if form.cleaned_data.get("profile_photo"):
+        profile.profile_photo = form.cleaned_data["profile_photo"]
+
     profile.save()
 
     messages.success(request, "Profile updated.")
@@ -215,86 +547,108 @@ def change_password(request):
     if request.method != "POST":
         return redirect("settings")
 
-    profile = Profile.objects.get(user=request.user)
     form = ChangePasswordForm(request.POST, user=request.user)
 
     if not form.is_valid():
-        profile_form = ProfileSettingsForm(
-            profile=profile,
-            initial={
-                "display_username": profile.display_username or "",
-                "phone_number": profile.phone_number or "",
-                "first_name": request.user.first_name or "",
-                "last_name": request.user.last_name or "",
-                "address_line1": getattr(profile, "address_line1", "") or "",
-                "address_line2": getattr(profile, "address_line2", "") or "",
-                "city": getattr(profile, "city", "") or "",
-                "state": getattr(profile, "state", "") or "",
-                "zip_code": getattr(profile, "zip_code", "") or "",
-            }
-        )
-        return render(request, "settings.html", {
-            "profile_form": profile_form,
-            "password_form": form,
-        })
+        for field, errors in form.errors.items():
+            for error in errors:
+                if field == "__all__":
+                    messages.error(request, error)
+                else:
+                    label = form.fields[field].label or field.replace("_", " ").title()
+                    messages.error(request, f"{label}: {error}")
 
-    new_pw = form.cleaned_data["new_password1"]
-    request.user.set_password(new_pw)
+        return redirect(f"{reverse('settings')}?tab=security-tab")
+
+    request.user.set_password(form.cleaned_data["new_password1"])
     request.user.save()
 
-    update_session_auth_hash(request, request.user)
+    messages.success(request, "Password changed successfully.")
+    return redirect("login")
 
-    messages.success(request, "Password changed.")
-    return redirect("settings")
-
+# Volunteer dashboard view.
+#
+# Displays active volunteer-side work in two sections:
+# - accepted_requests: requests claimed by this volunteer
+# - accepted_offers: offers created by this volunteer that were claimed
+#
+# accepted_requests excludes self-owned requests so the volunteer dashboard
+# only shows real requester/volunteer pairings and avoids self-message cases.
+# This gives volunteers one place to track both sides of their current activity
+# without changing the existing request/offer workflows.
 
 @login_required
 def volunteer(request):
     role = getattr(request.user.profile, "role", None)
     if role and role.name == "volunteer":
+        profile = request.user.profile
 
-        # Open requests available to claim
-        open_requests = Request.objects.filter(status=Request.STATUS_OPEN)
-
-        # Requests claimed by this volunteer (Pending)
-        pending_requests = Request.objects.filter(
-            claimed_by=request.user.profile,
+        accepted_requests = Request.objects.filter(
+            claimed_by=profile,
             status=Request.STATUS_CLAIMED
-        )
+        ).exclude(
+            requester=profile
+        ).order_by("-claimed_at", "-created_at")
 
-        # Requests completed by this volunteer
-        completed_requests = Request.objects.filter(
-            claimed_by=request.user.profile,
-            status=Request.STATUS_FULFILLED
-        )
+        accepted_offers = Offer.objects.filter(
+            offered_by=profile,
+            status=Offer.STATUS_CLAIMED
+        ).prefetch_related("images").order_by("-claimed_at", "-created_at")
 
-        return render(request, "volunteer.html", {
-            "open_requests": open_requests,
-            "pending_requests": pending_requests,
-            "completed_requests": completed_requests
+        return render(request, "volunteer_dash.html", {
+            "accepted_requests": accepted_requests,
+            "accepted_offers": accepted_offers,
         })
 
     return redirect("home")
 
+# Unhoused dashboard view.
+#
+# Displays:
+# - Open requests
+# - Processing (claimed) requests
+# - Completed requests
+#
+# Requests are separated by status for better UX.
 
 @login_required
 def unhoused(request):
     role = getattr(request.user.profile, "role", None)
     if role and role.name == "unhoused":
+        profile = request.user.profile
+
+        open_requests = Request.objects.filter(
+            requester=profile,
+            status=Request.STATUS_OPEN
+        ).order_by("-created_at")
 
         processing_requests = Request.objects.filter(
-            requester=request.user.profile,
+            requester=profile,
             status=Request.STATUS_CLAIMED
-        )
+        ).order_by("-claimed_at", "-created_at")
+
+        completed_requests = Request.objects.filter(
+            requester=profile,
+            status=Request.STATUS_FULFILLED
+        ).order_by("-created_at")
 
         return render(request, "unhoused_dash.html", {
-            "processing_requests": processing_requests
+            "open_requests": open_requests,
+            "processing_requests": processing_requests,
+            "completed_requests": completed_requests,
         })
 
     return redirect("home")
 
+# Returns correct dashboard route based on user role.
+# Used for centralized redirection logic.
 
 def get_dashboard_url(user):
+    try:
+        profile = user.profile
+    except Profile.DoesNotExist:
+        return "home"
+
     role = user.profile.role.name.lower() if user.profile.role else None
 
     if role == "volunteer":
@@ -318,13 +672,14 @@ def delete_account(request):
     form = DeleteAccountForm(request.POST, user=request.user)
 
     if not form.is_valid():
-        messages.error(request, "Could not delete account.")
-        return redirect("settings")
+        context = build_settings_context(
+            request,
+            delete_form=form,
+            active_tab="delete-tab",
+        )
+        return render(request, "settings.html", context)
 
-    user = request.user
-    logout(request)
-    user.delete()
-
+    request.user.delete()
     messages.success(request, "Your account has been deleted.")
     return redirect("home")
 
@@ -337,40 +692,157 @@ def update_email(request):
     form = EmailChangeForm(request.POST, user=request.user)
 
     if not form.is_valid():
-        messages.error(request, "Could not update email.")
+        context = build_settings_context(
+            request,
+            email_form=form,
+            active_tab="security-tab",
+        )
+        return render(request, "settings.html", context)
+
+    new_email = form.cleaned_data["email"].strip().lower()
+
+    # Prevent same email
+    if new_email == request.user.email.lower():
+        messages.error(request, "That is already your current email.")
+        return redirect(f"{reverse('settings')}?tab=security-tab")
+
+    # Prevent duplicate email
+    if User.objects.filter(email__iexact=new_email).exclude(pk=request.user.pk).exists():
+        messages.error(request, "That email is already in use.")
+        return redirect(f"{reverse('settings')}?tab=security-tab")
+
+    # Generate verification code
+    code = generate_verification_code()
+
+    EmailVerificationCode.objects.create(
+        user=request.user,
+        code=code,
+        expires_at=timezone.now() + timedelta(minutes=10)
+    )
+
+    send_verification_email(request.user, code, override_email=new_email)
+
+    # Store pending email in session
+    request.session["pending_new_email"] = new_email
+
+    messages.info(request, f"A verification code was sent to {new_email}.")
+    return redirect("verify_email_change")
+
+
+@login_required
+def resend_email_change_code(request):
+    pending_email = request.session.get("pending_new_email")
+
+    if not pending_email:
+        messages.error(request, "No email change request found.")
         return redirect("settings")
 
-    new_email = form.cleaned_data["email"]
-    request.user.email = new_email
-    request.user.username = new_email
-    request.user.save()
+    # 30-second cooldown
+    last_sent = request.session.get("last_email_change_verification_sent")
 
-    messages.success(request, "Email updated.")
-    return redirect("settings")
+    if last_sent:
+        last_sent_time = timezone.datetime.fromisoformat(last_sent)
 
+        if timezone.now() < last_sent_time + timedelta(seconds=30):
+            remaining = int(
+                (last_sent_time + timedelta(seconds=30) - timezone.now()).total_seconds()
+            )
+            messages.error(request, f"Please wait {remaining}s before requesting another code.")
+            return redirect("verify_email_change")
+
+    # mark previous unverified codes for this user as used
+    EmailVerificationCode.objects.filter(
+        user=request.user,
+        verified=False
+    ).update(verified=True)
+
+    code = generate_verification_code()
+
+    EmailVerificationCode.objects.create(
+        user=request.user,
+        code=code,
+        expires_at=timezone.now() + timedelta(minutes=10)
+    )
+
+    send_verification_email(request.user, code, override_email=pending_email)
+
+    request.session["last_email_change_verification_sent"] = timezone.now().isoformat()
+
+    messages.success(request, "A new verification code was sent to your new email.")
+    return redirect("verify_email_change")
+
+# Handles role switching between "volunteer" and "unhoused".
+#
+# IMPORTANT:
+# - Prevents switching if user has active items:
+#   - Volunteers → cannot switch if they have active offers
+#   - Unhoused → cannot switch if they have active requests
+#
 
 @login_required
 def update_role(request):
     if request.method != "POST":
         return redirect("settings")
 
-    allowed = ["volunteer", "unhoused"]
-    form = RoleChangeForm(request.POST, allowed_roles=allowed)
+    form = RoleChangeForm(
+        request.POST,
+        allowed_roles=["unhoused", "volunteer"]
+    )
 
     if not form.is_valid():
-        messages.error(request, "Invalid role.")
-        return redirect("settings")
+        context = build_settings_context(
+            request,
+            role_form=form,
+            active_tab="security-tab",
+        )
+        return render(request, "settings.html", context)
 
     profile = Profile.objects.get(user=request.user)
+    current_role = profile.role.name.lower() if profile.role else None
+    selected_role = form.cleaned_data["role"]
 
-    new_role_name = form.cleaned_data["role"]
-    role_obj, _ = Role.objects.get_or_create(name=new_role_name)
-    profile.role = role_obj
+    if current_role == selected_role:
+        messages.info(request, "You are already using that role.")
+        return redirect(f"{reverse('settings')}?tab=security-tab")
+
+    # Block volunteer -> unhoused only if volunteer still has active offers
+    if current_role == "volunteer" and selected_role == "unhoused":
+        active_offers = Offer.objects.filter(
+            offered_by=profile,
+            status__in=[Offer.STATUS_OPEN, Offer.STATUS_CLAIMED]
+        )
+
+        if active_offers.exists():
+            messages.error(
+                request,
+                "You cannot switch to Unhoused while you still have active offers. "
+                "Please remove, cancel, or complete them first."
+            )
+            return redirect(f"{reverse('settings')}?tab=security-tab")
+
+    # Block unhoused -> volunteer only if unhoused still has active requests
+    if current_role == "unhoused" and selected_role == "volunteer":
+        active_requests = Request.objects.filter(
+            requester=profile,
+            status__in=[Request.STATUS_OPEN, Request.STATUS_CLAIMED]
+        )
+
+        if active_requests.exists():
+            messages.error(
+                request,
+                "You cannot switch to Volunteer while you still have active requests. "
+                "Please remove, cancel, or complete them first."
+            )
+            return redirect(f"{reverse('settings')}?tab=security-tab")
+
+    profile.role = Role.objects.get(name=selected_role)
     profile.save()
 
     messages.success(request, "Role updated.")
-    return redirect("settings")
+    return redirect(f"{reverse('settings')}?tab=security-tab")
 
+# Allows unhoused users to create new requests.
+# Sets request status to OPEN by default.
 
 @login_required
 def create_request(request):
@@ -393,31 +865,84 @@ def create_request(request):
             new_request.save()
 
             messages.success(request, "Your request was submitted successfully.")
-            return redirect("create_request")
+            return redirect("unhoused")
     else:
         form = RequestForm()
 
-    open_requests = Request.objects.filter(
-    requester=profile,
-    status=Request.STATUS_OPEN
-    )
-
-    processing_requests = Request.objects.filter(
-    requester=profile,
-    status=Request.STATUS_CLAIMED
-    )
-
-    completed_requests = Request.objects.filter(
-    requester=profile,
-    status=Request.STATUS_FULFILLED
-    )
-
     return render(request, "create_request.html", {
-       "form": form,
-        "open_requests": open_requests,
-        "processing_requests": processing_requests,
-        "completed_requests": completed_requests,
+        "form": form,
     })
+
+# Updates an existing request.
+#
+# Special behavior:
+# - If request was already claimed → resets it back to OPEN
+# - Clears claimed_by and claimed_at
+# - Notifies user that volunteer will be affected
+
+@login_required
+@require_POST
+def update_request(request, request_id):
+    profile = request.user.profile
+
+    if profile.role is None or profile.role.name.lower() != "unhoused":
+        messages.error(request, "Only unhoused users can update requests.")
+        return redirect("home")
+
+    req = get_object_or_404(Request, id=request_id, requester=profile)
+    form = RequestForm(request.POST, instance=req)
+
+    if not form.is_valid():
+        messages.error(request, "Please check your request form and try again.")
+        return redirect("unhoused")
+
+    updated_request = form.save(commit=False)
+
+    if req.status == Request.STATUS_CLAIMED:
+        updated_request.status = Request.STATUS_OPEN
+        updated_request.claimed_by = None
+        updated_request.claimed_at = None
+        messages.success(
+            request,
+            "Your request was updated. The volunteer will be notified, and your request is open again."
+        )
+    else:
+        messages.success(request, "Your request was updated successfully.")
+
+    updated_request.requester = profile
+    updated_request.save()
+
+    return redirect("unhoused")
+
+# Deletes a request.
+#
+# If request was already claimed:
+# - Notifies that volunteer will be affected not yet completely implemented
+
+@login_required
+@require_POST
+def delete_request(request, request_id):
+    profile = request.user.profile
+
+    if profile.role is None or profile.role.name.lower() != "unhoused":
+        messages.error(request, "Only unhoused users can delete requests.")
+        return redirect("home")
+
+    req = get_object_or_404(Request, id=request_id, requester=profile)
+    was_processing = req.status == Request.STATUS_CLAIMED
+
+    req.delete()
+
+    if was_processing:
+        messages.success(
+            request,
+            "Your request was deleted. The volunteer will be notified that it is no longer needed."
+        )
+    else:
+        messages.success(request, "Your request was deleted successfully.")
+
+    return redirect("unhoused")
+
 
 @login_required
 def volunteer_requests(request):
@@ -431,24 +956,14 @@ def volunteer_requests(request):
         messages.error(request, "Only volunteers can view requests.")
         return redirect("home")
 
-    open_requests = Request.objects.filter(status=Request.STATUS_OPEN)
-
-    pending_requests = Request.objects.filter(
-        claimed_by=profile,
-        status=Request.STATUS_CLAIMED
-    )
-
-    completed_requests = Request.objects.filter(
-        claimed_by=profile,
-        status=Request.STATUS_FULFILLED
-    )
+    requests = Request.objects.filter(status=Request.STATUS_OPEN)
 
     return render(request, "volunteer_requests.html", {
-        "open_requests": open_requests,
-        "pending_requests": pending_requests,
-        "completed_requests": completed_requests
+        "requests": requests
     })
 
+# Allows volunteers to claim a request.
+# Updates status and tracks claimer + timestamp.
 
 @login_required
 @require_POST
@@ -467,10 +982,17 @@ def claim_request(request, request_id):
 
     req.status = Request.STATUS_CLAIMED
     req.claimed_by = profile
+    req.claimed_at = timezone.now()
     req.save()
 
     messages.success(request, "You have claimed this request.")
     return redirect("volunteer_requests")
+
+# Allows volunteers to create offers.
+#
+# Supports:
+# - Multiple image uploads
+# - Assigning images via OfferImage model
 
 @login_required
 def create_offer(request):
@@ -485,19 +1007,39 @@ def create_offer(request):
         return redirect("home")
 
     if request.method == "POST":
-        form = OfferForm(request.POST)
+        form = OfferForm(request.POST, request.FILES)
+        files = request.FILES.getlist("offer_images")
+
         if form.is_valid():
             offer = form.save(commit=False)
             offer.offered_by = profile
             offer.status = Offer.STATUS_OPEN
             offer.save()
 
+            for file in files:
+                OfferImage.objects.create(
+                    offer=offer,
+                    image=file
+                )
+
             messages.success(request, "Your offer was submitted successfully.")
             return redirect("create_offer")
+
+        for field, errors in form.errors.items():
+            for error in errors:
+                if field == "__all__":
+                    messages.error(request, error)
+                else:
+                    label = form.fields[field].label or field.replace("_", " ").title()
+                    messages.error(request, f"{label}: {error}")
+
     else:
         form = OfferForm()
 
     return render(request, "create_offer.html", {"form": form})
+
+# Displays all OPEN offers for unhoused users.
+# Uses pagination (18 per page).
 
 @login_required
 def available_offers(request):
@@ -511,11 +1053,20 @@ def available_offers(request):
         messages.error(request, "Only unhoused users can view offers.")
         return redirect("home")
 
-    offers = Offer.objects.filter(status=Offer.STATUS_OPEN)
+    offers_list = Offer.objects.filter(
+        status=Offer.STATUS_OPEN
+    ).prefetch_related("images")
+
+    paginator = Paginator(offers_list, 18)   # show 6 offers per page
+    page_number = request.GET.get("page")
+    offers = paginator.get_page(page_number)
 
     return render(request, "available_offers.html", {
         "offers": offers
     })
+
+# Allows unhoused users to claim an offer.
+# Changes status to CLAIMED and stores who claimed it.
 
 @login_required
 @require_POST
@@ -534,10 +1085,14 @@ def claim_offer(request, offer_id):
 
     offer.status = Offer.STATUS_CLAIMED
     offer.claimed_by = profile
+    offer.claimed_at = timezone.now()
     offer.save()
 
     messages.success(request, "You have claimed this offer.")
     return redirect("available_offers")
+
+# Displays all offers created by the logged-in volunteer.
+# Includes pagination and image prefetching.
 
 @login_required
 def my_offers(request):
@@ -547,8 +1102,151 @@ def my_offers(request):
         messages.error(request, "Only volunteers can view their offers.")
         return redirect("home")
 
-    offers = Offer.objects.filter(offered_by=profile)
+    offers_list = Offer.objects.filter(
+        offered_by=profile
+    ).prefetch_related("images")
+
+    paginator = Paginator(offers_list, 18)   # show 18 offers per page
+    page_number = request.GET.get("page")
+    offers = paginator.get_page(page_number)
 
     return render(request, "my_offers.html", {
         "offers": offers
     })
+
+# Allows users to report an offer.
+# Prevents self-reporting.
+# Stores reason and optional details.
+
+@login_required
+@require_POST
+def create_offer_report(request):
+    try:
+        reporter_profile = request.user.profile
+    except Profile.DoesNotExist:
+        messages.error(request, "You must have a profile to submit a report.")
+        return redirect("home")
+
+    offer_id = request.POST.get("offer_id")
+    reported_user_id = request.POST.get("reported_user_id")
+    reason = (request.POST.get("reason") or "").strip()
+    details = (request.POST.get("details") or "").strip()
+    return_to = (request.POST.get("return_to") or "").strip()
+
+    if not offer_id or not reported_user_id or not reason:
+        messages.error(request, "Please complete the report form.")
+        return redirect(return_to or "available_offers")
+
+    offer = get_object_or_404(Offer, pk=offer_id)
+    reported_user = get_object_or_404(Profile, user__id=reported_user_id)
+
+    if reported_user.user == request.user:
+        messages.error(request, "You cannot report yourself.")
+        return redirect(return_to or "available_offers")
+
+    OfferReport.objects.create(
+        reporter=reporter_profile,
+        reported_user=reported_user,
+        offer=offer,
+        reason=reason,
+        details=details,
+    )
+
+    messages.success(request, "Your report was submitted successfully.")
+    return redirect(return_to or "available_offers")
+
+# Allows users to report a request.
+# Validates reason against predefined choices.
+# Prevents self-reporting.
+
+@login_required
+@require_POST
+def create_request_report(request):
+    try:
+        reporter_profile = request.user.profile
+    except Profile.DoesNotExist:
+        messages.error(request, "You must have a profile to submit a report.")
+        return redirect("home")
+
+    request_id = request.POST.get("request_id")
+    reported_user_id = request.POST.get("reported_user_id")
+    reason = (request.POST.get("reason") or "").strip()
+    details = (request.POST.get("details") or "").strip()
+    return_to = (request.POST.get("return_to") or "").strip()
+
+    valid_reasons = {choice[0] for choice in RequestReport.REASON_CHOICES}
+
+    if not request_id or not reported_user_id or not reason:
+        messages.error(request, "Please complete the report form.")
+        return redirect(return_to or "volunteer_requests")
+
+    if reason not in valid_reasons:
+        messages.error(request, "Please choose a valid report reason.")
+        return redirect(return_to or "volunteer_requests")
+
+    request_item = get_object_or_404(Request, pk=request_id)
+    reported_user = get_object_or_404(Profile, user__id=reported_user_id)
+
+    if reported_user.user == request.user:
+        messages.error(request, "You cannot report yourself.")
+        return redirect(return_to or "volunteer_requests")
+
+    RequestReport.objects.create(
+        reporter=reporter_profile,
+        reported_user=reported_user,
+        request_item=request_item,
+        reason=reason,
+        details=details,
+    )
+
+    messages.success(request, "Your report was submitted successfully.")
+    return redirect(return_to or "volunteer_requests")
+
+
+@login_required
+@require_POST
+def update_offer(request, offer_id):
+    profile = request.user.profile
+    page_number = request.POST.get("return_page_number", "1")
+
+    if profile.role is None or profile.role.name.lower() != "volunteer":
+        messages.error(request, "Unauthorized.")
+        return redirect("my_offers")
+
+    offer = get_object_or_404(Offer, id=offer_id, offered_by=profile)
+
+    # BLOCK EDIT IF CLAIMED
+    if offer.status == Offer.STATUS_CLAIMED:
+        messages.error(request, "This offer has already been claimed and cannot be edited.")
+        return redirect(f"{reverse('my_offers')}?page={page_number}")
+
+    form = OfferForm(request.POST, instance=offer)
+
+    if form.is_valid():
+        updated_offer = form.save(commit=False)
+        updated_offer.offered_by = profile
+        updated_offer.save()
+
+        messages.success(request, "Offer updated successfully.")
+
+    else:
+        messages.error(request, "Failed to update offer. Please check your form.")
+
+    # always redirect back to my_offers
+    return redirect(f"{reverse('my_offers')}?page={page_number}")
+
+
+@login_required
+@require_POST
+def delete_offer(request, offer_id):
+    profile = request.user.profile
+
+    if profile.role is None or profile.role.name.lower() != "volunteer":
+        messages.error(request, "Only volunteers can delete offers.")
+        return redirect("home")
+
+    offer = get_object_or_404(Offer, id=offer_id, offered_by=profile)
+    offer.delete()
+
+    messages.success(request, "Offer deleted successfully.")
+    return redirect("my_offers")
