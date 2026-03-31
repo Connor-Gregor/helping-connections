@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Verify New Email | Helping Connections{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'login.css' %}">
+<style>
+    .verify-code-row {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin: 20px 0;
+        flex-wrap: wrap;
+    }
+
+    .verify-digit {
+        width: 56px;
+        height: 56px;
+        text-align: center;
+        font-size: 1.5rem;
+        border: 2px solid #ccc;
+        border-radius: 12px;
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .verify-digit:focus {
+        border-color: #1abc9c;
+        box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.12);
+    }
+
+    .verify-hidden-input {
+        display: none;
+    }
+
+    .verify-note {
+        text-align: center;
+        margin-top: 10px;
+        color: #666;
+    }
+
+    .verify-submit {
+        margin-top: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="login-hero">
+    <section class="card register-card-auth">
+        <div class="card-header">
+            <h2 class="title">Verify your new email</h2>
+            <p class="subtitle">
+                We sent a 6-digit code to <strong>{{ email }}</strong>.
+            </p>
+        </div>
+
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="verify-code-row">
+                    <input type="text" maxlength="1" class="verify-digit" autofocus inputmode="numeric" pattern="[0-9]*">
+                    <input type="text" maxlength="1" class="verify-digit" inputmode="numeric" pattern="[0-9]*">
+                    <input type="text" maxlength="1" class="verify-digit" inputmode="numeric" pattern="[0-9]*">
+                    <input type="text" maxlength="1" class="verify-digit" inputmode="numeric" pattern="[0-9]*">
+                    <input type="text" maxlength="1" class="verify-digit" inputmode="numeric" pattern="[0-9]*">
+                    <input type="text" maxlength="1" class="verify-digit" inputmode="numeric" pattern="[0-9]*">
+                </div>
+
+                <input type="hidden" name="code" id="full-code" class="verify-hidden-input">
+
+                <p class="verify-note">
+                    Enter the 6-digit code to confirm your new email address.
+                </p>
+
+                <div class="card-links">
+                    <a href="{% url 'resend_email_change_code' %}">Resend code</a>
+                    <a href="{% url 'settings' %}">Back to Settings</a>
+                </div>
+
+                <button type="submit" class="btn btn-primary verify-submit">
+                    Verify Email
+                </button>
+            </form>
+        </div>
+    </section>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const inputs = document.querySelectorAll(".verify-digit");
+    const fullCode = document.getElementById("full-code");
+
+    function updateFullCode() {
+        fullCode.value = Array.from(inputs).map(input => input.value).join("");
+    }
+
+    inputs.forEach((input, index) => {
+        input.addEventListener("input", function () {
+            this.value = this.value.replace(/[^0-9]/g, "");
+            updateFullCode();
+
+            if (this.value && index < inputs.length - 1) {
+                inputs[index + 1].focus();
+            }
+        });
+
+        input.addEventListener("keydown", function (e) {
+            if (e.key === "Backspace" && !this.value && index > 0) {
+                inputs[index - 1].focus();
+            }
+        });
+    });
+</script>
+{% endblock %}

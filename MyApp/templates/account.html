@@ -1,132 +1,195 @@
 {% extends "base.html" %}
 {% load static %}
+{% load user_extras %}
 
 {% block title %}Account - Helping Connections{% endblock %}
 
 {% block content %}
 
 <style>
-
 .account-container{
-    max-width:700px;
-    margin:40px auto;
-    background:white;
-    padding:30px;
-    border-radius:12px;
-    box-shadow:0 8px 22px rgba(0,0,0,0.1);
+    max-width: 800px;
+    margin: 40px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.1);
 }
 
 .account-title{
-    font-size:28px;
-    font-weight:700;
-    color:#2c3e50;
-    margin-bottom:20px;
+    font-size: 28px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 24px;
+}
+
+.account-header{
+    display: flex;
+    align-items: flex-start;
+    gap: 40px;
+}
+
+.account-photo-wrap{
+    flex-shrink: 0;
+}
+
+.account-photo{
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    border: 4px solid #e8eef2;
+}
+
+.account-photo-fallback{
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: #1abc9c;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 700;
+    border: 4px solid #e8eef2;
+}
+
+.account-details{
+    flex: 1;
+    min-width: 0;
 }
 
 .account-row{
-    margin-bottom:12px;
+    margin-bottom: 12px;
 }
 
 .account-label{
-    font-weight:600;
-    color:#2c3e50;
+    font-weight: 600;
+    color: #2c3e50;
 }
 
 .account-value{
-    color:#444;
+    color: #444;
 }
 
 .account-actions{
-    margin-top:25px;
+    margin-top: 25px;
 }
 
 .account-actions a{
-    display:inline-block;
-    padding:10px 16px;
-    background:#1abc9c;
-    color:white;
-    border-radius:6px;
-    text-decoration:none;
+    display: inline-block;
+    padding: 10px 16px;
+    background: #1abc9c;
+    color: white;
+    border-radius: 6px;
+    text-decoration: none;
 }
 
 .account-actions a:hover{
-    background:#16a085;
+    background: #16a085;
 }
 
+@media (max-width: 700px){
+    .account-header{
+        flex-direction: column;
+        align-items: center;
+        text-align: left;
+    }
+
+    .account-details{
+        width: 100%;
+    }
+}
 </style>
 
 <div class="account-container">
 
-<div class="account-title">
-Account Information
-</div>
+    <div class="account-title">Account Information</div>
 
-<div class="account-row">
-<span class="account-label">Username:</span>
-<span class="account-value">{{ user.username }}</span>
-</div>
+    <div class="account-header">
+        <div class="account-photo-wrap">
+            {% if profile and profile.profile_photo %}
+                <img
+                    src="{{ profile.profile_photo.url }}"
+                    alt="Profile photo"
+                    class="account-photo"
+                >
+            {% else %}
+                <div class="account-photo-fallback">
+                    {{ user|initials }}
+                </div>
+            {% endif %}
+        </div>
 
-<div class="account-row">
-<span class="account-label">Email:</span>
-<span class="account-value">{{ user.email }}</span>
-</div>
+        <div class="account-details">
+            <div class="account-row">
+                <span class="account-label">Username:</span>
+                <span class="account-value">{{ user.username }}</span>
+            </div>
 
-{% if profile %}
+            <div class="account-row">
+                <span class="account-label">Email:</span>
+                <span class="account-value">{{ user.email }}</span>
+            </div>
 
-{% if profile.display_username %}
-<div class="account-row">
-<span class="account-label">Profile Name:</span>
-<span class="account-value">{{ profile.display_username }}</span>
-</div>
-{% endif %}
+            {% if profile %}
 
-{% if user.first_name or user.last_name %}
-<div class="account-row">
-<span class="account-label">Name:</span>
-<span class="account-value">
-{{ user.first_name }} {{ user.last_name }}
-</span>
-</div>
-{% endif %}
+                {% if profile.display_username %}
+                <div class="account-row">
+                    <span class="account-label">Profile Name:</span>
+                    <span class="account-value">{{ profile.display_username }}</span>
+                </div>
+                {% endif %}
 
-{% if profile.phone_number %}
-<div class="account-row">
-<span class="account-label">Phone:</span>
-<span class="account-value">{{ profile.phone_number }}</span>
-</div>
-{% endif %}
+                {% if user.first_name or user.last_name %}
+                <div class="account-row">
+                    <span class="account-label">Name:</span>
+                    <span class="account-value">
+                        {{ user.first_name }} {{ user.last_name }}
+                    </span>
+                </div>
+                {% endif %}
 
-{% if profile.address_line1 or profile.address_line2 or profile.city %}
-<div class="account-row">
-<span class="account-label">Address:</span>
-<span class="account-value">
-{{ profile.address_line1 }}
-{% if profile.address_line2 %}, {{ profile.address_line2 }}{% endif %}
-{% if profile.city %}, {{ profile.city }}{% endif %}
-{% if profile.state %}, {{ profile.state }}{% endif %}
-{% if profile.zip_code %} {{ profile.zip_code }}{% endif %}
-</span>
-</div>
-{% endif %}
+                {% if profile.phone_number %}
+                <div class="account-row">
+                    <span class="account-label">Phone:</span>
+                    <span class="account-value">{{ profile.phone_number }}</span>
+                </div>
+                {% endif %}
 
-{% if profile.role %}
-<div class="account-row">
-<span class="account-label">Role:</span>
-<span class="account-value">{{ profile.role.name }}</span>
-</div>
-{% endif %}
+                {% if profile.address_line1 or profile.address_line2 or profile.city %}
+                <div class="account-row">
+                    <span class="account-label">Address:</span>
+                    <span class="account-value">
+                        {{ profile.address_line1 }}
+                        {% if profile.address_line2 %}, {{ profile.address_line2 }}{% endif %}
+                        {% if profile.city %}, {{ profile.city }}{% endif %}
+                        {% if profile.state %}, {{ profile.state }}{% endif %}
+                        {% if profile.zip_code %} {{ profile.zip_code }}{% endif %}
+                    </span>
+                </div>
+                {% endif %}
 
-{% else %}
+                {% if profile.role %}
+                <div class="account-row">
+                    <span class="account-label">Role:</span>
+                    <span class="account-value">{{ profile.role.name }}</span>
+                </div>
+                {% endif %}
 
-<p>No profile information available.</p>
+            {% else %}
+                <p>No profile information available.</p>
+            {% endif %}
 
-{% endif %}
-
-<div class="account-actions">
-<a href="{% url 'settings' %}">
-Edit Profile / Settings
-</a>
-</div>
+            <div class="account-actions">
+                <a href="{% url 'settings' %}">
+                    Edit Profile / Settings
+                </a>
+            </div>
+        </div>
+    </div>
 
 </div>
 
