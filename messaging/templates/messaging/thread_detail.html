@@ -114,13 +114,6 @@
     <div class="thread-header">
         <div class="thread-title">Conversation with {{ display_name }}</div>
     </div>
-    {% if messages %}
-        <div style="color: #c0392b; margin-bottom: 15px;">
-            {% for message in messages %}
-                <p>{{ message }}</p>
-            {% endfor %}
-        </div>
-    {% endif %}
     <div class="message-list">
         {% for m in chat_messages %}
             <div class="message-card">

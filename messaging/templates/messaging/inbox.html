@@ -11,6 +11,12 @@
     padding: 0 20px;
 }
 
+.messaging-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .messaging-header {
     display: flex;
     justify-content: space-between;
@@ -63,6 +69,24 @@
 
 .delete-thread-form {
     margin-top: 12px;
+}
+
+.delete-all-form {
+    margin: 0;
+}
+
+.delete-all-btn {
+    background: #c0392b;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.delete-all-btn:hover {
+    background: #a93226;
 }
 
 .delete-thread-btn {
@@ -138,9 +162,23 @@
 </style>
 
 <div class="messaging-page">
-    <div class="messaging-header">
+        <div class="messaging-header">
         <div class="messaging-title">Inbox</div>
-        <a class="new-message-btn" href="{% url 'messaging:new_thread' %}">+ New Message</a>
+
+        <div class="messaging-actions">
+            <form method="post" action="{% url 'messaging:delete_all_threads' %}" class="delete-all-form">
+                {% csrf_token %}
+                <button
+                    type="submit"
+                    class="delete-all-btn"
+                    onclick="return confirm('Are you sure you want to delete all conversations from your inbox?');"
+                >
+                    Delete All
+                </button>
+            </form>
+
+            <a class="new-message-btn" href="{% url 'messaging:new_thread' %}">+ New Message</a>
+        </div>
     </div>
 
     <div class="thread-list">
