@@ -1,43 +1,323 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Available Offers</title>
-</head>
-<body>
 {% extends "base.html" %}
+{% load static %}
+{% load user_extras %}
 
-    {% block content %}
-    <div class="container mt-4">
-        <h2>Available Offers</h2>
-        <p>Browse items that volunteers have offered.</p>
+{% block title %}Available Offers | Helping Connections{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/item_modal.css' %}">
+{% endblock %}
+
+{% block content %}
+    <style>
+        .offers-wrapper {
+            max-width: 1280px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .offers-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .offers-header h2 {
+            font-size: 2rem;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .offers-header p {
+            color: #555;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        .offers-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 24px;
+            justify-items: center;
+            align-items: start;
+        }
+
+        .item-card {
+            width: 100%;
+            max-width: 380px;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            background: #ffffff;
+            border: 1px solid #e6ece8;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 14px;
+            box-sizing: border-box;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .item-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+        }
+
+        .item-card-photo {
+            width: 104px;
+            height: 104px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 1px solid #d6dbe1;
+            flex-shrink: 0;
+            display: block;
+            background: #f4f6f8;
+        }
+
+        .item-card-photo-placeholder {
+            width: 104px;
+            height: 104px;
+            border-radius: 12px;
+            border: 1px solid #d6dbe1;
+            flex-shrink: 0;
+            background: #f4f6f8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        .item-card-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .item-card-title {
+            font-size: 1.05rem;
+            color: #2c3e50;
+            margin: 0 0 8px;
+            line-height: 1.25;
+            font-weight: 700;
+            word-break: break-word;
+        }
+
+        .item-card-details p {
+            margin: 4px 0;
+            color: #333;
+            line-height: 1.35;
+            font-size: 0.95rem;
+        }
+
+        .item-card-details strong {
+            color: #2c3e50;
+        }
+
+        .offer-description-line {
+            display: flex;
+            gap: 6px;
+            align-items: flex-start;
+        }
+
+        .offer-description-text {
+            flex: 1;
+            min-width: 0;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .empty-offers {
+            max-width: 700px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #e6ece8;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 32px;
+            text-align: center;
+        }
+
+        .empty-offers p {
+            color: #555;
+            font-size: 1rem;
+            margin-bottom: 0;
+        }
+
+        .offers-pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 14px;
+            margin-top: 32px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-pages {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-btn,
+        .pagination-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 42px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #2c3e50;
+            border: 1px solid #d6dbe1;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        .pagination-btn:hover,
+        .pagination-number:hover {
+            background: #f0f2f4;
+            border-color: #1abc9c;
+            color: #1abc9c;
+        }
+
+        .pagination-number.active {
+            background: #1abc9c;
+            color: #ffffff;
+            border-color: #1abc9c;
+        }
+
+        .pagination-btn.disabled {
+            background: #f4f6f8;
+            color: #98a39d;
+            border-color: #d6dbe1;
+            cursor: default;
+        }
+
+    </style>
+
+    <div class="offers-wrapper">
+        <div class="offers-header">
+            <h2>Available Offers</h2>
+            <p>Browse items that volunteers have offered.</p>
+        </div>
 
         {% if offers %}
-            <div class="row">
+            <div class="offers-grid">
                 {% for offer in offers %}
-                    <div class="col-md-6 mb-3">
-                        <div class="card h-100">
-                            <div class="card-body">
-                                <h5 class="card-title">{{ offer.title }}</h5>
-                                <p class="card-text"><strong>Category:</strong> {{ offer.get_category_display }}</p>
-                                <p class="card-text"><strong>Description:</strong> {{ offer.description|default:"No description provided." }}</p>
-                                <p class="card-text"><strong>City:</strong> {{ offer.city }}</p>
-                                <p class="card-text"><strong>Location Details:</strong> {{ offer.location_details|default:"N/A" }}</p>
-                                <p class="card-text"><strong>Status:</strong> {{ offer.get_status_display }}</p>
+                    {% with first_image=offer.images.first %}
 
-                                <form method="post" action="{% url 'claim_offer' offer.id %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-success">Claim Offer</button>
-                                </form>
+                        <div
+                                id="item-card-{{ offer.id }}"
+                                class="item-card js-item-card"
+                                data-item-id="{{ offer.id }}"
+                                data-owner-report-id="{{ offer.offered_by.user.id }}"
+                                data-title="{{ offer.title|escape }}"
+                                data-category="{{ offer.get_category_display|escape }}"
+                                data-category-value="{{ offer.category }}"
+                                data-city="{{ offer.city|escape }}"
+                                data-status="{{ offer.get_status_display|escape }}"
+                                data-description="{{ offer.description|default:'No description provided.'|escape }}"
+                                data-location="{{ offer.location_details|default:'N/A'|escape }}"
+                                data-primary-url="{% url 'claim_offer' offer.id %}"
+                                data-owner-id="{{ offer.offered_by.user.id }}"
+                                data-owner-name="{{ offer.offered_by.display_username|default:offer.offered_by.user.username|escape }}"
+                                data-owner-initials="{{ offer.offered_by.user|initials|escape }}"
+                                data-owner-photo="{% if offer.offered_by.profile_photo %}{{ offer.offered_by.profile_photo.url }}{% endif %}"
+                                data-created="{{ offer.created_at|date:'c' }}"
+                                data-claimed-by="{% if offer.claimed_by %}{{ offer.claimed_by.display_username|default:offer.claimed_by.user.username|escape }}{% endif %}"
+                                data-images='[{% for photo in offer.images.all %}"{{ photo.image.url|escapejs }}"{% if not forloop.last %}, {% endif %}{% endfor %}]'
+                                data-action-mode="available"
+                                data-primary-label="Claim Offer"
+                                data-message-label="Message"
+                                data-report-label="Report"
+                                data-primary-panel-title="Claim This Offer?"
+                                data-primary-confirm-label="Confirm Claim"
+                                data-primary-note="This will mark the offer as claimed and remove it from other users’ available offers."
+                        >
+                            {% if first_image %}
+                                <img src="{{ first_image.image.url }}" alt="{{ offer.title }}" class="item-card-photo">
+                            {% else %}
+                                {% if offer.category == "food" %}
+                                    <img src="{% static 'images/food.jpg' %}" alt="{{ offer.title }}" class="item-card-photo">
+                                {% elif offer.category == "clothing" %}
+                                    <img src="{% static 'images/clothes.jpg' %}" alt="{{ offer.title }}" class="item-card-photo">
+                                {% elif offer.category == "blankets" %}
+                                    <img src="{% static 'images/blanket.jpg' %}" alt="{{ offer.title }}" class="item-card-photo">
+                                {% elif offer.category == "hygiene" %}
+                                    <img src="{% static 'images/hygiene.jpg' %}" alt="{{ offer.title }}" class="item-card-photo">
+                                {% elif offer.category == "transport" %}
+                                    <img src="{% static 'images/transportation.jpg' %}" alt="{{ offer.title }}" class="item-card-photo">
+                                {% elif offer.category == "medical" %}
+                                    <img src="{% static 'images/medical.jpg' %}" alt="{{ offer.title }}" class="item-card-photo">
+                                {% else %}
+                                    <img src="{% static 'images/food.jpg' %}" alt="{{ offer.title }}" class="item-card-photo">
+                                {% endif %}
+                            {% endif %}
+
+                            <div class="item-card-content">
+                                <h3 class="item-card-title">{{ offer.title }}</h3>
+
+                                <div class="item-card-details">
+                                    <p><strong>Category:</strong> {{ offer.get_category_display }}</p>
+
+                                    <p class="offer-description-line">
+                                        <strong>Description:</strong>
+                                        <span class="offer-description-text">
+                                        {{ offer.description|default:"No description provided." }}
+                                    </span>
+                                    </p>
+
+                                    <p><strong>City:</strong> {{ offer.city }}</p>
+                                    <p><strong>Location Details:</strong> {{ offer.location_details|default:"N/A" }}</p>
+                                    <p><strong>Status:</strong> {{ offer.get_status_display }}</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    {% endwith %}
                 {% endfor %}
             </div>
+
+            {% if offers.has_other_pages %}
+                <div class="offers-pagination">
+                    {% if offers.has_previous %}
+                        <a href="?page={{ offers.previous_page_number }}" class="pagination-btn">Previous</a>
+                    {% else %}
+                        <span class="pagination-btn disabled">Previous</span>
+                    {% endif %}
+
+                    <div class="pagination-pages">
+                        {% for num in offers.paginator.page_range %}
+                            {% if offers.number == num %}
+                                <span class="pagination-number active">{{ num }}</span>
+                            {% else %}
+                                <a href="?page={{ num }}" class="pagination-number">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    {% if offers.has_next %}
+                        <a href="?page={{ offers.next_page_number }}" class="pagination-btn">Next</a>
+                    {% else %}
+                        <span class="pagination-btn disabled">Next</span>
+                    {% endif %}
+                </div>
+            {% endif %}
         {% else %}
-            <p>No offers are currently available.</p>
+            <div class="empty-offers">
+                <p>No offers are available right now.</p>
+            </div>
         {% endif %}
     </div>
-    {% endblock %}
-</body>
-</html>
+
+    {% include "components/item_modal.html" %}
+{% endblock %}
+
+{% block extra_scripts %}
+    <script src="{% static 'js/item_modal.js' %}"></script>
+{% endblock %}
