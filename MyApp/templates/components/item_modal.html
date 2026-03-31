@@ -1,0 +1,331 @@
+<!-- ============================================================
+     ITEM MODAL ROOT
+     Reusable modal used across offer/request pages.
+
+     Structure:
+     - Left side: images + thumbnails
+     - Right side: panels (detail, message, report, edit, etc.)
+
+     Controlled entirely by item_modal.js
+     ============================================================ -->
+<div id="itemPreviewModal" class="item-modal">
+    <div class="item-modal-content">
+
+        <!-- ============================================================
+             IMAGE SECTION
+             Displays:
+             - main image
+             - navigation arrows
+             - thumbnail list
+
+             Controlled by image state in modalState
+             ============================================================ -->
+        <div class="item-modal-left">
+            <div class="item-modal-image-wrap">
+
+                <button type="button" id="itemModalPrev" class="item-modal-nav prev hidden" aria-label="Previous image">
+                    &#10094;
+                </button>
+
+                <!-- Main image display area
+                     JS toggles between:
+                     - image element (when images exist)
+                     - empty state (when no images) -->
+                <div class="item-modal-image-stage">
+                    <img id="itemModalImage" class="item-modal-image" alt="Item preview" style="display:none;">
+                    <div id="itemModalEmpty" class="item-modal-empty" style="display:none;">No image available</div>
+                </div>
+
+                <button type="button" id="itemModalNext" class="item-modal-nav next hidden" aria-label="Next image">
+                    &#10095;
+                </button>
+            </div>
+
+            <div id="itemModalThumbs" class="item-modal-thumbs"></div>
+        </div>
+
+        <!-- ============================================================
+             RIGHT PANEL CONTAINER
+             Contains all modal panels.
+             Only ONE panel is visible at a time.
+             Panel switching is handled in item_modal.js
+             ============================================================ -->
+        <div class="item-modal-right">
+
+            <button type="button" id="itemModalClose" class="item-modal-close" aria-label="Close modal">&times;</button>
+
+            <!-- ============================================================
+                 DETAIL PANEL (default view)
+                 Shows:
+                 - item info
+                 - owner info
+                 - metadata
+                 - action buttons
+
+                 This is the "home screen" of the modal.
+                 ============================================================ -->
+            <div id="itemDetailPanel" class="item-detail-panel">
+                <div class="item-detail-scroll">
+
+                    <h2 id="itemModalTitle" class="item-modal-title"></h2>
+
+                    <div class="item-modal-user">
+                        <div class="item-modal-user-avatar">
+                            <img id="itemModalOwnerPhoto" class="item-modal-user-photo" alt="User photo" style="display:none;">
+                            <span id="itemModalOwnerInitials" class="item-modal-user-initials"></span>
+                        </div>
+
+                        <div class="item-modal-user-info">
+                            <div class="item-modal-user-label">Posted by</div>
+                            <div id="itemModalOwnerName" class="item-modal-user-name"></div>
+                            <div id="itemModalOwnerTime" class="item-modal-user-time"></div>
+                        </div>
+                    </div>
+
+                    <div class="item-modal-meta">
+                        <p><strong>Category:</strong> <span id="itemModalCategory"></span></p>
+                        <p><strong>City:</strong> <span id="itemModalCity"></span></p>
+                        <p><strong>Location Details:</strong> <span id="itemModalLocation"></span></p>
+                        <p><strong>Status:</strong> <span id="itemModalStatus"></span></p>
+
+                        <p id="itemModalClaimedAtRow" class="item-modal-user-time" style="display:none;">
+                            <span id="itemModalClaimedAt"></span>
+                        </p>
+                    </div>
+
+                    <div class="item-modal-description">
+                        <p><strong>Description:</strong></p>
+                        <p id="itemModalDescription"></p>
+                    </div>
+                </div>
+
+                <!-- Action buttons (visibility controlled by JS) -->
+                <div class="item-modal-actions">
+                    <button type="button" id="itemModalPrimaryBtn" class="item-primary-btn">Claim Offer</button>
+                    <button type="button" id="itemModalMessageBtn" class="item-secondary-solid-btn">Message</button>
+                    <button type="button" id="itemModalReportBtn" class="item-danger-outline-btn">Report</button>
+
+                    <button type="button" id="itemModalEditBtn" class="item-secondary-solid-btn" style="display:none;">Edit</button>
+                    <button type="button" id="itemModalMessageClaimerBtn" class="item-secondary-solid-btn" style="display:none;">Message</button>
+                    <button type="button" id="itemModalDeleteBtn" class="item-danger-outline-btn" style="display:none;">Delete</button>
+                    <button type="button" id="itemModalHideBtn" class="item-secondary-btn" style="display:none;">Hide</button>
+                </div>
+            </div>
+
+            <!-- ============================================================
+                 PRIMARY ACTION PANEL
+                 Used for confirm-style actions (claim, accept, etc.)
+                 ============================================================ -->
+            <div id="itemPrimaryPanel" class="item-primary-panel" style="display:none;">
+                <div class="item-primary-scroll">
+                    <h3 id="itemPrimaryPanelTitle" class="item-modal-title">Claim This Offer?</h3>
+                    <div class="item-primary-subtitle">You are about to proceed with:</div>
+                    <div id="itemPrimaryTitle" class="item-primary-item-name"></div>
+                    <div id="itemPrimaryNote" class="item-primary-note">This action will update this item.</div>
+                </div>
+
+                <form method="post" id="itemPrimaryForm" class="item-inline-primary-form">
+                    {% csrf_token %}
+                    <input type="hidden" id="itemPrimaryItemId" name="item_id">
+                    <input type="hidden" id="itemPrimaryReturnPageNumber" name="return_page_number">
+
+                    <div class="item-primary-actions">
+                        <button type="button" id="itemPrimaryBackBtn" class="item-back-btn">Back</button>
+                        <button type="submit" id="itemPrimaryConfirmBtn" class="item-confirm-btn">Confirm</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ============================================================
+                 MESSAGE PANEL
+                 Sends a message to owner or claimer
+                 ============================================================ -->
+            <div id="itemMessagePanel" class="item-message-panel" style="display:none;">
+                <div class="item-message-scroll">
+                    <h3 class="item-modal-title">Send Message</h3>
+                    <div class="item-message-subtitle">
+                        Send a message about <strong id="itemMessageTitle"></strong> to
+                        <strong id="itemMessageUserName"></strong>.
+                    </div>
+
+                    <form method="post" id="itemMessageForm" class="item-inline-message-form"
+                          action="{% url 'messaging:new_thread' %}">
+                        {% csrf_token %}
+                        <input type="hidden" id="itemMessageRecipientId" name="recipient">
+                        <input type="hidden" id="itemMessageReturnTo" name="return_to">
+                        <input type="hidden" id="itemMessageReturnItemId" name="return_item_id">
+                        <input type="hidden" id="itemMessageReturnPage" name="return_page">
+                        <input type="hidden" id="itemMessageReturnPageNumber" name="return_page_number">
+
+                        <label for="itemMessageBody" class="item-field-label">Message</label>
+                        <textarea
+                                id="itemMessageBody"
+                                name="body"
+                                class="item-message-textarea"
+                                rows="7"
+                                placeholder="Type your message here..."
+                        ></textarea>
+
+                        <div id="itemMessageError" class="item-form-error">Please enter a message before sending.</div>
+                    </form>
+                </div>
+
+                <div class="item-message-actions">
+                    <button type="button" id="itemMessageBackBtn" class="item-back-btn">Back</button>
+                    <button type="submit" form="itemMessageForm" class="item-confirm-btn">Send</button>
+                </div>
+            </div>
+
+            <!-- ============================================================
+                 REPORT PANEL
+                 Allows reporting offers or requests
+                 ============================================================ -->
+            <div id="itemReportPanel" class="item-report-panel" style="display:none;">
+                <div class="item-report-scroll">
+                    <h3 id="itemReportHeading" class="item-modal-title">Report Offer</h3>
+
+                    <div class="item-report-subtitle">
+                        Report <strong id="itemReportTitle"></strong> posted by
+                        <strong id="itemReportUserName"></strong>.
+                    </div>
+
+                    <form method="post" id="itemReportForm" class="item-inline-report-form" action="{% url 'create_offer_report' %}">
+                        {% csrf_token %}
+                        <input type="hidden" id="itemReportOfferId" name="offer_id">
+                        <input type="hidden" id="itemReportRequestId" name="request_id">
+                        <input type="hidden" id="itemReportUserId" name="reported_user_id">
+                        <input type="hidden" id="itemReportReturnTo" name="return_to">
+
+                        <label for="itemReportReason" class="item-field-label">Reason</label>
+                        <select id="itemReportReason" name="reason" class="item-field-control">
+                            <option value="">Select a reason</option>
+                            <option value="inappropriate">Inappropriate or offensive content</option>
+                            <option value="unsafe">Suspicious or unsafe request/offer</option>
+                            <option value="misleading">Misleading or false information</option>
+                            <option value="spam">Spam or repeated posts</option>
+                            <option value="harassment">Harassment or abusive behavior</option>
+                            <option value="not_as_described">Item/request not as described</option>
+                            <option value="other">Other</option>
+                        </select>
+
+                        <label for="itemReportDetails" class="item-field-label">Additional details (optional)</label>
+                        <textarea
+                                id="itemReportDetails"
+                                name="details"
+                                class="item-report-textarea"
+                                rows="6"
+                                placeholder="Add any details here"
+                        ></textarea>
+
+                        <div id="itemReportError" class="item-form-error">Please choose a reason.</div>
+                    </form>
+                </div>
+
+                <div class="item-report-actions">
+                    <button type="button" id="itemReportBackBtn" class="item-back-btn">Back</button>
+                    <button type="submit" form="itemReportForm" class="item-danger-btn">Submit Report</button>
+                </div>
+            </div>
+
+            <!-- ============================================================
+                 EDIT PANEL
+                 Allows updating item fields
+                 ============================================================ -->
+            <div id="itemEditPanel" class="item-message-panel" style="display:none;">
+                <div class="item-message-scroll">
+                    <h3 id="itemEditPanelTitle" class="item-modal-title">Edit Item</h3>
+
+                    <form method="post" id="itemEditForm" class="item-inline-message-form">
+                        {% csrf_token %}
+                        <input type="hidden" id="itemEditReturnPageNumber" name="return_page_number">
+
+                        <label for="itemEditTitle" class="item-field-label">Title</label>
+                        <textarea
+                                id="itemEditTitle"
+                                name="title"
+                                class="item-title-textarea"
+                                rows="2"
+                                placeholder="Enter a title"
+                                spellcheck="false"
+                        ></textarea>
+                        <div class="item-field-meta">
+                            <small id="itemEditTitleError" class="live-error"></small>
+                            <small id="itemEditTitleCount" class="char-count"></small>
+                        </div>
+
+                        <div class="item-edit-divider"></div>
+
+                        <label for="itemEditCategory" class="item-field-label">Category</label>
+                        <select id="itemEditCategory" name="category" class="item-field-control">
+                            <option value="food">Food</option>
+                            <option value="clothing">Clothing</option>
+                            <option value="blankets">Blankets / Bedding</option>
+                            <option value="hygiene">Hygiene Items</option>
+                            <option value="transport">Transportation</option>
+                            <option value="medical">Medical Supplies</option>
+                        </select>
+
+                        <div class="item-edit-divider"></div>
+
+                        <label for="itemEditCity" class="item-field-label">City</label>
+                        <input type="text" id="itemEditCity" name="city" class="item-field-control" spellcheck="false">
+                        <div class="item-field-meta">
+                            <small id="itemEditCityError" class="live-error"></small>
+                            <small id="itemEditCityCount" class="char-count"></small>
+                        </div>
+
+                        <div class="item-edit-divider"></div>
+
+                        <label for="itemEditLocation" class="item-field-label">Location Details</label>
+                        <input type="text" id="itemEditLocation" name="location_details" class="item-field-control">
+
+                        <div class="item-edit-divider"></div>
+
+                        <label for="itemEditDescription" class="item-field-label">Description</label>
+                        <textarea
+                                id="itemEditDescription"
+                                name="description"
+                                class="item-message-textarea"
+                                rows="7"
+                                placeholder="Add any details here"
+                        ></textarea>
+                    </form>
+                </div>
+
+                <div class="item-message-actions">
+                    <button type="button" id="itemEditBackBtn" class="item-back-btn">Back</button>
+                    <button type="submit" form="itemEditForm" class="item-confirm-btn">Save Changes</button>
+                </div>
+            </div>
+
+            <!-- ============================================================
+                 DELETE PANEL
+                 Final confirmation before deletion
+                 ============================================================ -->
+            <div id="itemDeletePanel" class="item-primary-panel" style="display:none;">
+                <div class="item-primary-scroll">
+                    <h3 class="item-modal-title">Delete This Offer?</h3>
+
+                    <div class="item-primary-subtitle">
+                        You are about to delete:
+                    </div>
+
+                    <div class="item-primary-item-name" id="itemDeleteTitle"></div>
+
+                    <div class="item-primary-note">
+                        This action cannot be undone.
+                    </div>
+                </div>
+
+                <form method="post" id="itemDeleteForm" class="item-inline-primary-form">
+                    {% csrf_token %}
+                    <div class="item-primary-actions">
+                        <button type="button" id="itemDeleteBackBtn" class="item-back-btn">Back</button>
+                        <button type="submit" class="item-danger-btn">Confirm Delete</button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>

@@ -7,18 +7,24 @@
     <meta charset="UTF-8">
     <title>{% block title %}Helping Connections{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'styles.css' %}">
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
 
+{% dashboard_url user as dash_url %}
+
 <nav class="navbar">
-    <div class="logo">Helping Connections</div>
+    <a href="{% url dash_url %}" class="logo {% if request.resolver_match.url_name == dash_url %}active{% endif %}">
+        Helping Connections
+    </a>
 
     <ul class="nav-links">
         {% if user.is_authenticated %}
 
             {% if user|role_name == "volunteer" %}
-                <li><a href="{% url 'volunteer' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'volunteer' %}active{% endif %}">Volunteer Dashboard</a></li>
                 <li><a href="{% url 'volunteer_requests' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'volunteer_requests' %}active{% endif %}">View Requests</a></li>
                 <li><a href="{% url 'create_offer' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'create_offer' %}active{% endif %}">Create Offer</a></li>
                 <li><a href="{% url 'my_offers' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'my_offers' %}active{% endif %}">My Offers</a></li>
@@ -26,11 +32,10 @@
                 <li><a href="{% url 'find_help' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'find_help' %}active{% endif %}">Find Help</a></li>
 
             {% elif user|role_name == "unhoused" %}
-                <li><a href="{% url 'unhoused' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'unhoused' %}active{% endif %}">Unhoused Dashboard</a></li>
-                <li><a href="{% url 'find_help' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'find_help' %}active{% endif %}">Find Help</a></li>
-                <li><a href="{% url 'create_request' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'create_request' %}active{% endif %}">Requests</a></li>
+                <li><a href="{% url 'create_request' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'create_request' %}active{% endif %}">Create Request</a></li>
                 <li><a href="{% url 'available_offers' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'available_offers' %}active{% endif %}">View Offers</a></li>
                 <li><a href="{% url 'map' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'map' %}active{% endif %}">Map</a></li>
+                <li><a href="{% url 'find_help' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'find_help' %}active{% endif %}">Find Help</a></li>
 
             {% elif user|role_name == "admin" %}
                 <li><a href="#" class="{% if request.resolver_match and request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">Admin Dashboard</a></li>
@@ -44,8 +49,15 @@
             <li><a href="{% url 'about' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'about' %}active{% endif %}">About</a></li>
 
             <li class="profile-menu">
-                <button class="profile-circle" id="profileBtn">
-                    {{ user|initials }}
+                <button class="profile-circle" id="profileBtn" type="button">
+                    <span class="profile-avatar-wrap">
+                        {% if user.profile.profile_photo %}
+                            <img src="{{ user.profile.profile_photo.url }}" alt="Profile photo" class="profile-avatar-img">
+                        {% else %}
+                            <span class="profile-initials">{{ user|initials }}</span>
+                        {% endif %}
+                    </span>
+
                     {% if unread_message_count > 0 %}
                         <span class="profile-badge">{{ unread_message_count }}</span>
                     {% endif %}
@@ -53,7 +65,11 @@
 
                 <div id="profileDropdown" class="profile-dropdown">
                     <div class="profile-dropdown-header">
-                        <div class="profile-initials-large">{{ user|initials }}</div>
+                        {% if user.profile.profile_photo %}
+                            <img src="{{ user.profile.profile_photo.url }}" alt="Profile photo" class="profile-avatar-large">
+                        {% else %}
+                            <div class="profile-initials-large">{{ user|initials }}</div>
+                        {% endif %}
 
                         <div class="profile-meta">
                             <div class="profile-name">
@@ -90,7 +106,6 @@
 </nav>
 
 <main class="page-content">
-
     {% if messages %}
         <div class="flash-messages">
             {% for message in messages %}
@@ -103,7 +118,6 @@
     {% endif %}
 
     {% block content %}{% endblock %}
-
 </main>
 
 <script>
@@ -125,14 +139,15 @@
         });
     }
 
-   setTimeout(() => {
-        document.querySelectorAll('.flash-message').forEach(msg => {
+    setTimeout(() => {
+        document.querySelectorAll(".flash-message").forEach(msg => {
             msg.remove();
         });
-    }, 4000);
+    }, 5000);
 </script>
 
-{% block extra_scripts %}{% endblock %}
+<script src="{% static 'js/auth.js' %}"></script>
 
+{% block extra_scripts %}{% endblock %}
 </body>
 </html>

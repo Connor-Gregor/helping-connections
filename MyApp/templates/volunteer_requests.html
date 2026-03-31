@@ -1,172 +1,391 @@
 {% extends "base.html" %}
 {% load static %}
+{% load user_extras %}
 
 {% block title %}Open Requests - Helping Connections{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/item_modal.css' %}">
+{% endblock %}
+
 {% block content %}
-
 <style>
-.page-wrap {
-    padding: 40px;
-    max-width: 900px;
-    margin: auto;
-}
+    .requests-page {
+        max-width: 1280px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
 
-.request-card {
-    border: 1px solid #e0e0e0;
-    padding: 18px;
-    border-radius: 10px;
-    margin-bottom: 18px;
-    background: white;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
+    .requests-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
 
-.request-card h3 {
-    margin-top: 0;
-    color: #2c3e50;
-}
+    .requests-header h2 {
+        font-size: 2rem;
+        color: #2c3e50;
+        margin-bottom: 8px;
+    }
 
-/* Buttons container */
-.request-actions {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    margin-top: 12px;
-    flex-wrap: wrap;
-}
+    .requests-header p {
+        color: #555;
+        font-size: 1rem;
+        margin: 0;
+    }
 
-/* Claim button */
-.claim-btn {
-    background: #1abc9c;
-    border: none;
-    padding: 10px 16px;
-    color: white;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 14px;
-    font-family: inherit;
-}
+    .requests-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 24px;
+        justify-items: center;
+    }
 
-.claim-btn:hover {
-    background: #16a085;
-}
+    .request-card {
+        width: 100%;
+        max-width: 380px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        background: #ffffff;
+        border: 1px solid #d6dbe1;
+        border-radius: 18px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        padding: 10px;
+        box-sizing: border-box;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
 
-/* Message buttons */
-.message-btn {
-    display: inline-block;
-    background: #2c3e50;
-    color: white;
-    text-decoration: none;
-    padding: 10px 16px;
-    border-radius: 6px;
+    .request-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+    }
 
-    font-weight: 600;
-    font-size: 14px;
-    font-family: inherit;
-}
+    .request-card-photo {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 1px solid #d6dbe1;
+        flex-shrink: 0;
+        display: block;
+        background: #f4f6f8;
+    }
 
-.message-btn:hover {
-    background: #1f2d3a;
-}
+    .request-card-photo-placeholder {
+        width: 120px;
+        height: 120px;
+        border-radius: 12px;
+        border: 1px solid #d6dbe1;
+        flex-shrink: 0;
+        background: #f4f6f8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        font-size: 0.95rem;
+        text-align: center;
+    }
 
-/* Secondary message button (claimed user) */
-.message-secondary {
-    background: #7f8c8d;
-}
+    .request-card-content {
+        flex: 1;
+        min-width: 0;
+    }
 
-.message-secondary:hover {
-    background: #626e70;
-}
+    .request-card-title {
+        font-size: 1.05rem;
+        color: #2c3e50;
+        margin: 0 0 8px;
+        line-height: 1.25;
+        font-weight: 700;
+        word-break: break-word;
+    }
 
-/* Claimed info */
-.claimed-info {
-    margin-top: 10px;
-    font-size: 14px;
-    color: #555;
-}
+    .request-card-details p {
+        margin: 6px 0;
+        color: #2c3e50;
+        line-height: 1.4;
+        font-size: 0.95rem;
+    }
 
-/* Back button */
-.back-dashboard {
-    display: inline-block;
-    margin-top: 20px;
-    text-decoration: none;
-    color: #2c3e50;
-    font-weight: 500;
-}
+    .request-card-details strong {
+        color: #1f3b4d;
+    }
 
-.back-dashboard:hover {
-    color: #1abc9c;
-}
+    .request-description-line {
+        display: flex;
+        gap: 6px;
+        align-items: flex-start;
+    }
+
+    .request-description-text {
+        flex: 1;
+        min-width: 0;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .claimed-user {
+        margin-top: 10px;
+        padding: 8px 10px;
+        background: #f4f6f8;
+        border-left: 4px solid #1abc9c;
+        border-radius: 8px;
+        font-size: 0.92rem;
+        color: #2c3e50;
+    }
+
+    .empty-requests {
+        max-width: 700px;
+        margin: 0 auto;
+        background: #ffffff;
+        border: 1px solid #d6dbe1;
+        border-radius: 18px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        padding: 32px;
+        text-align: center;
+    }
+
+    .empty-requests p {
+        color: #555;
+        font-size: 1rem;
+        margin-bottom: 0;
+    }
+
+    .requests-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 14px;
+        margin-top: 32px;
+        flex-wrap: wrap;
+    }
+
+    .pagination-pages {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .pagination-btn,
+    .pagination-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 42px;
+        padding: 10px 16px;
+        border-radius: 10px;
+        background: #ffffff;
+        color: #2c3e50;
+        border: 1px solid #d6dbe1;
+        text-decoration: none;
+        font-weight: 600;
+        transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+
+    .pagination-btn:hover,
+    .pagination-number:hover {
+        background: #f4f6f8;
+        border-color: #1abc9c;
+        color: #1f3b4d;
+    }
+
+    .pagination-number.active {
+        background: #1abc9c;
+        color: #ffffff;
+        border-color: #1abc9c;
+    }
+
+    .pagination-btn.disabled {
+        background: #f4f6f8;
+        color: #98a39d;
+        border-color: #d6dbe1;
+        cursor: default;
+    }
+
+    .back-dashboard {
+        display: inline-block;
+        margin-top: 26px;
+        background: #1abc9c;
+        color: #ffffff;
+        text-decoration: none;
+        padding: 12px 22px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: background 0.2s ease;
+    }
+
+    .back-dashboard:hover {
+        background: #16a085;
+    }
+
+    @media (max-width: 1180px) {
+        .requests-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 760px) {
+        .requests-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .request-card {
+            max-width: 100%;
+        }
+    }
 </style>
 
-<div class="page-wrap">
+<div class="requests-page">
+    <div class="requests-header">
+        <h2>Open Requests</h2>
+        <p>Browse requests from users who need help.</p>
+    </div>
 
-    <h2>Open Requests</h2>
+    {% if requests %}
+        <div class="requests-grid">
+            {% for request in requests %}
+                <div
+                    id="item-card-{{ request.id }}"
+                    class="request-card js-item-card"
 
-    {% for request in requests %}
-        <div class="request-card">
+                    data-item-id="{{ request.id }}"
+                    data-title="{{ request.title|escape }}"
+                    data-category="{{ request.get_category_display|escape }}"
+                    data-category-value="{{ request.category }}"
+                    data-city="{{ request.city|escape }}"
+                    data-location="{{ request.location_details|default:'N/A'|escape }}"
+                    data-description="{{ request.description|default:'No description provided.'|escape }}"
+                    data-status="{% if request.claimed_by %}Claimed{% else %}Open{% endif %}"
+                    data-created="{{ request.created_at|date:'c' }}"
 
-            <h3>{{ request.title }}</h3>
+                    data-owner-id="{{ request.requester.user.id }}"
+                    data-owner-name="{{ request.requester.display_username|default:request.requester.user.username|escape }}"
+                    data-owner-initials="{{ request.requester.user|initials|escape }}"
+                    data-owner-photo="{% if request.requester.profile_photo %}{{ request.requester.profile_photo.url }}{% endif %}"
+                    data-claimer-id="{% if request.claimed_by %}{{ request.claimed_by.user.id }}{% endif %}"
+                    data-claimer-name="{% if request.claimed_by %}{{ request.claimed_by.display_username|default:request.claimed_by.user.username|escape }}{% endif %}"
 
-            <p><strong>Category:</strong> {{ request.get_category_display }}</p>
-            <p>{{ request.description }}</p>
-            <p><strong>City:</strong> {{ request.city }}</p>
+                    data-primary-url="{% url 'claim_request' request.id %}"
+                    data-action-mode="request_available"
 
-            {% if request.location_details %}
-                <p><strong>Location:</strong> {{ request.location_details }}</p>
-            {% endif %}
+                    data-primary-label="Claim Request"
+                    data-message-label="Message"
+                    data-report-label="Report"
+                    data-primary-panel-title="Claim This Request?"
+                    data-primary-confirm-label="Confirm Claim"
+                    data-primary-note="You are about to take responsibility for helping with this request."
 
-            <p><strong>Posted:</strong> {{ request.created_at }}</p>
+                    {% if request.category == "food" %}
+                        data-images='["{% static "images/food.jpg" %}"]'
+                    {% elif request.category == "clothing" %}
+                        data-images='["{% static "images/clothes.jpg" %}"]'
+                    {% elif request.category == "blankets" %}
+                        data-images='["{% static "images/blanket.jpg" %}"]'
+                    {% elif request.category == "hygiene" %}
+                        data-images='["{% static "images/hygiene.jpg" %}"]'
+                    {% elif request.category == "transport" %}
+                        data-images='["{% static "images/transportation.jpg" %}"]'
+                    {% elif request.category == "medical" %}
+                        data-images='["{% static "images/medical.jpg" %}"]'
+                    {% else %}
+                        data-images='["{% static "images/food.jpg" %}"]'
+                    {% endif %}
+                >
+                    {% if request.category == 'food' %}
+                        <img src="{% static 'images/food.jpg' %}" alt="{{ request.get_category_display }}" class="request-card-photo">
+                    {% elif request.category == 'clothing' %}
+                        <img src="{% static 'images/clothes.jpg' %}" alt="{{ request.get_category_display }}" class="request-card-photo">
+                    {% elif request.category == 'blankets' %}
+                        <img src="{% static 'images/blanket.jpg' %}" alt="{{ request.get_category_display }}" class="request-card-photo">
+                    {% elif request.category == 'hygiene' %}
+                        <img src="{% static 'images/hygiene.jpg' %}" alt="{{ request.get_category_display }}" class="request-card-photo">
+                    {% elif request.category == 'transport' %}
+                        <img src="{% static 'images/transportation.jpg' %}" alt="{{ request.get_category_display }}" class="request-card-photo">
+                    {% elif request.category == 'medical' %}
+                        <img src="{% static 'images/medical.jpg' %}" alt="{{ request.get_category_display }}" class="request-card-photo">
+                    {% else %}
+                        <div class="request-card-photo-placeholder">No image</div>
+                    {% endif %}
 
-            <!-- Claimed Info -->
-            {% if request.claimed_by %}
-                <div class="claimed-info">
-                    <strong>Claimed by:</strong>
-                    {{ request.claimed_by.display_username|default:request.claimed_by.user.username }}
+                    <div class="request-card-content">
+                        <h3 class="request-card-title">{{ request.title }}</h3>
+
+                        <div class="request-card-details">
+                            <p><strong>Category:</strong> {{ request.get_category_display }}</p>
+
+                            <p class="request-description-line">
+                                <strong>Description:</strong>
+                                <span class="request-description-text">
+                                    {{ request.description|default:"No description provided." }}
+                                </span>
+                            </p>
+
+                            <p><strong>City:</strong> {{ request.city }}</p>
+                            <p><strong>Location Details:</strong> {{ request.location_details|default:"N/A" }}</p>
+
+                            <p>
+                                <strong>Status:</strong>
+                                {% if request.claimed_by %}
+                                    Claimed
+                                {% else %}
+                                    Open
+                                {% endif %}
+                            </p>
+
+                            {% if request.claimed_by %}
+                                <div class="claimed-user">
+                                    <strong>Claimed By:</strong>
+                                    {{ request.claimed_by.display_username|default:request.claimed_by.user.username }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
-            {% endif %}
-
-            <div class="request-actions">
-
-                <!-- CLAIM BUTTON (only if not claimed) -->
-                {% if not request.claimed_by %}
-                    <form method="POST" action="{% url 'claim_request' request.id %}">
-                        {% csrf_token %}
-                        <button class="claim-btn" type="submit">
-                            Claim Request
-                        </button>
-                    </form>
-                {% endif %}
-
-                <!-- MESSAGE REQUESTER -->
-                {% if request.requester.user.id != user.id %}
-                    <a class="message-btn"
-                       href="{% url 'messaging:start_dm' request.requester.user.id %}">
-                        Message Requester
-                    </a>
-                {% endif %}
-
-                <!-- OPTIONAL: MESSAGE CLAIMED VOLUNTEER -->
-                {% if request.claimed_by and request.claimed_by.user.id != user.id %}
-                    <a class="message-btn message-secondary"
-                       href="{% url 'messaging:start_dm' request.claimed_by.user.id %}">
-                        Message Volunteer
-                    </a>
-                {% endif %}
-
-            </div>
-
+            {% endfor %}
         </div>
 
-    {% empty %}
-        <p>No open requests available.</p>
-    {% endfor %}
+        {% if requests.has_other_pages %}
+            <div class="requests-pagination">
+                {% if requests.has_previous %}
+                    <a href="?page={{ requests.previous_page_number }}" class="pagination-btn">Previous</a>
+                {% else %}
+                    <span class="pagination-btn disabled">Previous</span>
+                {% endif %}
+
+                <div class="pagination-pages">
+                    {% for num in requests.paginator.page_range %}
+                        {% if requests.number == num %}
+                            <span class="pagination-number active">{{ num }}</span>
+                        {% else %}
+                            <a href="?page={{ num }}" class="pagination-number">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                {% if requests.has_next %}
+                    <a href="?page={{ requests.next_page_number }}" class="pagination-btn">Next</a>
+                {% else %}
+                    <span class="pagination-btn disabled">Next</span>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="empty-requests">
+            <p>No open requests available.</p>
+        </div>
+    {% endif %}
 
     <a class="back-dashboard" href="{% url 'dashboard_redirect' %}">
         ← Back to Dashboard
     </a>
-
 </div>
 
+{% include "components/item_modal.html" %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/item_modal.js' %}"></script>
 {% endblock %}

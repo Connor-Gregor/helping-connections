@@ -1,120 +1,33 @@
+{% extends "base.html" %}
 {% load static %}
 {% load user_extras %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Helping Connections</title>
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-</head>
-<body>
 
- 
-    <nav class="navbar">
-        <div class="logo">Helping Connections</div>
-        <ul class="nav-links">
-            {% if user.is_authenticated %}
-            
-                {% if user.profile.role.name == "volunteer" %}
-                    <li><a href="{% url 'volunteer' %}">Dashboard</a></li>
-                {% elif user.profile.role.name == "unhoused" %}
-                    <li><a href="{% url 'unhoused' %}">Dashboard</a></li>
-                {% endif %}
-            {% endif %}
-            <li><a href="{% url 'home' %}">Home</a></li>
-            <li><a href="{% url 'find_help' %}">Find Help</a></li>
-            <li><a href="{% url 'about' %}">About</a></li>
+{% block title %}Helping Connections{% endblock %}
 
-            {% if user.is_authenticated %}
-                <li class="profile-menu">
+{% block extra_css %}
+<style>
+    main.page-content {
+        padding: 0 !important;
+    }
 
-                    <!-- Profile circle button -->
-                    <button class="profile-circle" id="profileBtn">
-                        {{ user|initials }}
-                    </button>
+    .home-hero {
+        margin: 0 !important;
+        width: 100% !important;
+        height: calc(100vh - 63px);
+        background: url("{% static 'Hero.jpg' %}") center center / cover no-repeat !important;
+    }
+</style>
+{% endblock %}
 
-                    <!-- Dropdown menu -->
-                    <div id="profileDropdown" class="profile-dropdown">
+{% block content %}
+<section class="hero home-hero">
+    <div class="hero-overlay">
+        <h1>Welcome to Helping Connections</h1>
+        <p>Connecting people with the resources they need.</p>
 
-                        <div class="profile-dropdown-header">
-
-                            <div class="profile-initials-large">
-                                {{ user|initials }}
-                            </div>
-
-                            <div class="profile-meta">
-
-                                <div class="profile-name">
-                                    {{ user.get_full_name|default:user.username }}
-                                </div>
-
-                                <div class="profile-email">
-                                    {{ user.email }}
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                        <div class="profile-dropdown-links">
-
-                            <a class="dropdown-link" href="{% url 'account' %}">View Account</a>
-
-                            <a class="dropdown-link" href="{% url 'settings' %}">Settings</a>
-
-                            <a class="dropdown-link danger" href="{% url 'logout' %}">Sign Out</a>
-
-                        </div>
-
-                    </div>
-
-
-                </li>
-
-            {% else %}
-
-                <li><a href="{% url 'login' %}">Login</a></li>
-
-            {% endif %}
-
-        </ul>
-    </nav>
-
-  
-    <main class="hero">
-        <div class="hero-overlay">
-            <h1>Welcome to Helping Connections</h1>
-            <p>Connecting people with the resources they need.</p>
-            {% if not user.is_authenticated %}
-                <a href="{% url 'login' %}" class="cta-btn">Get Started</a>
-            {% endif %}
-
-        </div>
-    </main>
-    <!-- Profile dropdown script -->
-    <script>
-
-        const profileBtn = document.getElementById("profileBtn");
-        const profileDropdown = document.getElementById("profileDropdown");
-
-        if (profileBtn && profileDropdown) {
-
-            profileBtn.addEventListener("click", function(event) {
-
-                event.stopPropagation();
-
-                profileDropdown.classList.toggle("open");
-
-            });
-
-            document.addEventListener("click", function() {
-
-                profileDropdown.classList.remove("open");
-
-            });
-
-        }
-
-    </script>
-</body>
-</html>
+        {% if not user.is_authenticated %}
+            <a href="{% url 'login' %}" class="cta-btn">Get Started</a>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

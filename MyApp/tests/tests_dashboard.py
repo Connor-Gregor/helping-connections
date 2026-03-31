@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 
 from MyApp.models import Profile, Role
 
+
 class DashBoardAndLoginTests(TestCase):
     def CreateUserWithRole(self, email, password, role_name=None, display_username=None):
         user = User.objects.create_user(username = email, email = email, password = password)
@@ -113,7 +114,7 @@ class DashBoardAndLoginTests(TestCase):
 
         resp = self.client.get(reverse("volunteer"))
         self.assertEqual(resp.status_code, 200)
-        self.assertTemplateUsed(resp, "volunteer.html")
+        self.assertTemplateUsed(resp, "volunteer_dash.html")
 
     def test_unhoused_dashboard_allows_unhoused_user(self):
         self.CreateUserWithRole("u2@example.com", "pw123", role_name="unhoused")
