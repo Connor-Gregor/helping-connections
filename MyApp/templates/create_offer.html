@@ -1,146 +1,496 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Create Offer | Helping Connections{% endblock %}
 
 {% block content %}
-<style>
-    .offer-wrapper {
-        max-width: 800px;
-        margin: 40px auto;
-        padding: 0 20px;
-    }
+    <style>
+        .offer-wrapper {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
 
-    .offer-card {
-        background: #ffffff;
-        border-radius: 18px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-        padding: 32px;
-        border: 1px solid #e6ece8;
-    }
+        .offer-card {
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 32px;
+            border: 1px solid #e6ece8;
+        }
 
-    .offer-header {
-        margin-bottom: 24px;
-        text-align: center;
-    }
+        .offer-header {
+            margin-bottom: 24px;
+            text-align: center;
+        }
 
-    .offer-header h2 {
-        font-size: 2rem;
-        color: #2f6b4f;
-        margin-bottom: 8px;
-    }
+        .offer-header h2 {
+            margin: 0;
+            font-size: 2.35rem;
+            font-weight: 700;
+            color: #1f3b5b;
+        }
 
-    .offer-header p {
-        color: #5f6b64;
-        font-size: 1rem;
-        line-height: 1.6;
-        margin: 0;
-    }
+        .offer-form .form-field {
+            margin-bottom: 22px;
+        }
 
-    .offer-form p {
-        margin-bottom: 18px;
-    }
+        .offer-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #1f3b5b;
+        }
 
-    .offer-form label {
-        display: block;
-        font-weight: 600;
-        margin-bottom: 8px;
-        color: #2d2d2d;
-    }
+        .offer-form input[type="text"],
+        .offer-form textarea,
+        .offer-form select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #cfd8d3;
+            border-radius: 10px;
+            font-size: 1rem;
+            color: #1f2d3d;
+            background: #fff;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
 
-    .offer-form input,
-    .offer-form textarea,
-    .offer-form select {
-        width: 100%;
-        padding: 12px 14px;
-        border: 1px solid #cfd8d3;
-        border-radius: 10px;
-        font-size: 1rem;
-        background: #fcfcfc;
-        box-sizing: border-box;
-    }
+        .offer-form input[type="text"]:focus,
+        .offer-form textarea:focus,
+        .offer-form select:focus {
+            outline: none;
+            border-color: #1abc9c;
+            box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.15);
+        }
 
-    .offer-form textarea {
-        min-height: 120px;
-        resize: vertical;
-    }
+        .offer-form textarea {
+            min-height: 140px;
+            resize: vertical;
+        }
 
-    .offer-form input:focus,
-    .offer-form textarea:focus,
-    .offer-form select:focus {
-        outline: none;
-        border-color: #2f6b4f;
-        box-shadow: 0 0 0 3px rgba(47, 107, 79, 0.15);
-    }
+        #id_description {
+            width: 100%;
+            min-height: 140px;
+            border: 1px solid #d6dbe1;
+            border-radius: 12px;
+            padding: 14px;
+            font: inherit;
+            color: #333;
+            background: #fff;
+            box-sizing: border-box;
+            resize: vertical;
+            line-height: 1.45;
+        }
 
-    .form-errors {
-        background: #fdecec;
-        color: #a94442;
-        border: 1px solid #f5c2c0;
-        border-radius: 10px;
-        padding: 12px;
-        margin-bottom: 20px;
-    }
+        #id_description:focus {
+            outline: none;
+            border-color: #1abc9c;
+            box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.12);
+        }
 
-    .offer-actions {
-        display: flex;
-        gap: 14px;
-        align-items: center;
-        flex-wrap: wrap;
-        margin-top: 24px;
-    }
+        .input-with-counter {
+            position: relative;
+        }
 
-    .offer-submit-btn {
-        background: #2f6b4f;
-        color: white;
-        border: none;
-        border-radius: 10px;
-        padding: 12px 22px;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s ease;
-    }
+        .input-with-counter input {
+            padding-right: 76px;
+        }
 
-    .offer-submit-btn:hover {
-        background: #25563f;
-    }
+        .char-count-inside {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.9rem;
+            color: #64748b;
+            pointer-events: none;
+            line-height: 1;
+        }
 
-    .offer-back-link {
-        color: #2f6b4f;
-        text-decoration: none;
-        font-weight: 600;
-    }
+        .field-errors {
+            color: #c0392b;
+            font-size: 13px;
+            margin-top: 6px;
+        }
 
-    .offer-back-link:hover {
-        text-decoration: underline;
-    }
-</style>
+        .field-errors ul {
+            margin: 0;
+            padding-left: 18px;
+        }
 
-<div class="offer-wrapper">
-    <div class="offer-card">
-        <div class="offer-header">
-            <h2>Create an Offer</h2>
-            <p>
-                Share available items with unhoused users in your community.
-                Every offer helps build stronger local support.
-            </p>
+        .live-error {
+            display: block;
+            margin-top: 6px;
+            font-size: 13px;
+            color: #c0392b;
+        }
+
+        .input-error {
+            border-color: #e74c3c !important;
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.12) !important;
+        }
+
+        .input-valid {
+            border-color: #1abc9c !important;
+            box-shadow: 0 0 0 3px rgba(47, 107, 79, 0.12) !important;
+        }
+
+        .offer-upload-box {
+            border: 1px solid #cfd8d3;
+            border-radius: 12px;
+            background: #fff;
+            padding: 18px 20px;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .offer-upload-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .upload-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #1abc9c;
+            color: #ffffff !important;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 0.98rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            text-decoration: none;
+            margin-bottom: 0 !important;
+        }
+
+        .upload-btn:hover,
+        .upload-btn:focus,
+        .upload-btn:visited {
+            color: #ffffff !important;
+            background: #1abc9c;
+        }
+
+        .file-count {
+            font-size: 0.98rem;
+            color: #5f6b64;
+        }
+
+        .upload-help {
+            margin-top: 10px;
+            font-size: 0.95rem;
+            color: #5f6b64;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px 18px;
+            background: #1abc9c;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .submit-btn:hover {
+            background: #16a085;
+        }
+
+        #offerPreviewGrid {
+            margin-top: 14px;
+            display: none;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 14px;
+        }
+
+        .offer-preview-item {
+            position: relative;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid #d9e3dd;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        .offer-preview-image-wrap {
+            width: 100%;
+            height: 180px;
+            background: #eef3f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .offer-preview-item img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+            background: #eef3f0;
+        }
+
+        .offer-preview-remove {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.72);
+            color: #fff;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .offer-preview-remove:hover {
+            background: rgba(0, 0, 0, 0.86);
+        }
+
+        .offer-preview-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(26, 188, 156, 0.95);
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 999px;
+            z-index: 2;
+        }
+
+        .offer-preview-name {
+            padding: 10px 12px 12px;
+            font-size: 0.85rem;
+            color: #33413a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @media (max-width: 640px) {
+            .offer-card {
+                padding: 24px;
+            }
+
+            .offer-header h2 {
+                font-size: 2rem;
+            }
+
+            .offer-upload-row {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+    </style>
+
+    <div class="offer-wrapper">
+        <div class="offer-card">
+            <div class="offer-header">
+                <h2>Create Offer</h2>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" class="offer-form">
+                {% csrf_token %}
+
+                <div class="form-field">
+                    {{ form.title.label_tag }}
+                    <div class="input-with-counter">
+                        {{ form.title }}
+                        <span id="offer-title-count" class="char-count-inside"></span>
+                    </div>
+                    <small id="offer-title-live-error" class="live-error"></small>
+                    {% if form.title.errors %}
+                        <div class="field-errors">{{ form.title.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-field">
+                    {{ form.description.label_tag }}
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <div class="field-errors">{{ form.description.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-field">
+                    {{ form.category.label_tag }}
+                    {{ form.category }}
+                    {% if form.category.errors %}
+                        <div class="field-errors">{{ form.category.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-field">
+                    {{ form.city.label_tag }}
+                    <div class="input-with-counter">
+                        {{ form.city }}
+                        <span id="offer-city-count" class="char-count-inside"></span>
+                    </div>
+                    <small id="offer-city-live-error" class="live-error"></small>
+                    {% if form.city.errors %}
+                        <div class="field-errors">{{ form.city.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-field">
+                    {{ form.location_details.label_tag }}
+                    {{ form.location_details }}
+                    {% if form.location_details.errors %}
+                        <div class="field-errors">{{ form.location_details.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-field">
+                    <label for="offer_images">Offer Photos:</label>
+
+                    <div class="offer-upload-box">
+                        <div class="offer-upload-row">
+                            <label for="offer_images" class="upload-btn">Upload Photos</label>
+                            <span id="offerFileCount" class="file-count">No files selected.</span>
+                        </div>
+
+                        <input
+                                type="file"
+                                name="offer_images"
+                                id="offer_images"
+                                multiple
+                                accept="image/*"
+                                style="display:none;"
+                        >
+                    </div>
+
+                    <div class="upload-help">
+                        You can upload multiple photos. The first one will be the main photo.
+                    </div>
+
+                    <div id="offerPreviewGrid"></div>
+                </div>
+
+                <button type="submit" class="submit-btn">Create Offer</button>
+            </form>
         </div>
-
-        {% if form.errors %}
-            <div class="form-errors">
-                {{ form.errors }}
-            </div>
-        {% endif %}
-
-        <form method="post" class="offer-form">
-            {% csrf_token %}
-            {{ form.as_p }}
-
-            <div class="offer-actions">
-                <button type="submit" class="offer-submit-btn">Submit Offer</button>
-                <a href="{% url 'volunteer' %}" class="offer-back-link">Back to Dashboard</a>
-            </div>
-        </form>
     </div>
-</div>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script src="{% static 'js/auth.js' %}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const input = document.getElementById("offer_images");
+            const previewGrid = document.getElementById("offerPreviewGrid");
+            const fileCount = document.getElementById("offerFileCount");
+
+            if (!input || !previewGrid || !fileCount) return;
+
+            let selectedFiles = [];
+
+            function syncInputFiles() {
+                const dataTransfer = new DataTransfer();
+                selectedFiles.forEach(file => dataTransfer.items.add(file));
+                input.files = dataTransfer.files;
+            }
+
+            function updateFileCount() {
+                if (!selectedFiles.length) {
+                    fileCount.textContent = "No files selected.";
+                    return;
+                }
+
+                if (selectedFiles.length === 1) {
+                    fileCount.textContent = "1 file selected.";
+                    return;
+                }
+
+                fileCount.textContent = `${selectedFiles.length} files selected.`;
+            }
+
+            function renderPreviews() {
+                previewGrid.innerHTML = "";
+
+                if (!selectedFiles.length) {
+                    previewGrid.style.display = "none";
+                    updateFileCount();
+                    return;
+                }
+
+                previewGrid.style.display = "grid";
+                updateFileCount();
+
+                selectedFiles.forEach((file, index) => {
+                    if (!file.type.startsWith("image/")) return;
+
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "offer-preview-item";
+
+                    const imageWrap = document.createElement("div");
+                    imageWrap.className = "offer-preview-image-wrap";
+
+                    const img = document.createElement("img");
+                    img.alt = file.name;
+
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+
+                    imageWrap.appendChild(img);
+                    wrapper.appendChild(imageWrap);
+
+                    if (index === 0) {
+                        const badge = document.createElement("div");
+                        badge.className = "offer-preview-badge";
+                        badge.textContent = "Main Photo";
+                        wrapper.appendChild(badge);
+                    }
+
+                    const removeBtn = document.createElement("button");
+                    removeBtn.type = "button";
+                    removeBtn.className = "offer-preview-remove";
+                    removeBtn.innerHTML = "&times;";
+                    removeBtn.setAttribute("aria-label", `Remove ${file.name}`);
+                    removeBtn.addEventListener("click", function () {
+                        selectedFiles.splice(index, 1);
+                        syncInputFiles();
+                        renderPreviews();
+                    });
+                    wrapper.appendChild(removeBtn);
+
+                    const name = document.createElement("div");
+                    name.className = "offer-preview-name";
+                    name.textContent = file.name;
+                    wrapper.appendChild(name);
+
+                    previewGrid.appendChild(wrapper);
+                });
+            }
+
+            input.addEventListener("change", function () {
+                const newFiles = Array.from(input.files || []);
+
+                if (!newFiles.length) return;
+
+                selectedFiles = selectedFiles.concat(newFiles);
+                syncInputFiles();
+                renderPreviews();
+            });
+
+            renderPreviews();
+        });
+    </script>
 {% endblock %}

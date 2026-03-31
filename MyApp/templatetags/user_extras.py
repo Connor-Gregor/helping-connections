@@ -2,6 +2,7 @@ from django import template
 
 register = template.Library()
 
+
 @register.filter
 def initials(user):
     """
@@ -28,3 +29,21 @@ def role_name(user):
     profile = getattr(user, "profile", None)
     role = getattr(profile, "role", None)
     return getattr(role, "name", "") or ""
+
+
+@register.simple_tag
+def dashboard_url(user):
+    if not user.is_authenticated:
+        return "home"
+
+    role = getattr(getattr(user, "profile", None), "role", None)
+    role_name = getattr(role, "name", None)
+
+    if role_name == "volunteer":
+        return "volunteer"
+    elif role_name == "unhoused":
+        return "unhoused"
+    elif role_name == "admin":
+        return "admin_dashboard"  # change if needed
+
+    return "map"

@@ -1,19 +1,337 @@
 {% extends "base.html" %}
+{% load static %}
+{% load user_extras %}
 
 {% block title %}Unhoused Dashboard - Helping Connections{% endblock %}
 
-{% block content %}
-<main class="content">
-    <h1>Unhoused Dashboard</h1>
-<h2>Requests Being Processed</h2>
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/item_modal.css' %}">
+{% endblock %}
 
-{% if processing_requests %}
-    <ul>
-        {% for req in processing_requests %}
-            <li>{{ req.title }}</li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>No requests are currently being processed.</p>
-{% endif %}</main>
+{% block content %}
+    <style>
+        .dashboard-wrapper {
+            max-width: 1280px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-header h1 {
+            margin: 0;
+            font-size: 2.35rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 24px;
+            align-items: start;
+        }
+
+        .dashboard-column {
+            background: #ffffff;
+            border: 1px solid #e6ece8;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 22px;
+        }
+
+        .dashboard-column h2 {
+            margin: 0 0 18px;
+            font-size: 1.7rem;
+            color: #2c3e50;
+        }
+
+        .dashboard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .item-card {
+            width: 100%;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            background: #ffffff;
+            border: 1px solid #e6ece8;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 10px;
+            box-sizing: border-box;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .item-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+        }
+
+        .item-card-photo {
+            width: 104px;
+            height: 104px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 1px solid #d6dbe1;
+            flex-shrink: 0;
+            display: block;
+            background: #f4f6f8;
+        }
+
+        .item-card-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .item-card-title {
+            font-size: 1.05rem;
+            color: #2c3e50;
+            margin: 0 0 8px;
+            line-height: 1.25;
+            font-weight: 700;
+            word-break: break-word;
+        }
+
+        .item-card-details p {
+            margin: 6px 0;
+            color: #2c3e50;
+            line-height: 1.4;
+            font-size: 0.95rem;
+        }
+
+        .item-card-details strong {
+            color: #2c3e50;
+        }
+
+        .request-description-line {
+            display: flex;
+            gap: 6px;
+            align-items: flex-start;
+        }
+
+        .request-description-text {
+            flex: 1;
+            min-width: 0;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .empty-state {
+            background: #ffffff;
+            border: 1px solid #e6ece8;
+            border-radius: 14px;
+            padding: 18px;
+            color: #555;
+        }
+
+        @media (max-width: 1180px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .item-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .item-card-photo {
+                width: 100%;
+                height: 220px;
+            }
+        }
+    </style>
+
+    <div class="dashboard-wrapper">
+        <div class="dashboard-header">
+            <h1>Unhoused Dashboard</h1>
+        </div>
+
+        <div class="dashboard-grid">
+            <section class="dashboard-column">
+                <h2>Open Requests</h2>
+
+                {% if open_requests %}
+                    <div class="dashboard-list">
+                        {% for req in open_requests %}
+                            <div
+                                    id="item-card-{{ req.id }}"
+                                    class="item-card js-item-card"
+                                    data-item-id="{{ req.id }}"
+                                    data-title="{{ req.title|escape }}"
+                                    data-category="{{ req.get_category_display|escape }}"
+                                    data-category-value="{{ req.category }}"
+                                    data-city="{{ req.city|escape }}"
+                                    data-status="{{ req.get_status_display|escape }}"
+                                    data-description="{{ req.description|default:'No description provided.'|escape }}"
+                                    data-location="{{ req.location_details|default:'N/A'|escape }}"
+                                    data-owner-id="{{ req.requester.user.id }}"
+                                    data-owner-name="{{ req.requester.display_username|default:req.requester.user.username|escape }}"
+                                    data-owner-initials="{{ req.requester.user|initials|escape }}"
+                                    data-owner-photo="{% if req.requester.profile_photo %}{{ req.requester.profile_photo.url }}{% endif %}"
+                                    data-created="{{ req.created_at|date:'c' }}"
+                                    data-images="[]"
+                                    data-action-mode="request_open"
+                                    data-edit-url="{% url 'update_request' req.id %}"
+                                    data-delete-url="{% url 'delete_request' req.id %}"
+                                    data-claimer-id=""
+                                    data-claimer-name=""
+                                    data-claimed-at=""
+                            >
+                                <img src="{% if req.category == 'food' %}{% static 'images/food.jpg' %}{% elif req.category == 'clothing' %}{% static 'images/clothes.jpg' %}{% elif req.category == 'blankets' %}{% static 'images/blanket.jpg' %}{% elif req.category == 'hygiene' %}{% static 'images/hygiene.jpg' %}{% elif req.category == 'transport' %}{% static 'images/transportation.jpg' %}{% elif req.category == 'medical' %}{% static 'images/medical.jpg' %}{% else %}{% static 'images/food.jpg' %}{% endif %}" alt="{{ req.title }}" class="item-card-photo">
+
+                                <div class="item-card-content">
+                                    <h3 class="item-card-title">{{ req.title }}</h3>
+
+                                    <div class="item-card-details">
+                                        <p><strong>Category:</strong> {{ req.get_category_display }}</p>
+
+                                        <p class="request-description-line">
+                                            <strong>Description:</strong>
+                                            <span class="request-description-text">
+                                            {{ req.description|default:"No description provided." }}
+                                        </span>
+                                        </p>
+
+                                        <p><strong>City:</strong> {{ req.city }}</p>
+                                        <p><strong>Status:</strong> {{ req.get_status_display }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">No open requests.</div>
+                {% endif %}
+            </section>
+
+            <section class="dashboard-column">
+                <h2>Processing Requests</h2>
+
+                {% if processing_requests %}
+                    <div class="dashboard-list">
+                        {% for req in processing_requests %}
+                            <div
+                                    id="item-card-processing-{{ req.id }}"
+                                    class="item-card js-item-card"
+                                    data-item-id="{{ req.id }}"
+                                    data-title="{{ req.title|escape }}"
+                                    data-category="{{ req.get_category_display|escape }}"
+                                    data-category-value="{{ req.category }}"
+                                    data-city="{{ req.city|escape }}"
+                                    data-status="{{ req.get_status_display|escape }}"
+                                    data-description="{{ req.description|default:'No description provided.'|escape }}"
+                                    data-location="{{ req.location_details|default:'N/A'|escape }}"
+                                    data-owner-id="{{ req.requester.user.id }}"
+                                    data-owner-name="{{ req.requester.display_username|default:req.requester.user.username|escape }}"
+                                    data-owner-initials="{{ req.requester.user|initials|escape }}"
+                                    data-owner-photo="{% if req.requester.profile_photo %}{{ req.requester.profile_photo.url }}{% endif %}"
+                                    data-created="{{ req.created_at|date:'c' }}"
+                                    data-images="[]"
+                                    data-action-mode="request_processing"
+                                    data-edit-url="{% url 'update_request' req.id %}"
+                                    data-delete-url="{% url 'delete_request' req.id %}"
+                                    data-claimer-id="{% if req.claimed_by %}{{ req.claimed_by.user.id }}{% endif %}"
+                                    data-claimed-by="{% if req.claimed_by %}{{ req.claimed_by.display_username|default:req.claimed_by.user.username|escape }}{% endif %}"
+                                    data-claimed-at="{% if req.claimed_at %}{{ req.claimed_at|date:'c' }}{% endif %}"
+                            >
+                                <img src="{% if req.category == 'food' %}{% static 'images/food.jpg' %}{% elif req.category == 'clothing' %}{% static 'images/clothes.jpg' %}{% elif req.category == 'blankets' %}{% static 'images/blanket.jpg' %}{% elif req.category == 'hygiene' %}{% static 'images/hygiene.jpg' %}{% elif req.category == 'transport' %}{% static 'images/transportation.jpg' %}{% elif req.category == 'medical' %}{% static 'images/medical.jpg' %}{% else %}{% static 'images/food.jpg' %}{% endif %}" alt="{{ req.title }}" class="item-card-photo">
+
+                                <div class="item-card-content">
+                                    <h3 class="item-card-title">{{ req.title }}</h3>
+
+                                    <div class="item-card-details">
+                                        <p><strong>Category:</strong> {{ req.get_category_display }}</p>
+
+                                        <p class="request-description-line">
+                                            <strong>Description:</strong>
+                                            <span class="request-description-text">
+                                            {{ req.description|default:"No description provided." }}
+                                        </span>
+                                        </p>
+
+                                        <p><strong>City:</strong> {{ req.city }}</p>
+                                        <p><strong>Status:</strong> {{ req.get_status_display }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">No requests are currently being processed.</div>
+                {% endif %}
+            </section>
+
+            <section class="dashboard-column">
+                <h2>Completed Requests</h2>
+
+                {% if completed_requests %}
+                    <div class="dashboard-list">
+                        {% for req in completed_requests %}
+                            <div
+                                    id="item-card-completed-{{ req.id }}"
+                                    class="item-card js-item-card"
+                                    data-item-id="{{ req.id }}"
+                                    data-title="{{ req.title|escape }}"
+                                    data-category="{{ req.get_category_display|escape }}"
+                                    data-category-value="{{ req.category }}"
+                                    data-city="{{ req.city|escape }}"
+                                    data-status="{{ req.get_status_display|escape }}"
+                                    data-description="{{ req.description|default:'No description provided.'|escape }}"
+                                    data-location="{{ req.location_details|default:'N/A'|escape }}"
+                                    data-owner-id="{{ req.requester.user.id }}"
+                                    data-owner-name="{{ req.requester.display_username|default:req.requester.user.username|escape }}"
+                                    data-owner-initials="{{ req.requester.user|initials|escape }}"
+                                    data-owner-photo="{% if req.requester.profile_photo %}{{ req.requester.profile_photo.url }}{% endif %}"
+                                    data-created="{{ req.created_at|date:'c' }}"
+                                    data-images="[]"
+                                    data-action-mode="request_completed"
+                                    data-claimer-id="{% if req.claimed_by %}{{ req.claimed_by.user.id }}{% endif %}"
+                                    data-claimed-at="{% if req.claimed_at %}{{ req.claimed_at|date:'c' }}{% endif %}"
+                            >
+                                <img src="{% if req.category == 'food' %}{% static 'images/food.jpg' %}{% elif req.category == 'clothing' %}{% static 'images/clothes.jpg' %}{% elif req.category == 'blankets' %}{% static 'images/blanket.jpg' %}{% elif req.category == 'hygiene' %}{% static 'images/hygiene.jpg' %}{% elif req.category == 'transport' %}{% static 'images/transportation.jpg' %}{% elif req.category == 'medical' %}{% static 'images/medical.jpg' %}{% else %}{% static 'images/food.jpg' %}{% endif %}" alt="{{ req.title }}" class="item-card-photo">
+
+                                <div class="item-card-content">
+                                    <h3 class="item-card-title">{{ req.title }}</h3>
+
+                                    <div class="item-card-details">
+                                        <p><strong>Category:</strong> {{ req.get_category_display }}</p>
+
+                                        <p class="request-description-line">
+                                            <strong>Description:</strong>
+                                            <span class="request-description-text">
+                                            {{ req.description|default:"No description provided." }}
+                                        </span>
+                                        </p>
+
+                                        <p><strong>City:</strong> {{ req.city }}</p>
+                                        <p><strong>Status:</strong> {{ req.get_status_display }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">No completed requests.</div>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+
+    {% include "components/item_modal.html" %}
+{% endblock %}
+
+{% block extra_scripts %}
+    <script src="{% static 'js/item_modal.js' %}"></script>
 {% endblock %}

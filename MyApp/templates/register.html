@@ -1,242 +1,243 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Register - Helping Connections{% endblock %}
+{% block title %}Register | Helping Connections{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'login.css' %}">
+{% endblock %}
 
 {% block content %}
-
-<style>
-.register-wrap {
-    display: flex;
-    justify-content: center;
-    padding: 40px;
-}
-
-.register-card {
-    width: 100%;
-    max-width: 600px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 28px rgba(0,0,0,0.12);
-    padding: 30px;
-}
-
-.register-title {
-    font-size: 28px;
-    font-weight: 700;
-    color: #2c3e50;
-    margin-bottom: 20px;
-}
-
-.form-group {
-    margin-bottom: 16px;
-}
-
-.form-group label {
-    display: block;
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 6px;
-}
-
-.form-group input,
-.form-group select {
-    width: 100%;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    box-sizing: border-box;
-    font-size: 14px;
-}
-
-.help-text {
-    font-size: 12px;
-    color: #666;
-    display: block;
-    margin-top: 6px;
-}
-
-.error-text {
-    color: #c0392b;
-    font-size: 13px;
-    margin-top: 6px;
-}
-
-.register-btn {
-    width: 100%;
-    margin-top: 18px;
-    background: #1abc9c;
-    border: none;
-    padding: 12px;
-    color: white;
-    font-weight: 600;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.register-btn:hover {
-    background: #16a085;
-}
-
-.login-link {
-    margin-top: 18px;
-    text-align: center;
-}
-
-.login-link a {
-    color: #1abc9c;
-    text-decoration: none;
-}
-
-.login-link a:hover {
-    text-decoration: underline;
-}
-
-/* Role selection box */
-.role-box {
-    border: 1px solid #dcdcdc;
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 18px;
-    background: #fafafa;
-}
-
-.role-title {
-    font-weight: 700;
-    color: #2c3e50;
-    margin-bottom: 10px;
-}
-
-.role-options ul {
-    list-style: none;
-    padding-left: 0;
-    margin: 0;
-}
-
-.role-options li {
-    margin-bottom: 10px;
-}
-
-.role-options label {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 500;
-    color: #2c3e50;
-    cursor: pointer;
-}
-
-.role-options input[type="radio"] {
-    width: auto;
-    margin: 0;
-}
-</style>
-
-<div class="register-wrap">
-    <div class="register-card">
-        <div class="register-title">Create an Account</div>
-
-        <form method="post">
-            {% csrf_token %}
-
-            {% if form.non_field_errors %}
-                <div class="error-text">{{ form.non_field_errors }}</div>
-            {% endif %}
-
-            <div class="form-group">
-                <label for="{{ form.email.id_for_label }}">Email</label>
-                {{ form.email }}
-                {% if form.email.errors %}<div class="error-text">{{ form.email.errors }}</div>{% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ form.display_username.id_for_label }}">Profile Name</label>
-                {{ form.display_username }}
-                {% if form.display_username.help_text %}
-                    <small class="help-text">{{ form.display_username.help_text }}</small>
-                {% endif %}
-                {% if form.display_username.errors %}<div class="error-text">{{ form.display_username.errors }}</div>{% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ form.first_name.id_for_label }}">First Name</label>
-                {{ form.first_name }}
-                {% if form.first_name.errors %}<div class="error-text">{{ form.first_name.errors }}</div>{% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ form.last_name.id_for_label }}">Last Name</label>
-                {{ form.last_name }}
-                {% if form.last_name.errors %}<div class="error-text">{{ form.last_name.errors }}</div>{% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ form.phone_number.id_for_label }}">Phone Number (Optional)</label>
-                {{ form.phone_number }}
-                {% if form.phone_number.help_text %}
-                    <small class="help-text">{{ form.phone_number.help_text }}</small>
-                {% endif %}
-                {% if form.phone_number.errors %}<div class="error-text">{{ form.phone_number.errors }}</div>{% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ form.address_line1.id_for_label }}">Address Line 1</label>
-                {{ form.address_line1 }}
-                {% if form.address_line1.errors %}<div class="error-text">{{ form.address_line1.errors }}</div>{% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ form.address_line2.id_for_label }}">Address Line 2 (Optional)</label>
-                {{ form.address_line2 }}
-                {% if form.address_line2.errors %}<div class="error-text">{{ form.address_line2.errors }}</div>{% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ form.city.id_for_label }}">City</label>
-                {{ form.city }}
-                {% if form.city.errors %}<div class="error-text">{{ form.city.errors }}</div>{% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ form.state.id_for_label }}">State</label>
-                {{ form.state }}
-                {% if form.state.errors %}<div class="error-text">{{ form.state.errors }}</div>{% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ form.zip_code.id_for_label }}">Zip Code</label>
-                {{ form.zip_code }}
-                {% if form.zip_code.errors %}<div class="error-text">{{ form.zip_code.errors }}</div>{% endif %}
-            </div>
-
-            <div class="form-group role-box">
-                <div class="role-title">Role</div>
-                <div class="role-options">
-                    {{ form.role }}
-                </div>
-                {% if form.role.errors %}<div class="error-text">{{ form.role.errors }}</div>{% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ form.password1.id_for_label }}">Password</label>
-                {{ form.password1 }}
-                {% if form.password1.errors %}<div class="error-text">{{ form.password1.errors }}</div>{% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ form.password2.id_for_label }}">Confirm Password</label>
-                {{ form.password2 }}
-                {% if form.password2.errors %}<div class="error-text">{{ form.password2.errors }}</div>{% endif %}
-            </div>
-
-            <button type="submit" class="register-btn">Create Account</button>
-        </form>
-
-        <div class="login-link">
-            Already have an account?
-            <a href="{% url 'login' %}">Sign in</a>
+<section class="login-hero">
+    <section class="card register-card-auth">
+        <div class="card-header">
+            <h2 class="title">Create Account</h2>
+            <p class="subtitle">
+                Sign up to connect with resources and manage your activity.
+            </p>
         </div>
-    </div>
-</div>
 
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <ul class="errorlist">
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+                <p>
+                    <label for="{{ form.email.id_for_label }}">Email:</label>
+                    {{ form.email }}
+                    <small id="email-live-error" class="live-error"></small>
+
+                    {% if form.email.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.email.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </p>
+
+                <p>
+                    <label for="{{ form.display_username.id_for_label }}">Profile Name:</label>
+                    {{ form.display_username }}
+                    {% if form.display_username.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.display_username.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </p>
+
+                <p>
+                    <label for="{{ form.first_name.id_for_label }}">First Name:</label>
+
+                    <div class="input-with-counter">
+                        {{ form.first_name }}
+                        <span id="first-name-count" class="char-count-inside"></span>
+                    </div>
+
+                    <small id="first-name-live-error" class="live-error"></small>
+
+                    {% if form.first_name.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.first_name.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </p>
+
+                <p>
+                    <label for="{{ form.last_name.id_for_label }}">Last Name:</label>
+
+                    <div class="input-with-counter">
+                        {{ form.last_name }}
+                        <span id="last-name-count" class="char-count-inside"></span>
+                    </div>
+
+                    <small id="last-name-live-error" class="live-error"></small>
+
+                    {% if form.last_name.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.last_name.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </p>
+
+                <p>
+                    <label for="{{ form.phone_number.id_for_label }}">Phone Number (Optional):</label>
+                    {{ form.phone_number }}
+                    <small id="phone-live-error" class="live-error"></small>
+
+                    {% if form.phone_number.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.phone_number.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </p>
+
+                <p>
+                    <label for="{{ form.address_line1.id_for_label }}">Address Line 1:</label>
+                    {{ form.address_line1 }}
+                    <small id="address1-live-error" class="live-error"></small>
+                    {% if form.address_line1.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.address_line1.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </p>
+
+                <p>
+                    <label for="{{ form.address_line2.id_for_label }}">Address Line 2 (Optional):</label>
+                    {{ form.address_line2 }}
+                    <small class="field-helper">Apartment, suite, building, or unit (optional).</small>
+                    {% if form.address_line2.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.address_line2.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </p>
+
+                <p>
+                    <label for="{{ form.zip_code.id_for_label }}">Zip Code:</label>
+                    {{ form.zip_code }}
+                    <small id="zip-live-message" class="live-error"></small>
+
+                    {% if form.zip_code.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.zip_code.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </p>
+
+                <p>
+                    <label for="{{ form.city.id_for_label }}">City:</label>
+                    {{ form.city }}
+                    <small id="city-live-error" class="live-error"></small>
+
+                    {% if form.city.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.city.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </p>
+
+                <p>
+                    <label for="{{ form.state.id_for_label }}">State:</label>
+                    {{ form.state }}
+                    {% if form.state.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.state.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </p>
+
+                <div class="role-box register-role-box">
+                    <div class="role-title">Role</div>
+                    <div class="role-options">
+                        {{ form.role }}
+                    </div>
+                    {% if form.role.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.role.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <p>
+                    <label for="{{ form.password1.id_for_label }}">Password:</label>
+
+                    <div class="password-wrapper register-password-group">
+                        {{ form.password1 }}
+                        <button type="button" class="toggle-password" aria-label="Show password">
+                            <i class="fa fa-eye-slash"></i>
+                        </button>
+                    </div>
+
+                    <small id="password1-live-error" class="live-error"></small>
+
+                    {% if form.password1.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.password1.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </p>
+
+                <p>
+                    <label for="{{ form.password2.id_for_label }}">Confirm Password:</label>
+
+                    <div class="password-wrapper register-password-group">
+                        {{ form.password2 }}
+                        <button type="button" class="toggle-password" aria-label="Show password">
+                            <i class="fa fa-eye-slash"></i>
+                        </button>
+                    </div>
+
+                    <small id="password2-live-error" class="live-error"></small>
+
+                    {% if form.password2.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.password2.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </p>
+
+                <button type="submit" class="btn btn-primary">Create Account</button>
+
+                <div class="meta-row">
+                    <span>Already have an account?
+                        <a href="{% url 'login' %}">Sign in</a>
+                    </span>
+                </div>
+            </form>
+        </div>
+    </section>
+</section>
 {% endblock %}
