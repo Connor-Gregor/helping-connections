@@ -98,6 +98,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const editBtn = document.getElementById("itemModalEditBtn");
     const deleteBtn = document.getElementById("itemModalDeleteBtn");
     const messageClaimerBtn = document.getElementById("itemModalMessageClaimerBtn");
+    const verifyBtn = document.getElementById("itemModalVerifyBtn");
     const hideBtn = document.getElementById("itemModalHideBtn");
 
     // Primary action panel
@@ -879,6 +880,45 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function showVerifyRequestConfirm() {
+        const item = modalState.item;
+        if (!item) return;
+
+        setPendingProcessingAction("verify");
+
+        openPanel(primaryPanel, "primary", {
+            clearContext: true
+        });
+
+        if (primaryTitle) {
+            primaryTitle.textContent = item.title || "";
+        }
+
+        if (primaryItemId) {
+            primaryItemId.value = item.itemId || "";
+        }
+
+        if (primaryReturnPageNumber) {
+            primaryReturnPageNumber.value = getCurrentPageNumber();
+        }
+
+        if (primaryPanelTitle) {
+            primaryPanelTitle.textContent = "Verify this request?";
+        }
+
+        if (primaryNote) {
+            primaryNote.textContent = "Confirm that this request has been fulfilled.";
+        }
+
+        if (primaryConfirmBtn) {
+            primaryConfirmBtn.textContent = "Verify Fulfillment";
+        }
+
+        if (primaryForm) {
+            primaryForm.action = `/requests/${item.itemId}/verify/`;
+        }
+    }
+
     // Builds message context for owner vs claimer message flows.
     function buildMessagePanelContext(targetType) {
         const owner = getCurrentOwner();
@@ -1136,6 +1176,7 @@ document.addEventListener("DOMContentLoaded", function () {
         hideElement(editBtn);
         hideElement(deleteBtn);
         hideElement(messageClaimerBtn);
+        hideElement(verifyBtn);
         if (hideBtn) hideElement(hideBtn);
 
         if (!item) return;
@@ -1162,6 +1203,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (actions.showMessageClaimer) {
             showElement(messageClaimerBtn, "inline-flex");
+        }
+
+        if (actions.showVerify) {
+            showElement(verifyBtn, "inline-flex");
         }
 
         if (actions.showHide && hideBtn) {
@@ -1310,6 +1355,7 @@ document.addEventListener("DOMContentLoaded", function () {
             showEdit: false,
             showDelete: false,
             showMessageClaimer: false,
+            showVerify: false,
             showHide: false,
             requiresProcessingConfirm: false
         };
@@ -1328,6 +1374,7 @@ document.addEventListener("DOMContentLoaded", function () {
         } else if (actionMode === "request_processing") {
             actions.showEdit = true;
             actions.showMessageClaimer = hasClaimer;
+            actions.showVerify = true;
             actions.showDelete = true;
             actions.requiresProcessingConfirm = true;
         } else if (actionMode === "volunteer_request_claimed") {
@@ -1596,6 +1643,13 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    if (verifyBtn) {
+        verifyBtn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            showVerifyRequestConfirm();
+        });
+    }
+
     if (reportBtn) {
         reportBtn.addEventListener("click", function (e) {
             e.stopPropagation();
@@ -1648,6 +1702,10 @@ document.addEventListener("DOMContentLoaded", function () {
             const pendingAction = getPendingProcessingAction();
 
             if (!item || !item.actions?.requiresProcessingConfirm) {
+                return;
+            }
+
+            if (pendingAction === "verify") {
                 return;
             }
 
