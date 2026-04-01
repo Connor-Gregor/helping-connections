@@ -595,9 +595,17 @@ def volunteer(request):
             status=Offer.STATUS_CLAIMED
         ).prefetch_related("images").order_by("-claimed_at", "-created_at")
 
+        fulfilled_requests_count = Request.objects.filter(
+            claimed_by=profile,
+            status=Request.STATUS_FULFILLED
+        ).exclude(
+            requester=profile
+        ).count()
+
         return render(request, "volunteer_dash.html", {
             "accepted_requests": accepted_requests,
             "accepted_offers": accepted_offers,
+            "fulfilled_requests_count": fulfilled_requests_count,
         })
 
     return redirect("home")
@@ -1250,3 +1258,24 @@ def delete_offer(request, offer_id):
 
     messages.success(request, "Offer deleted successfully.")
     return redirect("my_offers")
+
+@login_required
+@require_POST
+def verify_request(request, request_id):
+    profile = request.user.profile
+
+    if profile.role is None or profile.role.name.lower() != "unhoused":
+        messages.error(request, "Only unhoused users can verify requests.")
+        return redirect("home")
+
+    req = get_object_or_404(Request, id=request_id, requester=profile)
+
+    if req.status != Request.STATUS_CLAIMED:
+        messages.error(request, "Only processing requests can be marked as fulfilled.")
+        return redirect("unhoused")
+
+    req.status = Request.STATUS_FULFILLED
+    req.save()
+
+    messages.success(request, "Request marked as fulfilled.")
+    return redirect("unhoused")

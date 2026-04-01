@@ -89,7 +89,7 @@ urlpatterns = [
     path("requests/claim/<int:request_id>/", claim_request, name="claim_request"),
     path("requests/<int:request_id>/update/", views.update_request, name="update_request"),
     path("requests/<int:request_id>/delete/", views.delete_request, name="delete_request"),
-
+    path("requests/<int:request_id>/verify/", views.verify_request, name="verify_request"),
 
     # OFFERS
     path("offers/create/", create_offer, name="create_offer"),
