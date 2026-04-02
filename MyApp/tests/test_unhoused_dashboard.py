@@ -155,6 +155,16 @@ class UnhousedDashboardTests(TestCase):
         self.assertEqual(open_requests[0].id, req2.id)
         self.assertEqual(open_requests[1].id, req1.id)
 
+    def test_completed_requests_newest_first(self):
+        self.login_as_unhoused()
+        req1 = self.make_request(Request.STATUS_FULFILLED, claimed=True)
+        Request.objects.filter(pk=req1.pk).update(created_at=timezone.now() - timedelta(seconds=5))
+        req2 = self.make_request(Request.STATUS_FULFILLED, category=Request.CATEGORY_CLOTHING, claimed=True)
+        resp = self.client.get(reverse("unhoused"))
+        completed = list(resp.context["completed_requests"])
+        self.assertEqual(completed[0].id, req2.id)
+        self.assertEqual(completed[1].id, req1.id)
+
     def test_processing_requests_most_recently_claimed_first(self):
         self.login_as_unhoused()
         req1 = Request.objects.create(
