@@ -35,6 +35,79 @@
         padding: 14px 16px;
     }
 
+    .helper-text {
+        font-size: 13px;
+        color: #555;
+        line-height: 1.4;
+        margin-bottom: 12px;
+    }
+
+    .radius-control {
+        margin-bottom: 12px;
+        font-size: 13px;
+        color: #2c3e50;
+    }
+
+    .radius-control label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+    }
+
+    .radius-control select {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #d9dee3;
+        background: #fff;
+        color: #2c3e50;
+        outline: none;
+    }
+
+    .radius-control select:focus {
+        border-color: #1abc9c;
+        box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.12);
+    }
+
+    .search-box {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .search-box input {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #d9dee3;
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        background: #fff;
+        color: #2c3e50;
+    }
+
+    .search-box input:focus {
+        border-color: #1abc9c;
+        box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.12);
+    }
+
+    .search-main-btn {
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: 700;
+        background: #1abc9c;
+        color: #fff;
+        transition: background 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .search-main-btn:hover {
+        background: #16a085;
+    }
+
     .search-buttons {
         display: grid;
         gap: 10px;
@@ -56,13 +129,6 @@
 
     .search-btn:hover {
         background: #16a085;
-    }
-
-    .helper-text {
-        font-size: 13px;
-        color: #555;
-        line-height: 1.4;
-        margin-bottom: 12px;
     }
 
     .status {
@@ -118,6 +184,7 @@
         border: 1px solid #e6e6e6;
         color: #2c3e50;
         background: #f4f6f8;
+        cursor: pointer;
     }
 
     .mini-link:hover {
@@ -150,24 +217,47 @@
         .results {
             max-height: 40vh;
         }
+
+        .search-box {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
 <div class="page-wrap">
     <div class="map-shell">
-
         <aside class="panel">
             <div class="panel-header">Nearby Resources</div>
 
             <div class="panel-body">
                 <div class="helper-text">
-                    Choose a category. We’ll use your current location to find nearby places and drop pins on the map.
-                    If location access is blocked, we’ll fall back to a default center until you allow it.
+                    Search for any place, address, or resource like normal Google Maps, or use the quick buttons below.
+                    You can also choose how far out to search in miles.
+                </div>
+
+                <div class="radius-control">
+                    <label for="radius-select">Search radius</label>
+                    <select id="radius-select">
+                        <option value="1">1 mile</option>
+                        <option value="3">3 miles</option>
+                        <option value="5" selected>5 miles</option>
+                        <option value="10">10 miles</option>
+                        <option value="20">20 miles</option>
+                    </select>
+                </div>
+
+                <div class="search-box">
+                    <input
+                        type="text"
+                        id="place-search-input"
+                        placeholder="Search for a place, address, shelter, store, food bank..."
+                    >
+                    <button type="button" id="place-search-btn" class="search-main-btn">Search</button>
                 </div>
 
                 <div class="search-buttons">
                     <button class="search-btn" data-query="food bank">Food bank</button>
-                    <button class="search-btn" data-query="soup kitchen">Soup kitchen</button>
+                    <button class="search-btn" data-query="homeless shelter">Shelter</button>
                     <button class="search-btn" data-query="dollar store OR thrift store OR goodwill OR discount store OR family dollar OR dollar tree">Low cost stores</button>
                 </div>
 
@@ -179,7 +269,6 @@
         <section class="panel map-panel">
             <div id="map"></div>
         </section>
-
     </div>
 </div>
 {% endblock %}
@@ -212,20 +301,80 @@
     let map;
     let infoWindow;
     let placesService;
+    let userMarker = null;
+    let radiusCircle = null;
 
     let userCenter = { lat: 43.0392, lng: -87.9065 };
     let markers = [];
 
     const statusEl = document.getElementById("status");
     const resultsEl = document.getElementById("results");
+    const searchInput = document.getElementById("place-search-input");
+    const searchBtn = document.getElementById("place-search-btn");
+    const radiusSelect = document.getElementById("radius-select");
+
+    function getDistanceMeters(lat1, lng1, lat2, lng2) {
+    const toRad = (deg) => deg * (Math.PI / 180);
+    const earthRadius = 6371000;
+
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) *
+        Math.cos(toRad(lat2)) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return earthRadius * c;
+}
+
+function filterResultsByRadius(results) {
+    const maxDistance = getSelectedRadiusMeters();
+
+    return (results || []).filter(place => {
+        if (!place.geometry || !place.geometry.location) {
+            return false;
+        }
+
+        const placeLat =
+            typeof place.geometry.location.lat === "function"
+                ? place.geometry.location.lat()
+                : place.geometry.location.lat;
+
+        const placeLng =
+            typeof place.geometry.location.lng === "function"
+                ? place.geometry.location.lng()
+                : place.geometry.location.lng;
+
+        const distance = getDistanceMeters(
+            userCenter.lat,
+            userCenter.lng,
+            placeLat,
+            placeLng
+        );
+
+        return distance <= maxDistance;
+    });
+}
 
     function setStatus(msg) {
         statusEl.textContent = msg;
     }
 
+    function getSelectedRadiusMiles() {
+        return parseFloat(radiusSelect.value);
+    }
+
+    function getSelectedRadiusMeters() {
+        return getSelectedRadiusMiles() * 1609.34;
+    }
+
     function clearMarkers() {
-        for (const m of markers) {
-            m.setMap(null);
+        for (const marker of markers) {
+            marker.setMap(null);
         }
         markers = [];
     }
@@ -238,9 +387,56 @@
         return `https://www.google.com/maps/place/?q=place_id:${placeId}`;
     }
 
-    function addResultCardClassic(place) {
+    function escapeHtml(text) {
+        if (!text) return "";
+        return text
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function addUserMarker() {
+        if (userMarker) {
+            userMarker.setMap(null);
+        }
+
+        userMarker = new google.maps.Marker({
+            map: map,
+            position: userCenter,
+            title: "Your location",
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 8,
+                fillColor: "#1abc9c",
+                fillOpacity: 1,
+                strokeColor: "#ffffff",
+                strokeWeight: 2
+            }
+        });
+    }
+
+    function drawRadiusCircle() {
+        if (radiusCircle) {
+            radiusCircle.setMap(null);
+        }
+
+        radiusCircle = new google.maps.Circle({
+            map: map,
+            center: userCenter,
+            radius: getSelectedRadiusMeters(),
+            strokeColor: "#1abc9c",
+            strokeOpacity: 0.7,
+            strokeWeight: 2,
+            fillColor: "#1abc9c",
+            fillOpacity: 0.12
+        });
+    }
+
+    function addResultCard(place) {
         const name = place.name || "Unnamed place";
-        const addr = place.vicinity || place.formatted_address || "Address not available";
+        const addr = place.formatted_address || place.vicinity || "Address not available";
         const mapsUrl = place.place_id ? buildMapsUrl(place.place_id) : null;
 
         const card = document.createElement("div");
@@ -258,24 +454,24 @@
         actions.className = "result-actions";
 
         if (mapsUrl) {
-            const a = document.createElement("a");
-            a.className = "mini-link";
-            a.href = mapsUrl;
-            a.target = "_blank";
-            a.rel = "noopener";
-            a.textContent = "Open in Google Maps";
-            actions.appendChild(a);
+            const openLink = document.createElement("a");
+            openLink.className = "mini-link";
+            openLink.href = mapsUrl;
+            openLink.target = "_blank";
+            openLink.rel = "noopener";
+            openLink.textContent = "Open in Google Maps";
+            actions.appendChild(openLink);
         }
 
-        const focusBtn = document.createElement("a");
+        const focusBtn = document.createElement("button");
         focusBtn.className = "mini-link";
-        focusBtn.href = "javascript:void(0)";
+        focusBtn.type = "button";
         focusBtn.textContent = "Focus on map";
 
         focusBtn.addEventListener("click", () => {
             if (place.geometry && place.geometry.location) {
                 map.panTo(place.geometry.location);
-                map.setZoom(Math.max(map.getZoom(), 14));
+                map.setZoom(Math.max(map.getZoom(), 15));
             }
         });
 
@@ -288,9 +484,186 @@
         resultsEl.appendChild(card);
     }
 
+    function addPlaceMarker(place) {
+        if (!place.geometry || !place.geometry.location) {
+            return null;
+        }
+
+        const marker = new google.maps.Marker({
+            map: map,
+            position: place.geometry.location,
+            title: place.name || "Place"
+        });
+
+        marker.addListener("click", () => {
+            const name = escapeHtml(place.name || "Place");
+            const addr = escapeHtml(place.formatted_address || place.vicinity || "");
+            const mapsUrl = place.place_id ? buildMapsUrl(place.place_id) : "";
+
+            infoWindow.setContent(`
+                <div style="font-family: Arial, sans-serif; max-width: 240px;">
+                    <div style="font-weight: 700; margin-bottom: 6px;">${name}</div>
+                    <div style="font-size: 13px; color: #555; margin-bottom: 8px;">${addr}</div>
+                    ${mapsUrl ? `<div style="font-size: 13px;"><a href="${mapsUrl}" target="_blank" rel="noopener">Open in Google Maps</a></div>` : ""}
+                </div>
+            `);
+
+            infoWindow.open(map, marker);
+        });
+
+        markers.push(marker);
+        return marker;
+    }
+
+    function renderPlaces(results, emptyMessage) {
+        clearMarkers();
+        clearResults();
+        drawRadiusCircle();
+        addUserMarker();
+
+        if (!results || !results.length) {
+            setStatus(emptyMessage || "No results found.");
+            return;
+        }
+
+        const bounds = new google.maps.LatLngBounds();
+        let validCount = 0;
+
+        results.slice(0, 20).forEach(place => {
+            if (!place.geometry || !place.geometry.location) {
+                return;
+            }
+
+            addPlaceMarker(place);
+            addResultCard(place);
+            bounds.extend(place.geometry.location);
+            validCount += 1;
+        });
+
+        bounds.extend(userCenter);
+
+        if (!validCount) {
+            setStatus("No usable map results found.");
+            map.setCenter(userCenter);
+            return;
+        }
+
+        map.fitBounds(bounds);
+
+        google.maps.event.addListenerOnce(map, "bounds_changed", () => {
+            if (map.getZoom() > 15) {
+                map.setZoom(15);
+            }
+        });
+
+        setStatus(`Found ${validCount} result(s). Click a pin or an item in the list.`);
+    }
+
+function runNearbySearch(textQuery) {
+    if (!placesService || !map) {
+        setStatus("Map not ready yet. Try again in a second.");
+        return;
+    }
+
+    if (!textQuery || !textQuery.trim()) {
+        setStatus("Choose a category or type something to search.");
+        return;
+    }
+
+    const miles = getSelectedRadiusMiles();
+    setStatus(`Searching nearby: ${textQuery} within ${miles} mile(s)...`);
+
+    const isShelterSearch = textQuery.toLowerCase().includes("shelter");
+
+    if (isShelterSearch) {
+        const request = {
+            query: textQuery,
+            location: userCenter,
+            radius: getSelectedRadiusMeters()
+        };
+
+        placesService.textSearch(request, (results, status) => {
+            if (status !== google.maps.places.PlacesServiceStatus.OK || !results || !results.length) {
+                renderPlaces([], "No nearby shelters found. Try a larger radius or a different search.");
+                return;
+            }
+
+            const filteredResults = filterResultsByRadius(results);
+
+            if (!filteredResults.length) {
+                renderPlaces([], "No shelters were found inside your selected radius.");
+                return;
+            }
+
+            renderPlaces(filteredResults, "No nearby shelters found.");
+        });
+
+        return;
+    }
+
+    const request = {
+        location: userCenter,
+        radius: getSelectedRadiusMeters(),
+        keyword: textQuery
+    };
+
+    placesService.nearbySearch(request, (results, status) => {
+        if (status !== google.maps.places.PlacesServiceStatus.OK || !results || !results.length) {
+            renderPlaces([], "No nearby results found. Try another category or a larger radius.");
+            return;
+        }
+
+        const filteredResults = filterResultsByRadius(results);
+
+        if (!filteredResults.length) {
+            renderPlaces([], "No results were found inside your selected radius.");
+            return;
+        }
+
+        renderPlaces(filteredResults, "No nearby results found.");
+    });
+}
+
+function runTextSearch(textQuery) {
+    if (!placesService || !map) {
+        setStatus("Map not ready yet. Try again in a second.");
+        return;
+    }
+
+    if (!textQuery || !textQuery.trim()) {
+        setStatus("Enter something to search for.");
+        return;
+    }
+
+    const miles = getSelectedRadiusMiles();
+    setStatus(`Searching for: ${textQuery} within ${miles} mile(s)...`);
+
+    const request = {
+        query: textQuery,
+        location: userCenter,
+        radius: getSelectedRadiusMeters()
+    };
+
+    placesService.textSearch(request, (results, status) => {
+        if (status !== google.maps.places.PlacesServiceStatus.OK || !results || !results.length) {
+            renderPlaces([], "No results found. Try another search or a larger radius.");
+            return;
+        }
+
+        const filteredResults = filterResultsByRadius(results);
+
+        if (!filteredResults.length) {
+            renderPlaces([], "No results were found inside your selected radius.");
+            return;
+        }
+
+        renderPlaces(filteredResults, "No results found.");
+    });
+}
+
     async function initMap() {
         try {
-            const { Map, InfoWindow } = await google.maps.importLibrary("maps");
+            const { Map, InfoWindow, Circle } = await google.maps.importLibrary("maps");
             await google.maps.importLibrary("marker");
             const { PlacesService } = await google.maps.importLibrary("places");
 
@@ -298,108 +671,70 @@
                 center: userCenter,
                 zoom: 12,
                 mapTypeControl: false,
-                streetViewControl: false
+                streetViewControl: false,
+                fullscreenControl: true
             });
 
             infoWindow = new InfoWindow();
             placesService = new PlacesService(map);
 
-            setStatus("Getting your location…");
+            addUserMarker();
+            drawRadiusCircle();
+            setStatus("Getting your location...");
 
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
-                        userCenter = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                        userCenter = {
+                            lat: pos.coords.latitude,
+                            lng: pos.coords.longitude
+                        };
+
                         map.setCenter(userCenter);
                         map.setZoom(13);
-                        setStatus("Ready. Pick a category to search nearby.");
+                        addUserMarker();
+                        drawRadiusCircle();
+                        setStatus("Ready. Search for any place or use a quick button.");
                     },
                     () => {
-                        setStatus("Location blocked. Using default center — you can still search.");
+                        drawRadiusCircle();
+                        setStatus("Location blocked. Using default center. You can still search.");
                     },
-                    { enableHighAccuracy: true, timeout: 8000 }
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 8000
+                    }
                 );
             } else {
+                drawRadiusCircle();
                 setStatus("Geolocation not supported. Using default center.");
             }
 
             document.querySelectorAll(".search-btn").forEach(btn => {
-                btn.addEventListener("click", () => runNearbySearch(btn.dataset.query));
+                btn.addEventListener("click", () => {
+                    runNearbySearch(btn.dataset.query);
+                });
+            });
+
+            searchBtn.addEventListener("click", () => {
+                runTextSearch(searchInput.value);
+            });
+
+            searchInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    runTextSearch(searchInput.value);
+                }
+            });
+
+            radiusSelect.addEventListener("change", () => {
+                drawRadiusCircle();
             });
 
         } catch (err) {
             console.error(err);
-            setStatus("Map failed to load. Check API key + enabled APIs.");
+            setStatus("Map failed to load. Check your API key and enabled Google Maps APIs.");
         }
-    }
-
-    function runNearbySearch(textQuery) {
-        clearMarkers();
-        clearResults();
-        setStatus(`Searching nearby: ${textQuery}…`);
-
-        if (!placesService || !map) {
-            setStatus("Map not ready yet. Try again in a second.");
-            return;
-        }
-
-        if (!userCenter || typeof userCenter.lat !== "number" || typeof userCenter.lng !== "number") {
-            setStatus("Location not ready yet. Try again in a second.");
-            return;
-        }
-
-        const request = {
-            location: userCenter,
-            radius: 8000,
-            keyword: textQuery
-        };
-
-        placesService.nearbySearch(request, (results, status) => {
-
-            if (status !== google.maps.places.PlacesServiceStatus.OK || !results || !results.length) {
-                setStatus("No results found nearby. Try another category.");
-                return;
-            }
-
-            setStatus(`Found ${results.length} result(s). Click pins or items in the list.`);
-
-            const bounds = new google.maps.LatLngBounds();
-
-            results.slice(0, 20).forEach(place => {
-
-                if (!place.geometry || !place.geometry.location) {
-                    return;
-                }
-
-                const marker = new google.maps.Marker({
-                    map: map,
-                    position: place.geometry.location
-                });
-
-                marker.addListener("click", () => {
-                    const name = place.name || "Place";
-                    const addr = place.vicinity || place.formatted_address || "";
-                    const mapsUrl = place.place_id ? buildMapsUrl(place.place_id) : "";
-
-                    infoWindow.setContent(`
-                        <div style="font-family: Arial, sans-serif; max-width: 240px;">
-                            <div style="font-weight: 700; margin-bottom: 6px;">${name}</div>
-                            <div style="font-size: 13px; color: #555; margin-bottom: 8px;">${addr}</div>
-                            ${mapsUrl ? `<div style="font-size: 13px;"><a href="${mapsUrl}" target="_blank" rel="noopener">Open in Google Maps</a></div>` : ""}
-                        </div>
-                    `);
-
-                    infoWindow.open(map, marker);
-                });
-
-                markers.push(marker);
-                bounds.extend(place.geometry.location);
-
-                addResultCardClassic(place);
-            });
-
-            map.fitBounds(bounds);
-        });
     }
 
     initMap();
