@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.password_validation import validate_password
-from .models import Profile, Request, Offer
+from .models import Profile, Request, Offer, Role
 import re
 import requests
 
@@ -766,3 +766,127 @@ class OfferForm(forms.ModelForm):
 
         return title
 
+class AdminAccountEditForm(forms.Form):
+    display_username = forms.CharField(max_length=30, required=True)
+    first_name = forms.CharField(max_length=30, required=False)
+    last_name = forms.CharField(max_length=30, required=False)
+    email = forms.EmailField(required=True)
+    phone_number = forms.CharField(max_length=20, required=False)
+    city = forms.CharField(max_length=100, required=False)
+    state = forms.ChoiceField(choices=STATE_CHOICES, required=False)
+    role = forms.ChoiceField(
+        choices=[
+            ("unhoused", "Unhoused"),
+            ("volunteer", "Volunteer"),
+            ("admin", "Admin"),
+        ],
+        required=True
+    )
+
+    def __init__(self, *args, profile: Profile, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.profile = profile
+        self.user = profile.user
+
+    def clean_display_username(self):
+        username = self.cleaned_data["display_username"].strip()
+
+        if len(username) < 3:
+            raise forms.ValidationError("Username must be at least 3 characters.")
+
+        allowed = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.")
+        if any(ch not in allowed for ch in username):
+            raise forms.ValidationError("Username can only use letters, numbers, _, -, and .")
+
+        qs = Profile.objects.filter(display_username__iexact=username).exclude(pk=self.profile.pk)
+        if qs.exists():
+            raise forms.ValidationError("That username is already taken.")
+
+        return username
+
+    def clean_email(self):
+        email = self.cleaned_data["email"].strip().lower()
+
+        qs = User.objects.filter(username__iexact=email).exclude(pk=self.user.pk)
+        if qs.exists():
+            raise forms.ValidationError("An account with this email already exists.")
+
+        return email
+
+    def clean_first_name(self):
+        first_name = self.cleaned_data.get("first_name", "").strip()
+
+        if not first_name:
+            return first_name
+
+        if len(first_name) < 2:
+            raise forms.ValidationError("First name must be at least 2 characters.")
+
+        if not re.fullmatch(r"[A-Za-z .'-]+", first_name):
+            raise forms.ValidationError(
+                "First name can only contain letters, spaces, apostrophes, hyphens, and periods."
+            )
+
+        return first_name
+
+    def clean_last_name(self):
+        last_name = self.cleaned_data.get("last_name", "").strip()
+
+        if not last_name:
+            return last_name
+
+        if len(last_name) < 2:
+            raise forms.ValidationError("Last name must be at least 2 characters.")
+
+        if not re.fullmatch(r"[A-Za-z .'-]+", last_name):
+            raise forms.ValidationError(
+                "Last name can only contain letters, spaces, apostrophes, hyphens, and periods."
+            )
+
+        return last_name
+
+    def clean_phone_number(self):
+        phone = self.cleaned_data.get("phone_number", "").strip()
+
+        if not phone:
+            return phone
+
+        digits = re.sub(r"\D", "", phone)
+
+        if len(digits) < 10 or len(digits) > 15:
+            raise forms.ValidationError("Enter a valid phone number.")
+
+        return digits
+
+    def clean_city(self):
+        city = self.cleaned_data.get("city", "").strip()
+
+        if not city:
+            return city
+
+        if len(city) < 2:
+            raise forms.ValidationError("Enter a valid city.")
+
+        if not re.fullmatch(r"[A-Za-z .'-]+", city):
+            raise forms.ValidationError(
+                "City can only contain letters, spaces, apostrophes, hyphens, and periods."
+            )
+
+        return city
+
+    def clean_state(self):
+        state = self.cleaned_data.get("state", "").strip()
+
+        if not state:
+            return state
+
+        if state not in VALID_STATE_VALUES:
+            raise forms.ValidationError("Please select a valid state.")
+
+        return state
+
+    def clean_role(self):
+        role = self.cleaned_data["role"]
+        if role not in {"unhoused", "volunteer", "admin"}:
+            raise forms.ValidationError("Invalid role selection.")
+        return role
