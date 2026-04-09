@@ -1052,10 +1052,12 @@ def create_request(request):
 # - Clears claimed_by and claimed_at
 # - Notifies user that volunteer will be affected
 
+
 @login_required
 @require_POST
 def update_request(request, request_id):
     profile = request.user.profile
+    return_query = (request.POST.get("return_query") or "").strip()
 
     if profile.role is None or profile.role.name.lower() != "unhoused":
         messages.error(request, "Only unhoused users can update requests.")
@@ -1066,6 +1068,8 @@ def update_request(request, request_id):
 
     if not form.is_valid():
         messages.error(request, "Please check your request form and try again.")
+        if return_query:
+            return redirect(f"{reverse('unhoused')}?{return_query}")
         return redirect("unhoused")
 
     updated_request = form.save(commit=False)
@@ -1104,8 +1108,8 @@ def update_request(request, request_id):
     else:
         messages.success(request, "Your request was updated successfully.")
 
-    updated_request.requester = profile
-    updated_request.save()
+    if return_query:
+        return redirect(f"{reverse('unhoused')}?{return_query}")
 
     return redirect("unhoused")
 
@@ -1479,6 +1483,7 @@ def create_request_report(request):
 def update_offer(request, offer_id):
     profile = request.user.profile
     page_number = request.POST.get("return_page_number", "1")
+    return_query = (request.POST.get("return_query") or "").strip()
 
     if profile.role is None or profile.role.name.lower() != "volunteer":
         messages.error(request, "Unauthorized.")
@@ -1489,6 +1494,8 @@ def update_offer(request, offer_id):
     # BLOCK EDIT IF CLAIMED
     if offer.status == Offer.STATUS_CLAIMED:
         messages.error(request, "This offer has already been claimed and cannot be edited.")
+        if return_query:
+            return redirect(f"{reverse('volunteer')}?{return_query}")
         return redirect(f"{reverse('my_offers')}?page={page_number}")
 
     form = OfferForm(request.POST, instance=offer)
@@ -1499,11 +1506,12 @@ def update_offer(request, offer_id):
         updated_offer.save()
 
         messages.success(request, "Offer updated successfully.")
-
     else:
         messages.error(request, "Failed to update offer. Please check your form.")
 
-    # always redirect back to my_offers
+    if return_query:
+        return redirect(f"{reverse('volunteer')}?{return_query}")
+
     return redirect(f"{reverse('my_offers')}?page={page_number}")
 
 
@@ -1667,11 +1675,11 @@ def admin_dashboard(request):
 
     suggestions = (
         Profile.objects.select_related("user")
-        .exclude(user__email__isnull=True)
-        .exclude(user__email__exact="")
-        .order_by("user__email")
-        .values_list("user__email", flat=True)
-        .distinct()
+            .exclude(user__email__isnull=True)
+            .exclude(user__email__exact="")
+            .order_by("user__email")
+            .values_list("user__email", flat=True)
+            .distinct()
     )
 
     return render(request, "admin_dash.html", {

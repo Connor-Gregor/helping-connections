@@ -176,6 +176,7 @@
                         <input type="hidden" id="itemMessageReturnItemId" name="return_item_id">
                         <input type="hidden" id="itemMessageReturnPage" name="return_page">
                         <input type="hidden" id="itemMessageReturnPageNumber" name="return_page_number">
+                        <input type="hidden" id="itemMessageReturnQuery" name="return_query">
 
                         <label for="itemMessageBody" class="item-field-label">Message</label>
                         <textarea
@@ -259,6 +260,8 @@
                         {% csrf_token %}
 
                         <input type="hidden" id="itemEditReturnPageNumber" name="return_page_number">
+                        <input type="hidden" id="itemEditReturnQuery" name="return_query">
+                        <input type="hidden" id="itemEditReturnItemId" name="return_item_id">
 
                         <div id="itemAdminEditFields" style="display:none;">
                             <label for="itemEditDisplayUsername" class="item-field-label">Display Username</label>
