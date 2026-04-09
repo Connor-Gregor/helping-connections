@@ -237,26 +237,37 @@ def new_thread(request):
 
             messages.success(request, "Message sent.")
 
-            # These return_to + return_page_number values are used by modal-based
-            # messaging flows so the user can land back on the page they came from.
             return_to = request.POST.get("return_to")
             return_page_number = request.POST.get("return_page_number", "1")
+            return_query = (request.POST.get("return_query") or "").strip()
 
             if return_to == "available_offers":
+                if return_query:
+                    return redirect(f"{reverse('available_offers')}?{return_query}")
                 return redirect(f"{reverse('available_offers')}?page={return_page_number}")
 
             if return_to == "my_offers":
+                if return_query:
+                    return redirect(f"{reverse('my_offers')}?{return_query}")
                 return redirect(f"{reverse('my_offers')}?page={return_page_number}")
 
             if return_to == "volunteer_requests":
+                if return_query:
+                    return redirect(f"{reverse('volunteer_requests')}?{return_query}")
                 return redirect(f"{reverse('volunteer_requests')}?page={return_page_number}")
 
             if return_to == "volunteer":
+                if return_query:
+                    return redirect(f"{reverse('volunteer')}?{return_query}")
                 return redirect("volunteer")
+
+            if return_to == "unhoused":
+                if return_query:
+                    return redirect(f"{reverse('unhoused')}?{return_query}")
+                return redirect("unhoused")
 
             return redirect("messaging:thread_detail", thread_id=thread.id)
     else:
-        # Optional query param support lets other pages prefill the intended recipient.
         form = NewThreadForm(
             user=request.user,
             initial_recipient_id=initial_recipient
