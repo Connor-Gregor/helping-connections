@@ -825,6 +825,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Shows the default item detail panel.
     function showDetailPanel() {
+        if (primaryConfirmBtn) {
+            primaryConfirmBtn.classList.remove("item-danger-btn");
+        }
         openPanel(detailPanel, "detail", {
             clearContext: true,
             resetPendingAction: true
@@ -916,7 +919,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    function showVerifyRequestConfirm() {
+    function showVerifyConfirm() {
         const item = modalState.item;
         if (!item) return;
 
@@ -939,11 +942,11 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (primaryPanelTitle) {
-            primaryPanelTitle.textContent = "Verify this request?";
+            primaryPanelTitle.textContent = item.verifyPanelTitle || "Verify this item?";
         }
 
         if (primaryNote) {
-            primaryNote.textContent = "Confirm that this request has been fulfilled.";
+            primaryNote.textContent = item.verifyNote || "Confirm that this item has been fulfilled.";
         }
 
         if (primaryConfirmBtn) {
@@ -951,7 +954,72 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (primaryForm) {
-            primaryForm.action = `/requests/${item.itemId}/verify/`;
+            primaryForm.action = item.urls?.verify || "";
+        }
+    }
+
+    function showVolunteerClaimedDeleteConfirm() {
+        const item = modalState.item;
+        if (!item) return;
+
+        setPendingProcessingAction("delete");
+
+        openPanel(primaryPanel, "primary", {
+            clearContext: true
+        });
+
+        if (primaryTitle) {
+            primaryTitle.textContent = item.title || "";
+        }
+
+        if (primaryItemId) {
+            primaryItemId.value = item.itemId || "";
+        }
+
+        if (primaryReturnPageNumber) {
+            primaryReturnPageNumber.value = getCurrentPageNumber();
+        }
+
+        if (primaryConfirmBtn) {
+            if (item.actionMode === "volunteer_request_claimed") {
+                primaryConfirmBtn.textContent = "Withdraw Claim";
+            } else {
+                primaryConfirmBtn.textContent = "Confirm Delete";
+            }
+
+            primaryConfirmBtn.classList.add("item-danger-btn");
+        }
+
+        if (item.actionMode === "volunteer_offer_claimed") {
+            if (primaryPanelTitle) {
+                primaryPanelTitle.textContent = "Delete this offer?";
+            }
+
+            if (primaryNote) {
+                primaryNote.textContent =
+                    "If you delete this offer, the unhoused user will be notified that it is no longer available.";
+            }
+
+            if (primaryForm) {
+                primaryForm.action = item.urls?.delete || "";
+            }
+
+            return;
+        }
+
+        if (item.actionMode === "volunteer_request_claimed") {
+            if (primaryPanelTitle) {
+                primaryPanelTitle.textContent = "Remove yourself from this request?";
+            }
+
+            if (primaryNote) {
+                primaryNote.textContent =
+                    "If you remove yourself from this request, the unhoused user will be notified and the request will reopen so another volunteer can respond.";
+            }
+
+            if (primaryForm) {
+                primaryForm.action = item.urls?.delete || "";
+            }
         }
     }
 
@@ -1296,6 +1364,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (actions.showDelete) {
             showElement(deleteBtn, "inline-flex");
+
+            if (deleteBtn) {
+                if (item.actionMode === "volunteer_request_claimed") {
+                    deleteBtn.textContent = "Withdraw Claim";
+                } else {
+                    deleteBtn.textContent = "Delete";
+                }
+            }
         }
 
         if (actions.showMessageClaimer) {
@@ -1514,6 +1590,14 @@ document.addEventListener("DOMContentLoaded", function () {
             actions.requiresProcessingConfirm = true;
         } else if (actionMode === "volunteer_request_claimed") {
             actions.showMessageOwner = true;
+            actions.showDelete = true;
+        } else if (actionMode === "volunteer_request_completed") {
+            actions.showMessageOwner = true;
+            actions.showHide = true;
+        } else if (actionMode === "volunteer_offer_claimed") {
+            actions.showMessageClaimer = hasClaimer;
+            actions.showVerify = true;
+            actions.showDelete = true;
         } else if (actionMode === "request_completed") {
             actions.showMessageClaimer = hasClaimer;
             actions.showHide = true;
@@ -1540,8 +1624,22 @@ document.addEventListener("DOMContentLoaded", function () {
         const urls = {
             primary: card.dataset.primaryUrl || "",
             edit: card.dataset.editUrl || "",
-            delete: card.dataset.deleteUrl || ""
+            delete: card.dataset.deleteUrl || "",
+            verify: ""
         };
+
+        let verifyPanelTitle = "";
+        let verifyNote = "";
+
+        if (actionMode === "volunteer_offer_claimed") {
+            urls.verify = `/offers/${card.dataset.itemId}/verify/`;
+            verifyPanelTitle = "Verify this offer?";
+            verifyNote = "Confirm that this offer has been fulfilled.";
+        } else if (actionMode === "volunteer_request_claimed" || actionMode === "request_processing") {
+            urls.verify = `/requests/${card.dataset.itemId}/verify/`;
+            verifyPanelTitle = "Verify this request?";
+            verifyNote = "Confirm that this request has been fulfilled.";
+        }
 
         return {
             itemId: card.dataset.itemId || "",
@@ -1578,7 +1676,9 @@ document.addEventListener("DOMContentLoaded", function () {
             reportLabel: card.dataset.reportLabel || "",
             primaryPanelTitle: card.dataset.primaryPanelTitle || "",
             primaryConfirmLabel: card.dataset.primaryConfirmLabel || "",
-            primaryNote: card.dataset.primaryNote || ""
+            primaryNote: card.dataset.primaryNote || "",
+            verifyPanelTitle: verifyPanelTitle,
+            verifyNote: verifyNote,
         };
     }
 
@@ -1801,10 +1901,10 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (verifyBtn) {
-        verifyBtn.addEventListener("click", function (e) {
+        verifyBtn.onclick = function (e) {
             e.stopPropagation();
-            showVerifyRequestConfirm();
-        });
+            showVerifyConfirm();
+        };
     }
 
     if (reportBtn) {
@@ -1837,6 +1937,14 @@ document.addEventListener("DOMContentLoaded", function () {
             const item = getCurrentItem();
             if (!item) return;
 
+            if (
+                item.actionMode === "volunteer_request_claimed" ||
+                item.actionMode === "volunteer_offer_claimed"
+            ) {
+                showVolunteerClaimedDeleteConfirm();
+                return;
+            }
+
             if (item.actions?.requiresProcessingConfirm) {
                 showProcessingRequestConfirm("delete");
                 return;
@@ -1855,6 +1963,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (primaryForm) {
         primaryForm.addEventListener("submit", function (e) {
+
             const item = getCurrentItem();
             const pendingAction = getPendingProcessingAction();
 

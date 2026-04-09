@@ -12,6 +12,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.urls import reverse
 from django.core.paginator import Paginator
+from messaging.services import send_system_dm
 
 from .forms import (
     RegisterForm,
@@ -588,29 +589,80 @@ def volunteer(request):
     role = getattr(request.user.profile, "role", None)
     if role and role.name == "volunteer":
         profile = request.user.profile
+        active_tab = request.GET.get("tab", "accepted-requests-tab")
+        offers_view = request.GET.get("offers_view", "accepted")
 
-        accepted_requests = Request.objects.filter(
+        available_requests_list = Request.objects.filter(
+            status=Request.STATUS_OPEN
+        ).exclude(
+            requester=profile
+        ).order_by("-created_at")
+
+        available_requests_total = available_requests_list.count()
+        available_requests_paginator = Paginator(available_requests_list, 9)
+        available_requests_page_number = request.GET.get("available_page")
+        available_requests = available_requests_paginator.get_page(available_requests_page_number)
+
+        accepted_requests_list = Request.objects.filter(
             claimed_by=profile,
             status=Request.STATUS_CLAIMED
         ).exclude(
             requester=profile
         ).order_by("-claimed_at", "-created_at")
 
-        accepted_offers = Offer.objects.filter(
+        accepted_requests_total = accepted_requests_list.count()
+        accepted_requests_paginator = Paginator(accepted_requests_list, 9)
+        accepted_requests_page_number = request.GET.get("accepted_page")
+        accepted_requests = accepted_requests_paginator.get_page(accepted_requests_page_number)
+
+        accepted_offers_list = Offer.objects.filter(
             offered_by=profile,
             status=Offer.STATUS_CLAIMED
         ).prefetch_related("images").order_by("-claimed_at", "-created_at")
 
-        fulfilled_requests_count = Request.objects.filter(
+        accepted_offers_paginator = Paginator(accepted_offers_list, 9)
+        accepted_offers_page_number = request.GET.get("accepted_offers_page")
+        accepted_offers = accepted_offers_paginator.get_page(accepted_offers_page_number)
+        accepted_offers_total = accepted_offers_list.count()
+
+        open_offers_list = Offer.objects.filter(
+            offered_by=profile,
+            status=Offer.STATUS_OPEN
+        ).prefetch_related("images").order_by("-created_at")
+
+        open_offers_total = open_offers_list.count()
+        open_offers_paginator = Paginator(open_offers_list, 9)
+        open_offers_page_number = request.GET.get("open_offers_page")
+        open_offers = open_offers_paginator.get_page(open_offers_page_number)
+
+        completed_requests_list = Request.objects.filter(
             claimed_by=profile,
             status=Request.STATUS_FULFILLED
         ).exclude(
             requester=profile
-        ).count()
+        ).order_by("-claimed_at", "-created_at")
+
+        completed_requests_total = completed_requests_list.count()
+
+        completed_requests_paginator = Paginator(completed_requests_list, 9)
+        completed_requests_page_number = request.GET.get("completed_page")
+        completed_requests = completed_requests_paginator.get_page(completed_requests_page_number)
+
+        fulfilled_requests_count = completed_requests_total
 
         return render(request, "volunteer_dash.html", {
+            "active_tab": active_tab,
             "accepted_requests": accepted_requests,
+            "accepted_requests_total": accepted_requests_total,
             "accepted_offers": accepted_offers,
+            "accepted_offers_total": accepted_offers_total,
+            "open_offers_total": open_offers_total,
+            "open_offers": open_offers,
+            "offers_view": offers_view,
+            "completed_requests": completed_requests,
+            "completed_requests_total": completed_requests_total,
+            "available_requests": available_requests,
+            "available_requests_total": available_requests_total,
             "fulfilled_requests_count": fulfilled_requests_count,
         })
 
@@ -624,6 +676,7 @@ def volunteer(request):
 # - Completed requests
 #
 # Requests are separated by status for better UX.
+
 
 @login_required
 def unhoused(request):
@@ -654,6 +707,7 @@ def unhoused(request):
 
     return redirect("home")
 
+
 # Returns correct dashboard route based on user role.
 # Used for centralized redirection logic.
 
@@ -673,6 +727,7 @@ def get_dashboard_url(user):
         return "unhoused"
 
     return "home"
+
 
 @login_required
 def dashboard_redirect(request):
@@ -989,13 +1044,36 @@ def update_request(request, request_id):
 
     updated_request = form.save(commit=False)
 
-    if req.status == Request.STATUS_CLAIMED:
+    previous_claimer = req.claimed_by
+    was_claimed = req.status == Request.STATUS_CLAIMED
+
+    if was_claimed:
         updated_request.status = Request.STATUS_OPEN
         updated_request.claimed_by = None
         updated_request.claimed_at = None
+
+    updated_request.requester = profile
+    updated_request.save()
+
+    if was_claimed and previous_claimer and previous_claimer.user != request.user:
+        requester_name = (
+                profile.display_username
+                or request.user.get_full_name().strip()
+                or request.user.username
+        )
+
+        send_system_dm(
+            sender=request.user,
+            recipient=previous_claimer.user,
+            body=(
+                f'{requester_name} updated the request "{updated_request.title}". '
+                f'The request has been reopened, so you are no longer assigned to it.'
+            ),
+        )
+
         messages.success(
             request,
-            "Your request was updated. The volunteer will be notified, and your request is open again."
+            "Your request was updated. The volunteer was notified, and your request is open again."
         )
     else:
         messages.success(request, "Your request was updated successfully.")
@@ -1021,13 +1099,30 @@ def delete_request(request, request_id):
 
     req = get_object_or_404(Request, id=request_id, requester=profile)
     was_processing = req.status == Request.STATUS_CLAIMED
+    previous_claimer = req.claimed_by
+    request_title = req.title
 
     req.delete()
 
-    if was_processing:
+    if was_processing and previous_claimer and previous_claimer.user != request.user:
+        requester_name = (
+                profile.display_username
+                or request.user.get_full_name().strip()
+                or request.user.username
+        )
+
+        send_system_dm(
+            sender=request.user,
+            recipient=previous_claimer.user,
+            body=(
+                f'{requester_name} deleted the request "{request_title}". '
+                f'It is no longer needed.'
+            ),
+        )
+
         messages.success(
             request,
-            "Your request was deleted. The volunteer will be notified that it is no longer needed."
+            "Your request was deleted. The volunteer was notified that it is no longer needed."
         )
     else:
         messages.success(request, "Your request was deleted successfully.")
@@ -1078,6 +1173,51 @@ def claim_request(request, request_id):
 
     messages.success(request, "You have claimed this request.")
     return redirect("volunteer_requests")
+
+@login_required
+@require_POST
+def withdraw_claimed_request(request, request_id):
+    profile = request.user.profile
+
+    if profile.role is None or profile.role.name.lower() != "volunteer":
+        messages.error(request, "Only volunteers can remove themselves from accepted requests.")
+        return redirect("home")
+
+    req = get_object_or_404(Request, id=request_id, claimed_by=profile)
+
+    if req.status != Request.STATUS_CLAIMED:
+        messages.error(request, "Only accepted requests can be removed from your dashboard.")
+        return redirect("volunteer")
+
+    requester_profile = req.requester
+    request_title = req.title
+
+    req.status = Request.STATUS_OPEN
+    req.claimed_by = None
+    req.claimed_at = None
+    req.save()
+
+    if requester_profile and requester_profile.user != request.user:
+        volunteer_name = (
+                profile.display_username
+                or request.user.get_full_name().strip()
+                or request.user.username
+        )
+
+        send_system_dm(
+            sender=request.user,
+            recipient=requester_profile.user,
+            body=(
+                f'{volunteer_name} removed themselves from the request "{request_title}". '
+                f'The request has reopened so another volunteer can respond.'
+            ),
+        )
+
+    messages.success(
+        request,
+        "You removed yourself from the request. The unhoused user was notified and the request is open again."
+    )
+    return redirect("volunteer")
 
 # Allows volunteers to create offers.
 #
@@ -1331,16 +1471,44 @@ def update_offer(request, offer_id):
 @require_POST
 def delete_offer(request, offer_id):
     profile = request.user.profile
+    page_number = request.POST.get("return_page_number", "1")
 
     if profile.role is None or profile.role.name.lower() != "volunteer":
         messages.error(request, "Only volunteers can delete offers.")
         return redirect("home")
 
     offer = get_object_or_404(Offer, id=offer_id, offered_by=profile)
+    was_claimed = offer.status == Offer.STATUS_CLAIMED
+    previous_claimer = offer.claimed_by
+    offer_title = offer.title
+
     offer.delete()
 
-    messages.success(request, "Offer deleted successfully.")
-    return redirect("my_offers")
+    if was_claimed and previous_claimer and previous_claimer.user != request.user:
+        volunteer_name = (
+                profile.display_username
+                or request.user.get_full_name().strip()
+                or request.user.username
+        )
+
+        send_system_dm(
+            sender=request.user,
+            recipient=previous_claimer.user,
+            body=(
+                f'{volunteer_name} deleted the offer "{offer_title}". '
+                f'It is no longer available.'
+            ),
+        )
+
+        messages.success(
+            request,
+            "Your offer was deleted. The unhoused user was notified that it is no longer available."
+        )
+    else:
+        messages.success(request, "Offer deleted successfully.")
+
+    return redirect(f"{reverse('my_offers')}?page={page_number}")
+
 
 @login_required
 @require_POST
@@ -1357,17 +1525,85 @@ def verify_request(request, request_id):
         messages.error(request, "Only processing requests can be marked as fulfilled.")
         return redirect("unhoused")
 
+    previous_claimer = req.claimed_by
+    request_title = req.title
+
     req.status = Request.STATUS_FULFILLED
     req.save()
 
-    messages.success(request, "Request marked as fulfilled.")
+    if previous_claimer and previous_claimer.user != request.user:
+        requester_name = (
+                profile.display_username
+                or request.user.get_full_name().strip()
+                or request.user.username
+        )
+
+        send_system_dm(
+            sender=request.user,
+            recipient=previous_claimer.user,
+            body=(
+                f'{requester_name} marked the request "{request_title}" as fulfilled. '
+                f'Thank you for helping {requester_name}!'
+            ),
+        )
+
+        messages.success(request, "Request marked as fulfilled. The volunteer was notified.")
+    else:
+        messages.success(request, "Request marked as fulfilled.")
+
     return redirect("unhoused")
+
+
+@login_required
+@require_POST
+def verify_offer(request, offer_id):
+    profile = request.user.profile
+
+    if profile.role is None or profile.role.name.lower() != "volunteer":
+        messages.error(request, "Only volunteers can mark offers as fulfilled.")
+        return redirect("home")
+
+    offer = get_object_or_404(Offer, id=offer_id, offered_by=profile)
+
+    if offer.status != Offer.STATUS_CLAIMED:
+        messages.error(request, "Only claimed offers can be marked as fulfilled.")
+        return redirect("volunteer")
+
+    previous_claimer = offer.claimed_by
+    offer_title = offer.title
+
+    offer.status = Offer.STATUS_FULFILLED
+    offer.save()
+
+    if previous_claimer and previous_claimer.user != request.user:
+        volunteer_name = (
+                profile.display_username
+                or request.user.get_full_name().strip()
+                or request.user.username
+        )
+
+        send_system_dm(
+            sender=request.user,
+            recipient=previous_claimer.user,
+            body=(
+                f'{volunteer_name} marked the offer "{offer_title}" as fulfilled. '
+                f'Thank you for confirming receipt.'
+            ),
+        )
+
+        messages.success(request, "Offer marked as fulfilled. The unhoused user was notified.")
+    else:
+        messages.success(request, "Offer marked as fulfilled.")
+
+    return redirect("volunteer")
+
 
 def is_admin(user):
     try:
         return bool(user.profile.role and user.profile.role.name.lower() == "admin")
     except Profile.DoesNotExist:
         return False
+
 
 @login_required
 def admin_dashboard(request):
