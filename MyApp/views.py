@@ -1165,10 +1165,24 @@ def volunteer_requests(request):
         messages.error(request, "Only volunteers can view requests.")
         return redirect("home")
 
-    requests = Request.objects.filter(status=Request.STATUS_OPEN)
+    category = request.GET.get("category", "").strip()
+    city = request.GET.get("city", "").strip()
+
+    requests_qs = Request.objects.filter(status=Request.STATUS_OPEN)
+
+    if category:
+        requests_qs = requests_qs.filter(category=category)
+    if city:
+        requests_qs = requests_qs.filter(city__icontains=city)
+
+    paginator = Paginator(requests_qs, 9)
+    page_obj = paginator.get_page(request.GET.get("page"))
 
     return render(request, "volunteer_requests.html", {
-        "requests": requests
+        "requests": page_obj,
+        "categories": Request.CATEGORY_CHOICES,
+        "selected_category": category,
+        "selected_city": city,
     })
 
 # Allows volunteers to claim a request.
