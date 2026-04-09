@@ -278,7 +278,7 @@
 
 .item-modal-actions > * {
     flex: 1 1 0;
-    max-width: 150px;
+    max-width: 170px;
 }
 
 /* Force consistent sizing for action buttons shown in the detail footer */
@@ -287,11 +287,14 @@
 #itemModalMessageClaimerBtn,
 #itemModalPrimaryBtn,
 #itemModalMessageBtn,
-#itemModalReportBtn {
+#itemModalReportBtn,
+#itemModalVerifyBtn,
+#itemModalHideBtn {
     width: 100%;
     min-width: 0;
     padding: 11px 10px;
     box-sizing: border-box;
+    white-space: nowrap;
 }
 
 /* Special solid style used for certain conditional footer buttons */
@@ -353,6 +356,7 @@
     background: #ffffff;
     color: #1abc9c;
     border: 1px solid #1abc9c;
+
 }
 
 .item-secondary-btn:hover {

@@ -90,6 +90,7 @@ urlpatterns = [
     path("requests/<int:request_id>/update/", views.update_request, name="update_request"),
     path("requests/<int:request_id>/delete/", views.delete_request, name="delete_request"),
     path("requests/<int:request_id>/verify/", views.verify_request, name="verify_request"),
+    path("requests/<int:request_id>/withdraw/", views.withdraw_claimed_request, name="withdraw_claimed_request"),
 
     # OFFERS
     path("offers/create/", create_offer, name="create_offer"),
@@ -97,6 +98,7 @@ urlpatterns = [
     path("offers/<int:offer_id>/claim/", claim_offer, name="claim_offer"),
     path("offers/<int:offer_id>/update/", update_offer, name="update_offer"),
     path("offers/<int:offer_id>/delete/", delete_offer, name="delete_offer"),
+    path("offers/<int:offer_id>/verify/", views.verify_offer, name="verify_offer"),
     path("offers/mine/", my_offers, name="my_offers"),
 
     # REPORT
