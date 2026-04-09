@@ -149,10 +149,46 @@ document.addEventListener("DOMContentLoaded", function () {
     const editDescription = document.getElementById("itemEditDescription");
     const editBackBtn = document.getElementById("itemEditBackBtn");
 
+    const modalEmailRow = document.getElementById("itemModalEmailRow");
+    const modalEmail = document.getElementById("itemModalEmail");
+    const modalPhoneRow = document.getElementById("itemModalPhoneRow");
+    const modalPhone = document.getElementById("itemModalPhone");
+    const modalRoleRow = document.getElementById("itemModalRoleRow");
+    const modalRole = document.getElementById("itemModalRole");
+
+    const adminEditFields = document.getElementById("itemAdminEditFields");
+    const standardEditFields = document.getElementById("itemStandardEditFields");
+
+    const editDisplayUsername = document.getElementById("itemEditDisplayUsername");
+    const editFirstName = document.getElementById("itemEditFirstName");
+    const editLastName = document.getElementById("itemEditLastName");
+    const editEmail = document.getElementById("itemEditEmail");
+    const editPhone = document.getElementById("itemEditPhone");
+    const editAdminCity = document.getElementById("itemEditAdminCity");
+    const editState = document.getElementById("itemEditState");
+    const editRole = document.getElementById("itemEditRole");
+
     // Delete panel
     const deleteForm = document.getElementById("itemDeleteForm");
     const deleteTitle = document.getElementById("itemDeleteTitle");
     const deleteBackBtn = document.getElementById("itemDeleteBackBtn");
+
+    // Admin viewing account stuff
+    const itemAccountInfo = document.getElementById("itemAccountInfo");
+    const itemAccountUsername = document.getElementById("itemAccountUsername");
+    const itemAccountFirstName = document.getElementById("itemAccountFirstName");
+    const itemAccountLastName = document.getElementById("itemAccountLastName");
+    const itemAccountEmail = document.getElementById("itemAccountEmail");
+    const itemAccountPhone = document.getElementById("itemAccountPhone");
+    const itemAccountCity = document.getElementById("itemAccountCity");
+    const itemAccountState = document.getElementById("itemAccountState");
+    const itemAccountRole = document.getElementById("itemAccountRole");
+    const itemAccountJoined = document.getElementById("itemAccountJoined");
+
+    const itemStandardUserBlock = document.getElementById("itemStandardUserBlock");
+    const itemStandardMetaBlock = document.getElementById("itemStandardMetaBlock");
+    const itemStandardDescriptionBlock = document.getElementById("itemStandardDescriptionBlock");
+    const itemModalLeft = document.getElementById("itemModalLeft");
 
     // ============================================================
     // MODAL STATE
@@ -1083,27 +1119,79 @@ document.addEventListener("DOMContentLoaded", function () {
         const item = modalState.item;
         if (!item) return;
 
+        const isAdminAccount = isAdminAccountItem();
+
         openPanel(editPanel, "edit", {
             clearContext: true,
             resetPendingAction: true
         });
 
         if (editPanelTitle) {
-            editPanelTitle.textContent = `Edit ${item.title || "Item"}`;
+            editPanelTitle.textContent = isAdminAccount
+                ? `Edit Account: ${item.title || "Account"}`
+                : `Edit ${item.title || "Item"}`;
         }
-        if (editTitle) {
-            editTitle.value = item.title || "";
 
-            editTitle.onkeydown = function (e) {
-                if (e.key === "Enter") {
-                    e.preventDefault();
-                }
-            };
+        if (isAdminAccount) {
+            showElement(adminEditFields, "block");
+            hideElement(standardEditFields);
+
+            if (editTitle) editTitle.disabled = true;
+            if (editCategory) editCategory.disabled = true;
+            if (editCity) editCity.disabled = true;
+            if (editLocation) editLocation.disabled = true;
+            if (editDescription) editDescription.disabled = true;
+
+            if (editDisplayUsername) editDisplayUsername.disabled = false;
+            if (editFirstName) editFirstName.disabled = false;
+            if (editLastName) editLastName.disabled = false;
+            if (editEmail) editEmail.disabled = false;
+            if (editPhone) editPhone.disabled = false;
+            if (editAdminCity) editAdminCity.disabled = false;
+            if (editState) editState.disabled = false;
+            if (editRole) editRole.disabled = false;
+
+            if (editDisplayUsername) editDisplayUsername.value = item.title || "";
+            if (editFirstName) editFirstName.value = item.firstName || "";
+            if (editLastName) editLastName.value = item.lastName || "";
+            if (editEmail) editEmail.value = item.email || "";
+            if (editPhone) editPhone.value = item.phone || "";
+            if (editAdminCity) editAdminCity.value = item.city || "";
+            if (editState) editState.value = item.state || "";
+            if (editRole) editRole.value = (item.roleName || "").toLowerCase();
+        } else {
+            hideElement(adminEditFields);
+            showElement(standardEditFields, "block");
+
+            if (editDisplayUsername) editDisplayUsername.disabled = true;
+            if (editFirstName) editFirstName.disabled = true;
+            if (editLastName) editLastName.disabled = true;
+            if (editEmail) editEmail.disabled = true;
+            if (editPhone) editPhone.disabled = true;
+            if (editAdminCity) editAdminCity.disabled = true;
+            if (editState) editState.disabled = true;
+            if (editRole) editRole.disabled = true;
+
+            if (editTitle) editTitle.disabled = false;
+            if (editCategory) editCategory.disabled = false;
+            if (editCity) editCity.disabled = false;
+            if (editLocation) editLocation.disabled = false;
+            if (editDescription) editDescription.disabled = false;
+
+            if (editTitle) {
+                editTitle.value = item.title || "";
+
+                editTitle.onkeydown = function (e) {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                    }
+                };
+            }
+            if (editCategory) editCategory.value = item.categoryValue || "";
+            if (editCity) editCity.value = item.city || "";
+            if (editLocation) editLocation.value = item.location || "";
+            if (editDescription) editDescription.value = item.description || "";
         }
-        if (editCategory) editCategory.value = item.categoryValue || "";
-        if (editCity) editCity.value = item.city || "";
-        if (editLocation) editLocation.value = item.location || "";
-        if (editDescription) editDescription.value = item.description || "";
 
         if (editReturnPageNumber) {
             editReturnPageNumber.value = getCurrentPageNumber();
@@ -1129,6 +1217,15 @@ document.addEventListener("DOMContentLoaded", function () {
     function showDeletePanel() {
         const item = modalState.item;
         if (!item) return;
+
+        const isAdminAccount = isAdminAccountItem();
+
+        const deleteHeading = deletePanel.querySelector(".item-modal-title");
+        if (deleteHeading) {
+            deleteHeading.textContent = isAdminAccount
+                ? "Delete This Account?"
+                : "Delete This Offer?";
+        }
 
         openPanel(deletePanel, "delete", {
             clearContext: true,
@@ -1224,6 +1321,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (!item) return;
 
+        const isAdminAccount = isAdminAccountItem();
+
         setCurrentItem(item);
         resetImageState(item.images || []);
         setActivePanel("detail");
@@ -1274,6 +1373,38 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (primaryBtn) {
             primaryBtn.textContent = getCurrentPrimaryLabel();
+        }
+
+        if (isAdminAccount) {
+            hideElement(itemStandardUserBlock);
+            hideElement(itemStandardMetaBlock);
+            hideElement(itemStandardDescriptionBlock);
+            showElement(itemAccountInfo, "block");
+            hideElement(itemModalLeft);
+
+            if (itemAccountUsername) itemAccountUsername.textContent = item.title || "Not provided";
+            if (itemAccountFirstName) itemAccountFirstName.textContent = item.firstName || "Not provided";
+            if (itemAccountLastName) itemAccountLastName.textContent = item.lastName || "Not provided";
+            if (itemAccountEmail) itemAccountEmail.textContent = item.email || "Not provided";
+            if (itemAccountPhone) itemAccountPhone.textContent = item.phone || "Not provided";
+            if (itemAccountCity) itemAccountCity.textContent = item.city || "Not provided";
+            if (itemAccountState) itemAccountState.textContent = item.state || "Not provided";
+            if (itemAccountRole) itemAccountRole.textContent = item.roleName || "None";
+            if (itemAccountJoined) itemAccountJoined.textContent = formatPostedDate(item.createdAt);
+
+            hideElement(modalEmailRow);
+            hideElement(modalPhoneRow);
+            hideElement(modalRoleRow);
+        } else {
+            showElement(itemStandardUserBlock, "flex");
+            showElement(itemStandardMetaBlock, "block");
+            showElement(itemStandardDescriptionBlock, "block");
+            hideElement(itemAccountInfo);
+            showElement(itemModalLeft, "block");
+
+            hideElement(modalEmailRow);
+            hideElement(modalPhoneRow);
+            hideElement(modalRoleRow);
         }
 
         updateImageView();
@@ -1346,6 +1477,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         const actionMode = card.dataset.actionMode || "";
+        const isAdminAccount = actionMode === "admin_account";
         const hasClaimer = !!(card.dataset.claimerId || "");
 
         const actions = {
@@ -1360,7 +1492,10 @@ document.addEventListener("DOMContentLoaded", function () {
             requiresProcessingConfirm: false
         };
 
-        if (actionMode === "mine") {
+        if (isAdminAccount) {
+            actions.showEdit = true;
+            actions.showDelete = card.dataset.canDelete === "true";
+        } else if (actionMode === "mine") {
             actions.showDelete = true;
 
             if (hasClaimer) {
@@ -1419,15 +1554,23 @@ document.addEventListener("DOMContentLoaded", function () {
             description: card.dataset.description || "",
             location: card.dataset.location || "",
             createdAt: card.dataset.created || "",
+            email: card.dataset.email || "",
+            phone: card.dataset.phone || "",
+            roleName: card.dataset.roleName || "",
+            firstName: card.dataset.firstName || "",
+            lastName: card.dataset.lastName || "",
+            state: card.dataset.state || "",
 
             owner: owner,
             claim: claim,
             urls: urls,
             actions: actions,
 
-            images: parsedImages.length
-                ? parsedImages
-                : [getDefaultCategoryImage(card.dataset.categoryValue, card.dataset.category)],
+            images: isAdminAccount
+                ? []
+                : (parsedImages.length
+                    ? parsedImages
+                    : [getDefaultCategoryImage(card.dataset.categoryValue, card.dataset.category)]),
 
             actionMode: actionMode,
             primaryLabel: card.dataset.primaryLabel || "",
@@ -1572,6 +1715,16 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function handleEditSubmit(e) {
+        if (isAdminAccountItem()) {
+            sessionStorage.setItem("itemModalScrollY", String(window.scrollY));
+            sessionStorage.setItem("itemModalReturnItemId", modalState.item?.itemId || "");
+
+            sessionStorage.removeItem("itemModalReopenItemId");
+            sessionStorage.removeItem("itemModalReopenPanel");
+            sessionStorage.removeItem("itemModalReopenPanelContext");
+            return;
+        }
+
         const titleValue = editTitle ? editTitle.value.trim() : "";
         const cityValue = editCity ? editCity.value.trim() : "";
 
@@ -1609,6 +1762,10 @@ document.addEventListener("DOMContentLoaded", function () {
         sessionStorage.removeItem("itemModalReopenItemId");
         sessionStorage.removeItem("itemModalReopenPanel");
         sessionStorage.removeItem("itemModalReopenPanelContext");
+    }
+
+    function isAdminAccountItem() {
+        return (modalState.item?.actionMode || "") === "admin_account";
     }
 
     const hiddenIds = getHiddenDashboardRequests();

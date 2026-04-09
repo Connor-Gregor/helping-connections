@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 from django.contrib.auth.models import User
@@ -21,7 +22,8 @@ from .forms import (
     EmailChangeForm,
     RoleChangeForm,
     RequestForm,
-    OfferForm
+    OfferForm,
+    AdminAccountEditForm,
 )
 from .models import (
     Profile,
@@ -237,7 +239,9 @@ class VerifyEmailView(View):
         messages.success(request, "Email verified successfully. Welcome to Helping Connections!")
 
         role = getattr(user.profile, "role", None)
-        if role and role.name == "volunteer":
+        if role and role.name == "admin":
+            return redirect("admin_dashboard")
+        elif role and role.name == "volunteer":
             return redirect("volunteer")
         elif role and role.name == "unhoused":
             return redirect("unhoused")
@@ -416,7 +420,9 @@ class LoginView(View):
         request.session.set_expiry(300)
 
         role = getattr(user.profile, "role", None)
-        if role and role.name == "volunteer":
+        if role and role.name == "admin":
+            return redirect("admin_dashboard")
+        elif role and role.name == "volunteer":
             return redirect("volunteer")
         elif role and role.name == "unhoused":
             return redirect("unhoused")
@@ -659,6 +665,8 @@ def get_dashboard_url(user):
 
     role = user.profile.role.name.lower() if user.profile.role else None
 
+    if role == "admin":
+        return "admin_dashboard"
     if role == "volunteer":
         return "volunteer"
     elif role == "unhoused":
@@ -666,10 +674,21 @@ def get_dashboard_url(user):
 
     return "home"
 
-
 @login_required
 def dashboard_redirect(request):
-    return redirect(get_dashboard_url(request.user))
+    if not request.user.is_authenticated:
+        return redirect("login")
+
+    role = request.user.profile.role.name
+
+    if role == "admin":
+        return redirect("admin_dashboard")
+    elif role == "volunteer":
+        return redirect("volunteer")
+    elif role == "unhoused":
+        return redirect("unhoused")
+
+    return redirect("home")
 
 
 @login_required
@@ -848,6 +867,70 @@ def update_role(request):
 
     messages.success(request, "Role updated.")
     return redirect(f"{reverse('settings')}?tab=security-tab")
+
+@login_required
+@require_POST
+def admin_update_account(request, profile_id):
+    if not is_admin(request.user):
+        messages.error(request, "Only admins can update accounts.")
+        return redirect("home")
+
+    profile = get_object_or_404(Profile.objects.select_related("user", "role"), id=profile_id)
+    form = AdminAccountEditForm(request.POST, profile=profile)
+
+    if not form.is_valid():
+        for field, errors in form.errors.items():
+            for error in errors:
+                if field == "__all__":
+                    messages.error(request, error)
+                else:
+                    label = form.fields[field].label or field.replace("_", " ").title()
+                    messages.error(request, f"{label}: {error}")
+        return redirect("admin_dashboard")
+
+    selected_role = form.cleaned_data["role"]
+
+    if profile.user == request.user and selected_role != "admin":
+        messages.error(request, "You cannot remove your own admin role.")
+        return redirect("admin_dashboard")
+
+    profile.user.first_name = form.cleaned_data.get("first_name", "").strip()
+    profile.user.last_name = form.cleaned_data.get("last_name", "").strip()
+    profile.user.email = form.cleaned_data["email"]
+    profile.user.username = form.cleaned_data["email"]
+    profile.user.save()
+
+    profile.display_username = form.cleaned_data["display_username"].strip()
+    profile.phone_number = form.cleaned_data.get("phone_number", "")
+    profile.city = form.cleaned_data.get("city", "").strip()
+    profile.state = form.cleaned_data.get("state", "").strip()
+    profile.role = Role.objects.get(name=selected_role)
+    profile.save()
+
+    messages.success(request, "Account updated successfully.")
+    return redirect("admin_dashboard")
+
+
+@login_required
+@require_POST
+def admin_delete_account(request, profile_id):
+    if not is_admin(request.user):
+        messages.error(request, "Only admins can delete accounts.")
+        return redirect("home")
+
+    profile = get_object_or_404(Profile.objects.select_related("user", "role"), id=profile_id)
+
+    if profile.user == request.user:
+        messages.error(request, "You cannot delete your own account.")
+        return redirect("admin_dashboard")
+
+    if profile.role and profile.role.name.lower() == "admin":
+        messages.error(request, "You cannot delete another admin account.")
+        return redirect("admin_dashboard")
+
+    profile.user.delete()
+    messages.success(request, "Account deleted successfully.")
+    return redirect("admin_dashboard")
 
 # Allows unhoused users to create new requests.
 # Sets request status to OPEN by default.
@@ -1279,3 +1362,43 @@ def verify_request(request, request_id):
 
     messages.success(request, "Request marked as fulfilled.")
     return redirect("unhoused")
+
+def is_admin(user):
+    try:
+        return bool(user.profile.role and user.profile.role.name.lower() == "admin")
+    except Profile.DoesNotExist:
+        return False
+
+@login_required
+def admin_dashboard(request):
+    if not is_admin(request.user):
+        messages.error(request, "Only admins can view that page.")
+        return redirect("home")
+
+    query = request.GET.get("q", "").strip()
+
+    profiles = Profile.objects.select_related("user", "role").order_by("user__email")
+
+    if query:
+        profiles = profiles.filter(
+            Q(user__username__icontains=query) |
+            Q(user__email__icontains=query) |
+            Q(display_username__icontains=query) |
+            Q(user__first_name__icontains=query) |
+            Q(user__last_name__icontains=query)
+        )
+
+    suggestions = (
+        Profile.objects.select_related("user")
+        .exclude(user__email__isnull=True)
+        .exclude(user__email__exact="")
+        .order_by("user__email")
+        .values_list("user__email", flat=True)
+        .distinct()
+    )
+
+    return render(request, "admin_dash.html", {
+        "profiles": profiles,
+        "query": query,
+        "suggestions": suggestions,
+    })
