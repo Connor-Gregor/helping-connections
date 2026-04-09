@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.db.models import Count, Q
-from .models import Thread, ThreadReadState
+from .models import Thread, ThreadReadState, Message
+from django.utils import timezone
 
 
 # =========================================
@@ -56,3 +57,47 @@ def get_or_create_dm_thread(user_a, user_b):
     ThreadReadState.objects.get_or_create(thread=thread, user=user_b)
 
     return thread
+
+@transaction.atomic
+def send_system_dm(sender, recipient, body):
+    """
+    Sends a normal direct message through the existing DM system.
+
+    Why this helper exists:
+    - keeps auto-notification logic out of views
+    - reuses the existing 1-to-1 thread model
+
+    sender   = Django User who should appear as the sender
+    recipient = Django User who should receive the message
+    body      = message text
+    """
+    if not sender or not recipient:
+        return None
+
+    if sender.pk == recipient.pk:
+        return None
+
+    body = (body or "").strip()
+    if not body:
+        return None
+
+    thread = get_or_create_dm_thread(sender, recipient)
+
+    message = Message.objects.create(
+        thread=thread,
+        sender=sender,
+        body=body,
+    )
+
+    # Keep the thread activity fresh for inbox ordering.
+    thread.updated_at = timezone.now()
+    thread.save(update_fields=["updated_at"])
+
+    # Sender has effectively "read" the thread through the message they just sent.
+    ThreadReadState.objects.update_or_create(
+        thread=thread,
+        user=sender,
+        defaults={"last_read_at": message.created_at},
+    )
+
+    return message
