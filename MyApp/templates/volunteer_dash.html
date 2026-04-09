@@ -1129,7 +1129,39 @@
             const dashboardTabButtons = document.querySelectorAll(".settings-tab-btn[data-tab]");
             const dashboardPanels = document.querySelectorAll(".dashboard-tab-panel");
 
-            function activateDashboardTab(tabId) {
+            function syncDashboardUrl(tabId) {
+                const url = new URL(window.location.href);
+                const params = url.searchParams;
+
+                params.set("tab", tabId);
+
+                if (tabId === "my-offers-tab") {
+                    if (!params.get("offers_view")) {
+                        params.set("offers_view", "accepted");
+                    }
+                } else {
+                    params.delete("offers_view");
+                    params.delete("accepted_offers_page");
+                    params.delete("open_offers_page");
+                }
+
+                if (tabId !== "available-tab") {
+                    params.delete("available_page");
+                }
+
+                if (tabId !== "accepted-requests-tab") {
+                    params.delete("accepted_page");
+                }
+
+                if (tabId !== "completed-tab") {
+                    params.delete("completed_page");
+                }
+
+                url.search = params.toString();
+                window.history.replaceState({}, "", url.toString());
+            }
+
+            function activateDashboardTab(tabId, updateUrl = true) {
                 dashboardTabButtons.forEach(button => {
                     button.classList.toggle("active", button.dataset.tab === tabId);
                 });
@@ -1137,15 +1169,19 @@
                 dashboardPanels.forEach(panel => {
                     panel.classList.toggle("active", panel.id === tabId);
                 });
+
+                if (updateUrl) {
+                    syncDashboardUrl(tabId);
+                }
             }
 
             dashboardTabButtons.forEach(button => {
                 button.addEventListener("click", function () {
-                    activateDashboardTab(this.dataset.tab);
+                    activateDashboardTab(this.dataset.tab, true);
                 });
             });
 
-            activateDashboardTab("{{ active_tab|default:'accepted-requests-tab' }}");
+            activateDashboardTab("{{ active_tab|default:'accepted-requests-tab' }}", false);
         });
     </script>
 {% endblock %}

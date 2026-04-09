@@ -13,16 +13,9 @@ document.addEventListener("DOMContentLoaded", function () {
     // modalState is the source for the modal.
     // ============================================================
 
-
-    // ------------------------------------------------------------
-    // Restore page position and saved return/reopen state
-    // after navigation or form submissions.
     // ------------------------------------------------------------
     const savedScroll = sessionStorage.getItem("itemModalScrollY");
     const returnItemId = sessionStorage.getItem("itemModalReturnItemId");
-    const reopenModalItemId = sessionStorage.getItem("itemModalReopenItemId");
-    const reopenModalPanel = sessionStorage.getItem("itemModalReopenPanel");
-    const reopenModalPanelContext = sessionStorage.getItem("itemModalReopenPanelContext");
 
     if (savedScroll) {
         window.scrollTo(0, parseInt(savedScroll, 10));
@@ -118,6 +111,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const messageBody = document.getElementById("itemMessageBody");
     const messageBackBtn = document.getElementById("itemMessageBackBtn");
     const messageForm = document.getElementById("itemMessageForm");
+    const messageReturnQuery = document.getElementById("itemMessageReturnQuery");
     const messageReturnTo = document.getElementById("itemMessageReturnTo");
     const messageReturnItemId = document.getElementById("itemMessageReturnItemId");
     const messageReturnPage = document.getElementById("itemMessageReturnPage");
@@ -167,6 +161,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const editAdminCity = document.getElementById("itemEditAdminCity");
     const editState = document.getElementById("itemEditState");
     const editRole = document.getElementById("itemEditRole");
+    const editReturnQuery = document.getElementById("itemEditReturnQuery");
+    const editReturnItemId = document.getElementById("itemEditReturnItemId");
 
     // Delete panel
     const deleteForm = document.getElementById("itemDeleteForm");
@@ -275,6 +271,11 @@ document.addEventListener("DOMContentLoaded", function () {
     // Returns extra context for the currently active panel.
     function getPanelContext() {
         return modalState.panelContext || null;
+    }
+
+    function getCurrentReturnQuery() {
+        const query = window.location.search || "";
+        return query.startsWith("?") ? query.slice(1) : query;
     }
 
     // Reads the current pagination page from the URL query string.
@@ -450,6 +451,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         return (
             document.getElementById(`item-card-${itemId}`) ||
+            document.getElementById(`item-card-open-${itemId}`) ||
+            document.getElementById(`item-card-available-${itemId}`) ||
             document.getElementById(`item-card-processing-${itemId}`) ||
             document.getElementById(`item-card-completed-${itemId}`)
         );
@@ -593,42 +596,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // ============================================================
     // PAGE / STORAGE STATE HELPERS
-    // These helpers preserve modal reopening, return highlighting,
+    // These helpers return highlighting,
     // hidden dashboard items, and scroll restoration across navigation.
     // ============================================================
-
-    // Saves enough state to reopen the modal and restore its panel later.
-    function saveReopenState(itemId, panelName, panelContext) {
-        sessionStorage.setItem("itemModalScrollY", String(window.scrollY));
-        sessionStorage.setItem("itemModalReopenItemId", itemId || "");
-        sessionStorage.setItem("itemModalReopenPanel", panelName || "detail");
-        sessionStorage.setItem(
-            "itemModalReopenPanelContext",
-            JSON.stringify(panelContext || null)
-        );
-    }
-
-    // Reopens a saved item and restores the last active panel/context.
-    function reopenSavedModalState(itemId, panelName, panelContextValue) {
-        const reopenCard = findCardByItemId(itemId);
-        if (!reopenCard) {
-            clearReopenState();
-            return;
-        }
-
-        openModal(reopenCard);
-
-        if (panelContextValue) {
-            try {
-                setPanelContext(JSON.parse(panelContextValue));
-            } catch (error) {
-                clearPanelContext();
-            }
-        }
-
-        restoreActivePanel(panelName || "detail");
-        clearReopenState();
-    }
 
     // Resets modal state back to its default neutral values.
     function resetModalState() {
@@ -662,47 +632,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // Clears the saved returned-item highlight state.
     function clearReturnItemState() {
         sessionStorage.removeItem("itemModalReturnItemId");
-    }
-
-    // Clears saved modal reopen state after it has been used.
-    function clearReopenState() {
-        sessionStorage.removeItem("itemModalReopenItemId");
-        sessionStorage.removeItem("itemModalReopenPanel");
-        sessionStorage.removeItem("itemModalReopenPanelContext");
-    }
-
-    // Verifies whether a saved panel can be safely restored for the current item.
-    function canRestorePanel(panelName) {
-        const item = getCurrentItem();
-        const owner = getCurrentOwner();
-        const claim = getCurrentClaim();
-        const context = getPanelContext();
-
-        if (!item) return false;
-
-        switch (panelName) {
-            case "message_owner":
-                return !!(context && context.targetType === "owner" && owner?.id);
-
-            case "message_claimer":
-                return !!(context && context.targetType === "claimer" && claim?.claimerId);
-
-            case "report":
-                return !!(
-                    context &&
-                    (context.targetType === "request_report" || context.targetType === "offer_report") &&
-                    item.itemId
-                );
-
-            case "primary":
-            case "edit":
-            case "delete":
-            case "detail":
-                return true;
-
-            default:
-                return false;
-        }
     }
 
 
@@ -1093,6 +1022,10 @@ document.addEventListener("DOMContentLoaded", function () {
             messageReturnTo.value = messageTarget?.returnTo || fallbackReturnTo;
         }
 
+        if (messageReturnQuery) {
+            messageReturnQuery.value = getCurrentReturnQuery();
+        }
+
         if (messageReturnPageNumber) {
             messageReturnPageNumber.value = getCurrentPageNumber();
         }
@@ -1263,6 +1196,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (editReturnPageNumber) {
             editReturnPageNumber.value = getCurrentPageNumber();
+        }
+
+        if (editReturnQuery) {
+            editReturnQuery.value = getCurrentReturnQuery();
+        }
+
+        if (editReturnItemId) {
+            editReturnItemId.value = item.itemId || "";
         }
 
         const urls = getCurrentUrls();
@@ -1488,39 +1429,6 @@ document.addEventListener("DOMContentLoaded", function () {
         showDetailPanel();
     }
 
-    // Reopens the correct panel after restoring saved modal state.
-    function restoreActivePanel(panelName) {
-        if (!canRestorePanel(panelName)) {
-            showDetailPanel();
-            return;
-        }
-
-        switch (panelName) {
-            case "primary":
-                showPrimaryPanel();
-                break;
-            case "message_owner":
-                showDefaultMessagePanel();
-                break;
-            case "message_claimer":
-                showClaimerMessagePanel();
-                break;
-            case "report":
-                showReportPanel();
-                break;
-            case "edit":
-                showEditPanel();
-                break;
-            case "delete":
-                showDeletePanel();
-                break;
-            case "detail":
-            default:
-                showDetailPanel();
-                break;
-        }
-    }
-
     // ============================================================
     // CARD DATA NORMALIZATION
     // Converts raw card data-* attributes into one consistent modal item.
@@ -1720,47 +1628,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Validates message submit state before allowing the form to post.
     function handleMessageSubmit(e) {
-        const item = getCurrentItem();
-        const messageTarget = getCurrentMessageTarget();
-        const recipientValue = messageRecipientId ? messageRecipientId.value.trim() : "";
         const bodyValue = messageBody ? messageBody.value.trim() : "";
-
-        if (!messageTarget || !messageTarget.id) {
-            e.preventDefault();
-            if (messageError) {
-                messageError.textContent = "Could not find who to send this message to.";
-                showElement(messageError, "block");
-            }
-            return;
-        }
-
-        if (!recipientValue || recipientValue !== String(messageTarget.id)) {
-            e.preventDefault();
-            if (messageError) {
-                messageError.textContent = "Could not find who to send this message to.";
-                showElement(messageError, "block");
-            }
-            return;
-        }
 
         if (!bodyValue) {
             e.preventDefault();
-            if (messageError) {
-                messageError.textContent = "Please enter a message before sending.";
-                showElement(messageError, "block");
+            showElement(messageError, "block");
+
+            if (messageBody) {
+                messageBody.focus();
             }
             return;
         }
 
-        if (item?.itemId) {
-            saveReturnItemState(item.itemId);
-        }
-
-        saveReopenState(
-            item?.itemId || "",
-            modalState.activePanel || "detail",
-            getPanelContext()
-        );
+        const item = getCurrentItem();
+        sessionStorage.setItem("itemModalScrollY", String(window.scrollY));
+        sessionStorage.setItem("itemModalReturnItemId", item?.itemId || "");
     }
 
     function handleReportSubmit(e) {
@@ -1807,21 +1689,12 @@ document.addEventListener("DOMContentLoaded", function () {
             saveReturnItemState(item.itemId);
         }
 
-        saveReopenState(
-            item?.itemId || "",
-            modalState.activePanel || "detail",
-            getPanelContext()
-        );
     }
 
     function handleEditSubmit(e) {
         if (isAdminAccountItem()) {
             sessionStorage.setItem("itemModalScrollY", String(window.scrollY));
             sessionStorage.setItem("itemModalReturnItemId", modalState.item?.itemId || "");
-
-            sessionStorage.removeItem("itemModalReopenItemId");
-            sessionStorage.removeItem("itemModalReopenPanel");
-            sessionStorage.removeItem("itemModalReopenPanelContext");
             return;
         }
 
@@ -1858,10 +1731,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         sessionStorage.setItem("itemModalScrollY", String(window.scrollY));
         sessionStorage.setItem("itemModalReturnItemId", modalState.item?.itemId || "");
-
-        sessionStorage.removeItem("itemModalReopenItemId");
-        sessionStorage.removeItem("itemModalReopenPanel");
-        sessionStorage.removeItem("itemModalReopenPanelContext");
     }
 
     function isAdminAccountItem() {
@@ -2039,12 +1908,4 @@ document.addEventListener("DOMContentLoaded", function () {
             showNextImage();
         }
     });
-
-    if (reopenModalItemId) {
-        reopenSavedModalState(
-            reopenModalItemId,
-            reopenModalPanel,
-            reopenModalPanelContext
-        );
-    }
 });
