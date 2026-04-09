@@ -134,6 +134,29 @@ class Request(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.status})"
+    
+#User can pick there favorite locations to save to the map 
+    
+class FavoriteLocation(models.Model):
+    user = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="favorite_locations"
+    )
+    place_id = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+    address = models.CharField(max_length=500, blank=True)
+    lat = models.FloatField()
+    lng = models.FloatField()
+    category = models.CharField(max_length=100, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        unique_together = ("user", "place_id")
+
+    def __str__(self):
+        return f"{self.user.display_username or self.user.user.username} - {self.name}"
 
 # Represents an offer created by a volunteer.
 #
