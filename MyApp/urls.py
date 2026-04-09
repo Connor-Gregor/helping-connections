@@ -12,7 +12,7 @@ from .views import (
     volunteer_requests, claim_request,
     about, create_offer, available_offers, claim_offer, my_offers,
     update_offer, delete_offer,
-    VerifyEmailView, resend_verification_code,
+    VerifyEmailView, resend_verification_code, admin_dashboard,
 )
 
 urlpatterns = [
@@ -75,11 +75,14 @@ urlpatterns = [
     path("settings/email/verify/", views.VerifyEmailChangeView.as_view(), name="verify_email_change"),
     path("settings/email/resend/", views.resend_email_change_code, name="resend_email_change_code"),
     path("settings/role/", update_role, name="settings_role"),
+    path("dashboard-admin/accounts/<int:profile_id>/update/", views.admin_update_account, name="admin_update_account"),
+    path("dashboard-admin/accounts/<int:profile_id>/delete/", views.admin_delete_account, name="admin_delete_account"),
 
     # DASHBOARD / NAVIGATION
     path("find-help/", find_help, name="find_help"),
     path("volunteer/", volunteer, name="volunteer"),
     path("unhoused_dash/", unhoused, name="unhoused"),
+    path("admin-dashboard/", views.admin_dashboard, name="admin_dashboard"),
     path("dashboard/", dashboard_redirect, name="dashboard_redirect"),
     path("map/", map, name="map"),
 
