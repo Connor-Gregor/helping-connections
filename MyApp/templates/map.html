@@ -4,683 +4,882 @@
 {% block title %}Helping Connections - Map{% endblock %}
 
 {% block content %}
-    <style>
+<style>
+    .page-wrap {
+        padding: 18px 40px;
+    }
+
+    .map-shell {
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        gap: 18px;
+        align-items: start;
+    }
+
+    .panel {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.10);
+        overflow: hidden;
+    }
+
+    .panel-header {
+        padding: 14px 16px;
+        background: #f4f6f8;
+        border-bottom: 1px solid #e6e6e6;
+        color: #2c3e50;
+        font-weight: 700;
+    }
+
+    .panel-body {
+        padding: 14px 16px;
+    }
+
+    .helper-text {
+        font-size: 13px;
+        color: #555;
+        line-height: 1.4;
+        margin-bottom: 12px;
+    }
+
+    .radius-control {
+        margin-bottom: 12px;
+        font-size: 13px;
+        color: #2c3e50;
+    }
+
+    .radius-control label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+    }
+
+    .radius-control select {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #d9dee3;
+        background: #fff;
+        color: #2c3e50;
+        outline: none;
+    }
+
+    .radius-control select:focus {
+        border-color: #1abc9c;
+        box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.12);
+    }
+
+    .search-box {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .search-box input {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #d9dee3;
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        background: #fff;
+        color: #2c3e50;
+    }
+
+    .search-box input:focus {
+        border-color: #1abc9c;
+        box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.12);
+    }
+
+    .search-main-btn {
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: 700;
+        background: #1abc9c;
+        color: #fff;
+        transition: background 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .search-main-btn:hover {
+        background: #16a085;
+    }
+
+    .search-buttons {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .search-btn {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: 700;
+        background: #1abc9c;
+        color: #fff;
+        transition: background 0.2s ease;
+        text-align: left;
+    }
+
+    .search-btn:hover {
+        background: #16a085;
+    }
+
+    .cached-results-banner {
+        margin-bottom: 12px;
+        padding: 12px 14px;
+        border-radius: 10px;
+        background: #fff8db;
+        border: 1px solid #f0df95;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .cached-results-banner-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #7a5d00;
+        margin-bottom: 4px;
+    }
+
+    .cached-results-banner-text {
+        font-size: 0.9rem;
+        line-height: 1.4;
+        color: #6b5a1f;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    .status {
+        font-size: 13px;
+        color: #2c3e50;
+        background: #f4f6f8;
+        border: 1px solid #e6e6e6;
+        padding: 10px;
+        border-radius: 10px;
+    }
+
+    .results {
+        margin-top: 12px;
+        display: grid;
+        gap: 10px;
+        max-height: 56vh;
+        overflow: auto;
+        padding-right: 6px;
+    }
+
+    .result-card {
+        border: 1px solid #e6e6e6;
+        border-radius: 10px;
+        padding: 10px;
+        background: #fff;
+    }
+
+    .result-title {
+        font-weight: 800;
+        color: #2c3e50;
+        margin-bottom: 6px;
+    }
+
+    .result-meta {
+        font-size: 13px;
+        color: #555;
+        line-height: 1.35;
+    }
+
+    .result-actions {
+        margin-top: 8px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .mini-link {
+        display: inline-block;
+        font-size: 13px;
+        padding: 7px 10px;
+        border-radius: 8px;
+        text-decoration: none;
+        border: 1px solid #e6e6e6;
+        color: #2c3e50;
+        background: #f4f6f8;
+        cursor: pointer;
+    }
+
+    .mini-link:hover {
+        background: #eef1f4;
+    }
+
+    .map-panel {
+        height: calc(85vh - 36px);
+        min-height: 520px;
+    }
+
+    #map {
+        width: 100%;
+        height: 100%;
+    }
+
+    @media (max-width: 980px) {
         .page-wrap {
-            padding: 18px 40px;
+            padding: 14px 16px;
         }
 
         .map-shell {
-            display: grid;
-            grid-template-columns: 340px 1fr;
-            gap: 18px;
-            align-items: start;
-        }
-
-        .panel {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.10);
-            overflow: hidden;
-        }
-
-        .panel-header {
-            padding: 14px 16px;
-            background: #f4f6f8;
-            border-bottom: 1px solid #e6e6e6;
-            color: #2c3e50;
-            font-weight: 700;
-        }
-
-        .panel-body {
-            padding: 14px 16px;
-        }
-
-        .helper-text {
-            font-size: 13px;
-            color: #555;
-            line-height: 1.4;
-            margin-bottom: 12px;
-        }
-
-        .radius-control {
-            margin-bottom: 12px;
-            font-size: 13px;
-            color: #2c3e50;
-        }
-
-        .radius-control label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 600;
-        }
-
-        .radius-control select {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: 1px solid #d9dee3;
-            background: #fff;
-            color: #2c3e50;
-            outline: none;
-        }
-
-        .radius-control select:focus {
-            border-color: #1abc9c;
-            box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.12);
-        }
-
-        .search-box {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 10px;
-            margin-bottom: 14px;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1px solid #d9dee3;
-            border-radius: 8px;
-            font-size: 14px;
-            outline: none;
-            background: #fff;
-            color: #2c3e50;
-        }
-
-        .search-box input:focus {
-            border-color: #1abc9c;
-            box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.12);
-        }
-
-        .search-main-btn {
-            padding: 12px 16px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-weight: 700;
-            background: #1abc9c;
-            color: #fff;
-            transition: background 0.2s ease;
-            white-space: nowrap;
-        }
-
-        .search-main-btn:hover {
-            background: #16a085;
-        }
-
-        .search-buttons {
-            display: grid;
-            gap: 10px;
-            margin-bottom: 14px;
-        }
-
-        .search-btn {
-            width: 100%;
-            padding: 12px 14px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-weight: 700;
-            background: #1abc9c;
-            color: #fff;
-            transition: background 0.2s ease;
-            text-align: left;
-        }
-
-        .search-btn:hover {
-            background: #16a085;
-        }
-
-        .cached-results-banner {
-            margin-bottom: 12px;
-            padding: 12px 14px;
-            border-radius: 10px;
-            background: #fff8db;
-            border: 1px solid #f0df95;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        }
-
-        .cached-results-banner-title {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #7a5d00;
-            margin-bottom: 4px;
-        }
-
-        .cached-results-banner-text {
-            font-size: 0.9rem;
-            line-height: 1.4;
-            color: #6b5a1f;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .status {
-            font-size: 13px;
-            color: #2c3e50;
-            background: #f4f6f8;
-            border: 1px solid #e6e6e6;
-            padding: 10px;
-            border-radius: 10px;
-        }
-
-        .results {
-            margin-top: 12px;
-            display: grid;
-            gap: 10px;
-            max-height: 56vh;
-            overflow: auto;
-            padding-right: 6px;
-        }
-
-        .result-card {
-            border: 1px solid #e6e6e6;
-            border-radius: 10px;
-            padding: 10px;
-            background: #fff;
-        }
-
-        .result-title {
-            font-weight: 800;
-            color: #2c3e50;
-            margin-bottom: 6px;
-        }
-
-        .result-meta {
-            font-size: 13px;
-            color: #555;
-            line-height: 1.35;
-        }
-
-        .result-actions {
-            margin-top: 8px;
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .mini-link {
-            display: inline-block;
-            font-size: 13px;
-            padding: 7px 10px;
-            border-radius: 8px;
-            text-decoration: none;
-            border: 1px solid #e6e6e6;
-            color: #2c3e50;
-            background: #f4f6f8;
-            cursor: pointer;
-        }
-
-        .mini-link:hover {
-            background: #eef1f4;
+            grid-template-columns: 1fr;
         }
 
         .map-panel {
-            height: calc(85vh - 36px);
-            min-height: 520px;
+            height: 60vh;
         }
 
-        #map {
-            width: 100%;
-            height: 100%;
+        .results {
+            max-height: 40vh;
         }
 
-        @media (max-width: 980px) {
-            .page-wrap {
-                padding: 14px 16px;
-            }
-
-            .map-shell {
-                grid-template-columns: 1fr;
-            }
-
-            .map-panel {
-                height: 60vh;
-            }
-
-            .results {
-                max-height: 40vh;
-            }
-
-            .search-box {
-                grid-template-columns: 1fr;
-            }
+        .search-box {
+            grid-template-columns: 1fr;
         }
-    </style>
 
-    <div class="page-wrap">
-        <div class="map-shell">
-            <aside class="panel">
-                <div class="panel-header">Nearby Resources</div>
 
-                <div class="panel-body">
-                    <div class="helper-text">
-                        Search for any place, address, or resource like normal Google Maps, or use the quick buttons below.
-                        You can also choose how far out to search in miles.
-                    </div>
+    }
 
-                    <div class="radius-control">
-                        <label for="radius-select">Search radius</label>
-                        <select id="radius-select">
-                            <option value="1">1 mile</option>
-                            <option value="3">3 miles</option>
-                            <option value="5" selected>5 miles</option>
-                            <option value="10">10 miles</option>
-                            <option value="20">20 miles</option>
-                        </select>
-                    </div>
+    .favorite-btn {
+        margin-top: 8px;
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        background: #007bff;
+        color: white;
+    }
 
-                    <div class="search-box">
-                        <input
-                                type="text"
-                                id="place-search-input"
-                                placeholder="Search for a place, address, shelter, store, food bank..."
-                        >
-                        <button type="button" id="place-search-btn" class="search-main-btn">Search</button>
-                    </div>
+    .favorite-btn[data-saved="true"] {
+        background: #28a745;
+    }
+</style>
 
-                    <div class="search-buttons">
-                        <button class="search-btn" data-query="food bank">Food bank</button>
-                        <button class="search-btn" data-query="homeless shelter">Shelter</button>
-                        <button class="search-btn" data-query="dollar store OR thrift store OR goodwill OR discount store OR family dollar OR dollar tree">Low cost stores</button>
-                    </div>
+<div class="page-wrap">
+    <div class="map-shell">
+        <aside class="panel">
+            <div class="panel-header">Nearby Resources</div>
 
-                    <div id="cached-results-banner" class="cached-results-banner hidden" role="status" aria-live="polite">
-                        <div class="cached-results-banner-title">Saved results</div>
-                        <div class="cached-results-banner-text">Restored from this browser. These may be outdated.</div>
-                    </div>
-
-                    <div id="status" class="status">Loading map…</div>
-                    <div id="results" class="results"></div>
+            <div class="panel-body">
+                <div class="helper-text">
+                    Search for any place, address, or resource like normal Google Maps, or use the quick buttons below.
+                    You can also choose how far out to search in miles.
                 </div>
-            </aside>
 
-            <section class="panel map-panel">
-                <div id="map"></div>
-            </section>
-        </div>
+                <div class="radius-control">
+                    <label for="radius-select">Search radius</label>
+                    <select id="radius-select">
+                        <option value="1">1 mile</option>
+                        <option value="3">3 miles</option>
+                        <option value="5" selected>5 miles</option>
+                        <option value="10">10 miles</option>
+                        <option value="20">20 miles</option>
+                    </select>
+                </div>
+
+
+
+                <div class="search-box">
+                    <input type="text" id="place-search-input"
+                        placeholder="Search for a place, address, shelter, store, food bank...">
+                    <button type="button" id="place-search-btn" class="search-main-btn">Search</button>
+                </div>
+
+                <div class="search-buttons">
+                    <button class="search-btn" data-query="food bank">Food bank</button>
+                    <button class="search-btn" data-query="homeless shelter">Shelter</button>
+                    <button class="search-btn"
+                        data-query="dollar store OR thrift store OR goodwill OR discount store OR family dollar OR dollar tree">Low
+                        cost stores</button>
+                </div>
+
+                <div id="cached-results-banner" class="cached-results-banner hidden" role="status" aria-live="polite">
+                    <div class="cached-results-banner-title">Saved results</div>
+                    <div class="cached-results-banner-text">Restored from this browser. These may be outdated.</div>
+                </div>
+
+                <div id="status" class="status">Loading map…</div>
+                <div id="results" class="results"></div>
+
+
+                <div class="panel-header" style="margin-top: 14px; border-radius: 10px 10px 0 0;">
+                    Saved Locations
+                </div>
+                <div id="favorites-list" class="results"></div>
+            </div>
+        </aside>
+
+        <section class="panel map-panel">
+            <div id="map"></div>
+        </section>
     </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
-    <script>
-        (g => {
-            var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__", m = document, b = window;
-            b = b[c] || (b[c] = {});
-            var d = b.maps || (b.maps = {}), r = new Set, e = new URLSearchParams, u = () =>
-                h || (h = new Promise(async (f, n) => {
-                    await (a = m.createElement("script"));
-                    e.set("libraries", [...r] + "");
-                    for (k in g) e.set(k.replace(/[A-Z]/g, t => "_" + t[0].toLowerCase()), g[k]);
-                    e.set("callback", c + ".maps." + q);
-                    a.src = `https://maps.${c}apis.com/maps/api/js?` + e;
-                    d[q] = f;
-                    a.onerror = () => h = n(Error(p + " could not load."));
-                    a.nonce = m.querySelector("script[nonce]")?.nonce || "";
-                    m.head.append(a);
-                }));
-            d[l] ? console.warn(p + " only loads once. Ignoring:", g) : d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n));
-        })({
-            key: "{{ google_maps_api_key }}",
-            v: "weekly"
+<script>
+
+
+
+    const favoritesListEl = document.getElementById("favorites-list");
+
+    async function loadFavorites() {
+        try {
+            const response = await fetch("/favorites/list/");
+            const result = await response.json();
+
+            favoritesListEl.innerHTML = "";
+
+            if (!result.favorites || !result.favorites.length) {
+                favoritesListEl.innerHTML = "<div class='result-card'>No saved locations yet.</div>";
+                return;
+            }
+
+            result.favorites.forEach(place => {
+                const card = document.createElement("div");
+                card.className = "result-card";
+
+                const title = document.createElement("div");
+                title.className = "result-title";
+                title.textContent = place.name;
+
+                const meta = document.createElement("div");
+                meta.className = "result-meta";
+                meta.textContent = place.address || "Address not available";
+
+                const actions = document.createElement("div");
+                actions.className = "result-actions";
+
+                const removeBtn = document.createElement("button");
+                removeBtn.className = "favorite-btn";
+                removeBtn.type = "button";
+                removeBtn.textContent = "Remove";
+                removeBtn.dataset.saved = "true";
+
+                removeBtn.addEventListener("click", async () => {
+                    try {
+                        const response = await fetch("/favorites/remove/", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-CSRFToken": getCookie("csrftoken")
+                            },
+                            body: JSON.stringify({ place_id: place.place_id })
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            loadFavorites();
+                        } else {
+                            alert(result.error || "Could not remove favorite");
+                        }
+                    } catch (error) {
+                        console.error(error);
+                        alert("Something went wrong");
+                    }
+                });
+
+                const focusBtn = document.createElement("button");
+                focusBtn.className = "mini-link";
+                focusBtn.type = "button";
+                focusBtn.textContent = "Focus on map";
+
+                focusBtn.addEventListener("click", () => {
+                    if (!map) return;
+                    map.panTo({ lat: place.lat, lng: place.lng });
+                    map.setZoom(15);
+                });
+
+                actions.appendChild(removeBtn);
+                actions.appendChild(focusBtn);
+
+                card.appendChild(title);
+                card.appendChild(meta);
+                card.appendChild(actions);
+
+                favoritesListEl.appendChild(card);
+            });
+        } catch (error) {
+            console.error("Error loading favorites:", error);
+            favoritesListEl.innerHTML = "<div class='result-card'>Could not load saved locations.</div>";
+        }
+    }
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + "=")) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    async function toggleFavorite(button) {
+        const isSaved = button.dataset.saved === "true";
+
+        const data = {
+            place_id: button.dataset.placeId,
+            name: button.dataset.name,
+            address: button.dataset.address,
+            lat: parseFloat(button.dataset.lat),
+            lng: parseFloat(button.dataset.lng),
+            category: button.dataset.category
+        };
+
+        try {
+            const url = isSaved ? "/favorites/remove/" : "/favorites/save/";
+
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                if (isSaved) {
+                    button.textContent = "Save";
+                    button.dataset.saved = "false";
+                } else {
+                    button.textContent = "Saved";
+                    button.dataset.saved = "true";
+                }
+            } else {
+                alert(result.error || "Error updating favorite");
+            }
+
+        } catch (error) {
+            console.error(error);
+            alert("Something went wrong");
+        }
+        
+        loadFavorites();
+    }
+    (g => {
+        var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__", m = document, b = window;
+        b = b[c] || (b[c] = {});
+        var d = b.maps || (b.maps = {}), r = new Set, e = new URLSearchParams, u = () =>
+            h || (h = new Promise(async (f, n) => {
+                await (a = m.createElement("script"));
+                e.set("libraries", [...r] + "");
+                for (k in g) e.set(k.replace(/[A-Z]/g, t => "_" + t[0].toLowerCase()), g[k]);
+                e.set("callback", c + ".maps." + q);
+                a.src = `https://maps.${c}apis.com/maps/api/js?` + e;
+                d[q] = f;
+                a.onerror = () => h = n(Error(p + " could not load."));
+                a.nonce = m.querySelector("script[nonce]")?.nonce || "";
+                m.head.append(a);
+            }));
+        d[l] ? console.warn(p + " only loads once. Ignoring:", g) : d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n));
+    })({
+        key: "{{ google_maps_api_key }}",
+        v: "weekly"
+    });
+</script>
+
+<script>
+    let map;
+    let infoWindow;
+    let placesService;
+    let userMarker = null;
+    let radiusCircle = null;
+
+    let userCenter = { lat: 43.0392, lng: -87.9065 };
+    let markers = [];
+    let lastSearchMode = "";
+    let lastSearchQuery = "";
+
+    const statusEl = document.getElementById("status");
+    const resultsEl = document.getElementById("results");
+    const searchInput = document.getElementById("place-search-input");
+    const searchBtn = document.getElementById("place-search-btn");
+    const radiusSelect = document.getElementById("radius-select");
+    const cachedBannerEl = document.getElementById("cached-results-banner");
+
+    const MAP_CACHE_KEY = "helping_connections_map_state_v1";
+    const cachedMapState = restoreCachedControls();
+
+    function readMapCache() {
+        try {
+            const raw = localStorage.getItem(MAP_CACHE_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch (err) {
+            console.warn("Map cache could not be read.", err);
+            return null;
+        }
+    }
+
+    function writeMapCache(nextState) {
+        try {
+            const currentState = readMapCache() || {};
+            localStorage.setItem(
+                MAP_CACHE_KEY,
+                JSON.stringify({
+                    ...currentState,
+                    ...nextState
+                })
+            );
+        } catch (err) {
+            console.warn("Map cache could not be saved.", err);
+        }
+    }
+
+    function placeToCache(place) {
+        if (!place || !place.geometry || !place.geometry.location) {
+            return null;
+        }
+
+        const lat =
+            typeof place.geometry.location.lat === "function"
+                ? place.geometry.location.lat()
+                : place.geometry.location.lat;
+
+        const lng =
+            typeof place.geometry.location.lng === "function"
+                ? place.geometry.location.lng()
+                : place.geometry.location.lng;
+
+        return {
+            name: place.name || "Unnamed place",
+            formatted_address: place.formatted_address || place.vicinity || "Address not available",
+            place_id: place.place_id || null,
+            geometry: {
+                location: { lat, lng }
+            }
+        };
+    }
+
+    function saveMapState(results, statusMessage) {
+        const safeResults = (results || [])
+            .slice(0, 20)
+            .map(placeToCache)
+            .filter(Boolean);
+
+        writeMapCache({
+            searchText: searchInput.value,
+            radiusMiles: getSelectedRadiusMiles(),
+            results: safeResults,
+            lastStatus: statusMessage || "",
+            savedAt: new Date().toISOString()
         });
-    </script>
+    }
 
-    <script>
-        let map;
-        let infoWindow;
-        let placesService;
-        let userMarker = null;
-        let radiusCircle = null;
+    function restoreCachedControls() {
+        const cached = readMapCache();
 
-        let userCenter = { lat: 43.0392, lng: -87.9065 };
-        let markers = [];
-        let lastSearchMode = "";
-        let lastSearchQuery = "";
-
-        const statusEl = document.getElementById("status");
-        const resultsEl = document.getElementById("results");
-        const searchInput = document.getElementById("place-search-input");
-        const searchBtn = document.getElementById("place-search-btn");
-        const radiusSelect = document.getElementById("radius-select");
-        const cachedBannerEl = document.getElementById("cached-results-banner");
-
-        const MAP_CACHE_KEY = "helping_connections_map_state_v1";
-        const cachedMapState = restoreCachedControls();
-
-        function readMapCache() {
-            try {
-                const raw = localStorage.getItem(MAP_CACHE_KEY);
-                return raw ? JSON.parse(raw) : null;
-            } catch (err) {
-                console.warn("Map cache could not be read.", err);
-                return null;
-            }
+        if (!cached) {
+            return null;
         }
 
-        function writeMapCache(nextState) {
-            try {
-                const currentState = readMapCache() || {};
-                localStorage.setItem(
-                    MAP_CACHE_KEY,
-                    JSON.stringify({
-                        ...currentState,
-                        ...nextState
-                    })
-                );
-            } catch (err) {
-                console.warn("Map cache could not be saved.", err);
-            }
+        if (cached.searchText) {
+            searchInput.value = cached.searchText;
         }
 
-        function placeToCache(place) {
-            if (!place || !place.geometry || !place.geometry.location) {
-                return null;
+        if (cached.searchText && cached.searchText.trim()) {
+            lastSearchMode = "text";
+            lastSearchQuery = cached.searchText.trim();
+        }
+
+        if (cached.radiusMiles) {
+            radiusSelect.value = String(cached.radiusMiles);
+        }
+
+        return cached;
+    }
+
+    function setStatus(msg) {
+        statusEl.textContent = msg;
+    }
+
+    function showCachedBanner() {
+        if (cachedBannerEl) {
+            cachedBannerEl.classList.remove("hidden");
+        }
+    }
+
+    function hideCachedBanner() {
+        if (cachedBannerEl) {
+            cachedBannerEl.classList.add("hidden");
+        }
+    }
+
+    function setCachedStatus(message) {
+        showCachedBanner();
+
+        if (message) {
+            setStatus(`Showing saved results from this browser. These may be outdated. ${message}`);
+        } else {
+            setStatus("Showing saved results from this browser. These may be outdated. Run a new search to refresh live results.");
+        }
+    }
+
+    function setLiveStatus(message) {
+        hideCachedBanner();
+        setStatus(message);
+    }
+
+    function restoreCachedResults(cached) {
+        if (!cached) {
+            return false;
+        }
+
+        clearMarkers();
+        clearResults();
+        drawRadiusCircle();
+        addUserMarker();
+
+        (cached.results || []).forEach(place => {
+            addResultCard(place);
+        });
+
+        if (cached.lastStatus) {
+            setCachedStatus(cached.lastStatus);
+        } else {
+            setCachedStatus("");
+        }
+
+        return true;
+    }
+
+    function getDistanceMeters(lat1, lng1, lat2, lng2) {
+        const toRad = (deg) => deg * (Math.PI / 180);
+        const earthRadius = 6371000;
+
+        const dLat = toRad(lat2 - lat1);
+        const dLng = toRad(lng2 - lng1);
+
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRad(lat1)) *
+            Math.cos(toRad(lat2)) *
+            Math.sin(dLng / 2) *
+            Math.sin(dLng / 2);
+
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return earthRadius * c;
+    }
+
+    function filterResultsByRadius(results) {
+        const maxDistance = getSelectedRadiusMeters();
+
+        return (results || []).filter(place => {
+            if (!place.geometry || !place.geometry.location) {
+                return false;
             }
 
-            const lat =
+            const placeLat =
                 typeof place.geometry.location.lat === "function"
                     ? place.geometry.location.lat()
                     : place.geometry.location.lat;
 
-            const lng =
+            const placeLng =
                 typeof place.geometry.location.lng === "function"
                     ? place.geometry.location.lng()
                     : place.geometry.location.lng;
 
-            return {
-                name: place.name || "Unnamed place",
-                formatted_address: place.formatted_address || place.vicinity || "Address not available",
-                place_id: place.place_id || null,
-                geometry: {
-                    location: { lat, lng }
-                }
-            };
+            const distance = getDistanceMeters(
+                userCenter.lat,
+                userCenter.lng,
+                placeLat,
+                placeLng
+            );
+
+            return distance <= maxDistance;
+        });
+    }
+
+    function getSelectedRadiusMiles() {
+        return parseFloat(radiusSelect.value);
+    }
+
+    function getSelectedRadiusMeters() {
+        return getSelectedRadiusMiles() * 1609.34;
+    }
+
+    function clearMarkers() {
+        for (const marker of markers) {
+            marker.setMap(null);
+        }
+        markers = [];
+    }
+
+    function clearResults() {
+        resultsEl.innerHTML = "";
+    }
+
+    function buildMapsUrl(placeId) {
+        return `https://www.google.com/maps/place/?q=place_id:${placeId}`;
+    }
+
+    function escapeHtml(text) {
+        if (!text) return "";
+        return text
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function addUserMarker() {
+        if (userMarker) {
+            userMarker.setMap(null);
         }
 
-        function saveMapState(results, statusMessage) {
-            const safeResults = (results || [])
-                .slice(0, 20)
-                .map(placeToCache)
-                .filter(Boolean);
-
-            writeMapCache({
-                searchText: searchInput.value,
-                radiusMiles: getSelectedRadiusMiles(),
-                results: safeResults,
-                lastStatus: statusMessage || "",
-                savedAt: new Date().toISOString()
-            });
-        }
-
-        function restoreCachedControls() {
-            const cached = readMapCache();
-
-            if (!cached) {
-                return null;
-            }
-
-            if (cached.searchText) {
-                searchInput.value = cached.searchText;
-            }
-
-            if (cached.searchText && cached.searchText.trim()) {
-                lastSearchMode = "text";
-                lastSearchQuery = cached.searchText.trim();
-            }
-
-            if (cached.radiusMiles) {
-                radiusSelect.value = String(cached.radiusMiles);
-            }
-
-            return cached;
-        }
-
-        function setStatus(msg) {
-            statusEl.textContent = msg;
-        }
-
-        function showCachedBanner() {
-            if (cachedBannerEl) {
-                cachedBannerEl.classList.remove("hidden");
-            }
-        }
-
-        function hideCachedBanner() {
-            if (cachedBannerEl) {
-                cachedBannerEl.classList.add("hidden");
-            }
-        }
-
-        function setCachedStatus(message) {
-            showCachedBanner();
-
-            if (message) {
-                setStatus(`Showing saved results from this browser. These may be outdated. ${message}`);
-            } else {
-                setStatus("Showing saved results from this browser. These may be outdated. Run a new search to refresh live results.");
-            }
-        }
-
-        function setLiveStatus(message) {
-            hideCachedBanner();
-            setStatus(message);
-        }
-
-        function restoreCachedResults(cached) {
-            if (!cached) {
-                return false;
-            }
-
-            clearMarkers();
-            clearResults();
-            drawRadiusCircle();
-            addUserMarker();
-
-            (cached.results || []).forEach(place => {
-                addResultCard(place);
-            });
-
-            if (cached.lastStatus) {
-                setCachedStatus(cached.lastStatus);
-            } else {
-                setCachedStatus("");
-            }
-
-            return true;
-        }
-
-        function getDistanceMeters(lat1, lng1, lat2, lng2) {
-            const toRad = (deg) => deg * (Math.PI / 180);
-            const earthRadius = 6371000;
-
-            const dLat = toRad(lat2 - lat1);
-            const dLng = toRad(lng2 - lng1);
-
-            const a =
-                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(toRad(lat1)) *
-                Math.cos(toRad(lat2)) *
-                Math.sin(dLng / 2) *
-                Math.sin(dLng / 2);
-
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return earthRadius * c;
-        }
-
-        function filterResultsByRadius(results) {
-            const maxDistance = getSelectedRadiusMeters();
-
-            return (results || []).filter(place => {
-                if (!place.geometry || !place.geometry.location) {
-                    return false;
-                }
-
-                const placeLat =
-                    typeof place.geometry.location.lat === "function"
-                        ? place.geometry.location.lat()
-                        : place.geometry.location.lat;
-
-                const placeLng =
-                    typeof place.geometry.location.lng === "function"
-                        ? place.geometry.location.lng()
-                        : place.geometry.location.lng;
-
-                const distance = getDistanceMeters(
-                    userCenter.lat,
-                    userCenter.lng,
-                    placeLat,
-                    placeLng
-                );
-
-                return distance <= maxDistance;
-            });
-        }
-
-        function getSelectedRadiusMiles() {
-            return parseFloat(radiusSelect.value);
-        }
-
-        function getSelectedRadiusMeters() {
-            return getSelectedRadiusMiles() * 1609.34;
-        }
-
-        function clearMarkers() {
-            for (const marker of markers) {
-                marker.setMap(null);
-            }
-            markers = [];
-        }
-
-        function clearResults() {
-            resultsEl.innerHTML = "";
-        }
-
-        function buildMapsUrl(placeId) {
-            return `https://www.google.com/maps/place/?q=place_id:${placeId}`;
-        }
-
-        function escapeHtml(text) {
-            if (!text) return "";
-            return text
-                .replaceAll("&", "&amp;")
-                .replaceAll("<", "&lt;")
-                .replaceAll(">", "&gt;")
-                .replaceAll('"', "&quot;")
-                .replaceAll("'", "&#039;");
-        }
-
-        function addUserMarker() {
-            if (userMarker) {
-                userMarker.setMap(null);
-            }
-
-            userMarker = new google.maps.Marker({
-                map: map,
-                position: userCenter,
-                title: "Your location",
-                icon: {
-                    path: google.maps.SymbolPath.CIRCLE,
-                    scale: 8,
-                    fillColor: "#1abc9c",
-                    fillOpacity: 1,
-                    strokeColor: "#ffffff",
-                    strokeWeight: 2
-                }
-            });
-        }
-
-        function drawRadiusCircle() {
-            if (radiusCircle) {
-                radiusCircle.setMap(null);
-            }
-
-            radiusCircle = new google.maps.Circle({
-                map: map,
-                center: userCenter,
-                radius: getSelectedRadiusMeters(),
-                strokeColor: "#1abc9c",
-                strokeOpacity: 0.7,
-                strokeWeight: 2,
+        userMarker = new google.maps.Marker({
+            map: map,
+            position: userCenter,
+            title: "Your location",
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 8,
                 fillColor: "#1abc9c",
-                fillOpacity: 0.12
-            });
+                fillOpacity: 1,
+                strokeColor: "#ffffff",
+                strokeWeight: 2
+            }
+        });
+    }
+
+    function drawRadiusCircle() {
+        if (radiusCircle) {
+            radiusCircle.setMap(null);
         }
 
-        function addResultCard(place) {
-            const name = place.name || "Unnamed place";
-            const addr = place.formatted_address || place.vicinity || "Address not available";
-            const mapsUrl = place.place_id ? buildMapsUrl(place.place_id) : null;
+        radiusCircle = new google.maps.Circle({
+            map: map,
+            center: userCenter,
+            radius: getSelectedRadiusMeters(),
+            strokeColor: "#1abc9c",
+            strokeOpacity: 0.7,
+            strokeWeight: 2,
+            fillColor: "#1abc9c",
+            fillOpacity: 0.12
+        });
+    }
 
-            const card = document.createElement("div");
-            card.className = "result-card";
+    function addResultCard(place) {
+        const name = place.name || "Unnamed place";
+        const addr = place.formatted_address || place.vicinity || "Address not available";
+        const mapsUrl = place.place_id ? buildMapsUrl(place.place_id) : null;
 
-            const title = document.createElement("div");
-            title.className = "result-title";
-            title.textContent = name;
+        const card = document.createElement("div");
+        card.className = "result-card";
 
-            const meta = document.createElement("div");
-            meta.className = "result-meta";
-            meta.textContent = addr;
+        const title = document.createElement("div");
+        title.className = "result-title";
+        title.textContent = name;
 
-            const actions = document.createElement("div");
-            actions.className = "result-actions";
+        const meta = document.createElement("div");
+        meta.className = "result-meta";
+        meta.textContent = addr;
 
-            if (mapsUrl) {
-                const openLink = document.createElement("a");
-                openLink.className = "mini-link";
-                openLink.href = mapsUrl;
-                openLink.target = "_blank";
-                openLink.rel = "noopener";
-                openLink.textContent = "Open in Google Maps";
-                actions.appendChild(openLink);
-            }
+        const actions = document.createElement("div");
+        actions.className = "result-actions";
 
-            const focusBtn = document.createElement("button");
-            focusBtn.className = "mini-link";
-            focusBtn.type = "button";
-            focusBtn.textContent = "Focus on map";
+        const favBtn = document.createElement("button");
+        favBtn.className = "favorite-btn";
+        favBtn.type = "button";
+        favBtn.textContent = "Save";
+        favBtn.dataset.saved = "false";
+        favBtn.dataset.placeId = place.place_id || place.id || "";
+        favBtn.dataset.name = name;
+        favBtn.dataset.address = addr;
 
-            focusBtn.addEventListener("click", () => {
-                if (!map) {
-                    setStatus("Map not ready yet. Try again in a moment.");
-                    return;
-                }
+        const lat =
+            typeof place.geometry?.location?.lat === "function"
+                ? place.geometry.location.lat()
+                : place.geometry?.location?.lat;
 
-                if (place.geometry && place.geometry.location) {
-                    map.panTo(place.geometry.location);
-                    map.setZoom(Math.max(map.getZoom(), 15));
-                }
-            });
+        const lng =
+            typeof place.geometry?.location?.lng === "function"
+                ? place.geometry.location.lng()
+                : place.geometry?.location?.lng;
 
-            actions.appendChild(focusBtn);
+        favBtn.dataset.lat = lat ?? "";
+        favBtn.dataset.lng = lng ?? "";
+        favBtn.dataset.category = lastSearchQuery || "";
 
-            card.appendChild(title);
-            card.appendChild(meta);
-            card.appendChild(actions);
+        favBtn.addEventListener("click", () => {
+            toggleFavorite(favBtn);
+        });
 
-            resultsEl.appendChild(card);
+        actions.appendChild(favBtn);
+
+        if (mapsUrl) {
+            const openLink = document.createElement("a");
+            openLink.className = "mini-link";
+            openLink.href = mapsUrl;
+            openLink.target = "_blank";
+            openLink.rel = "noopener";
+            openLink.textContent = "Open in Google Maps";
+            actions.appendChild(openLink);
         }
 
-        function addPlaceMarker(place) {
-            if (!place.geometry || !place.geometry.location) {
-                return null;
+        const focusBtn = document.createElement("button");
+        focusBtn.className = "mini-link";
+        focusBtn.type = "button";
+        focusBtn.textContent = "Focus on map";
+
+        focusBtn.addEventListener("click", () => {
+            if (!map) {
+                setStatus("Map not ready yet. Try again in a moment.");
+                return;
             }
 
-            const marker = new google.maps.Marker({
-                map: map,
-                position: place.geometry.location,
-                title: place.name || "Place"
-            });
+            if (place.geometry && place.geometry.location) {
+                map.panTo(place.geometry.location);
+                map.setZoom(Math.max(map.getZoom(), 15));
+            }
+        });
 
-            marker.addListener("click", () => {
-                const name = escapeHtml(place.name || "Place");
-                const addr = escapeHtml(place.formatted_address || place.vicinity || "");
-                const mapsUrl = place.place_id ? buildMapsUrl(place.place_id) : "";
+        actions.appendChild(focusBtn);
 
-                infoWindow.setContent(`
+        card.appendChild(title);
+        card.appendChild(meta);
+        card.appendChild(actions);
+
+        resultsEl.appendChild(card);
+    }
+
+    function addPlaceMarker(place) {
+        if (!place.geometry || !place.geometry.location) {
+            return null;
+        }
+
+        const marker = new google.maps.Marker({
+            map: map,
+            position: place.geometry.location,
+            title: place.name || "Place"
+        });
+
+        marker.addListener("click", () => {
+            const name = escapeHtml(place.name || "Place");
+            const addr = escapeHtml(place.formatted_address || place.vicinity || "");
+            const mapsUrl = place.place_id ? buildMapsUrl(place.place_id) : "";
+
+            infoWindow.setContent(`
                 <div style="font-family: Arial, sans-serif; max-width: 240px;">
                     <div style="font-weight: 700; margin-bottom: 6px;">${name}</div>
                     <div style="font-size: 13px; color: #555; margin-bottom: 8px;">${addr}</div>
@@ -688,149 +887,84 @@
                 </div>
             `);
 
-                infoWindow.open(map, marker);
-            });
+            infoWindow.open(map, marker);
+        });
 
-            markers.push(marker);
-            return marker;
+        markers.push(marker);
+        return marker;
+    }
+
+    function renderPlaces(results, emptyMessage) {
+        clearMarkers();
+        clearResults();
+        drawRadiusCircle();
+        addUserMarker();
+        hideCachedBanner();
+
+        if (!results || !results.length) {
+            const message = emptyMessage || "No results found.";
+            setStatus(message);
+            saveMapState([], message);
+            return;
         }
 
-        function renderPlaces(results, emptyMessage) {
-            clearMarkers();
-            clearResults();
-            drawRadiusCircle();
-            addUserMarker();
-            hideCachedBanner();
+        const bounds = new google.maps.LatLngBounds();
+        let validCount = 0;
 
-            if (!results || !results.length) {
-                const message = emptyMessage || "No results found.";
-                setStatus(message);
-                saveMapState([], message);
+        results.slice(0, 20).forEach(place => {
+            if (!place.geometry || !place.geometry.location) {
                 return;
             }
 
-            const bounds = new google.maps.LatLngBounds();
-            let validCount = 0;
+            addPlaceMarker(place);
+            addResultCard(place);
+            bounds.extend(place.geometry.location);
+            validCount += 1;
+        });
 
-            results.slice(0, 20).forEach(place => {
-                if (!place.geometry || !place.geometry.location) {
-                    return;
-                }
+        bounds.extend(userCenter);
 
-                addPlaceMarker(place);
-                addResultCard(place);
-                bounds.extend(place.geometry.location);
-                validCount += 1;
-            });
-
-            bounds.extend(userCenter);
-
-            if (!validCount) {
-                const message = "No usable map results found.";
-                setStatus(message);
-                saveMapState([], message);
-                map.setCenter(userCenter);
-                return;
-            }
-
-            map.fitBounds(bounds);
-
-            google.maps.event.addListenerOnce(map, "bounds_changed", () => {
-                if (map.getZoom() > 15) {
-                    map.setZoom(15);
-                }
-            });
-
-            const message = `Found ${validCount} live result(s). Click a pin or an item in the list.`;
-            setLiveStatus(message);
-            saveMapState(results.slice(0, 20), message);
+        if (!validCount) {
+            const message = "No usable map results found.";
+            setStatus(message);
+            saveMapState([], message);
+            map.setCenter(userCenter);
+            return;
         }
 
-        function runNearbySearch(textQuery) {
-            if (!placesService || !map) {
-                setStatus("Map not ready yet. Try again in a second.");
-                return;
+        map.fitBounds(bounds);
+
+        google.maps.event.addListenerOnce(map, "bounds_changed", () => {
+            if (map.getZoom() > 15) {
+                map.setZoom(15);
             }
+        });
 
-            if (!textQuery || !textQuery.trim()) {
-                setStatus("Choose a category or type something to search.");
-                return;
-            }
+        const message = `Found ${validCount} live result(s). Click a pin or an item in the list.`;
+        setLiveStatus(message);
+        saveMapState(results.slice(0, 20), message);
+    }
 
-            lastSearchMode = "nearby";
-            lastSearchQuery = textQuery.trim();
-
-            const miles = getSelectedRadiusMiles();
-            setLiveStatus(`Searching nearby: ${lastSearchQuery} within ${miles} mile(s).`);
-
-            const isShelterSearch = lastSearchQuery.toLowerCase().includes("shelter");
-
-            if (isShelterSearch) {
-                const request = {
-                    query: lastSearchQuery,
-                    location: userCenter,
-                    radius: getSelectedRadiusMeters()
-                };
-
-                placesService.textSearch(request, (results, status) => {
-                    if (status !== google.maps.places.PlacesServiceStatus.OK || !results || !results.length) {
-                        renderPlaces([], "No nearby shelters found. Try a larger radius or a different search.");
-                        return;
-                    }
-
-                    const filteredResults = filterResultsByRadius(results);
-
-                    if (!filteredResults.length) {
-                        renderPlaces([], "No shelters were found inside your selected radius.");
-                        return;
-                    }
-
-                    renderPlaces(filteredResults, "No nearby shelters found.");
-                });
-
-                return;
-            }
-
-            const request = {
-                location: userCenter,
-                radius: getSelectedRadiusMeters(),
-                keyword: lastSearchQuery
-            };
-
-            placesService.nearbySearch(request, (results, status) => {
-                if (status !== google.maps.places.PlacesServiceStatus.OK || !results || !results.length) {
-                    renderPlaces([], "No nearby results found. Try another category or a larger radius.");
-                    return;
-                }
-
-                const filteredResults = filterResultsByRadius(results);
-
-                if (!filteredResults.length) {
-                    renderPlaces([], "No results were found inside your selected radius.");
-                    return;
-                }
-
-                renderPlaces(filteredResults, "No nearby results found.");
-            });
+    function runNearbySearch(textQuery) {
+        if (!placesService || !map) {
+            setStatus("Map not ready yet. Try again in a second.");
+            return;
         }
 
-        function runTextSearch(textQuery) {
-            if (!placesService || !map) {
-                setStatus("Map not ready yet. Try again in a second.");
-                return;
-            }
+        if (!textQuery || !textQuery.trim()) {
+            setStatus("Choose a category or type something to search.");
+            return;
+        }
 
-            if (!textQuery || !textQuery.trim()) {
-                setStatus("Enter something to search for.");
-                return;
-            }
+        lastSearchMode = "nearby";
+        lastSearchQuery = textQuery.trim();
 
-            lastSearchMode = "text";
-            lastSearchQuery = textQuery.trim();
+        const miles = getSelectedRadiusMiles();
+        setLiveStatus(`Searching nearby: ${lastSearchQuery} within ${miles} mile(s).`);
 
-            const miles = getSelectedRadiusMiles();
-            setLiveStatus(`Searching for: ${lastSearchQuery} within ${miles} mile(s)...`);
+        const isShelterSearch = lastSearchQuery.toLowerCase().includes("shelter");
 
+        if (isShelterSearch) {
             const request = {
                 query: lastSearchQuery,
                 location: userCenter,
@@ -839,129 +973,194 @@
 
             placesService.textSearch(request, (results, status) => {
                 if (status !== google.maps.places.PlacesServiceStatus.OK || !results || !results.length) {
-                    renderPlaces([], "No results found. Try another search or a larger radius.");
+                    renderPlaces([], "No nearby shelters found. Try a larger radius or a different search.");
                     return;
                 }
 
                 const filteredResults = filterResultsByRadius(results);
 
                 if (!filteredResults.length) {
-                    renderPlaces([], "No results were found inside your selected radius.");
+                    renderPlaces([], "No shelters were found inside your selected radius.");
                     return;
                 }
 
-                renderPlaces(filteredResults, "No results found.");
+                renderPlaces(filteredResults, "No nearby shelters found.");
             });
+
+            return;
         }
 
-        async function initMap() {
-            try {
-                const { Map, InfoWindow } = await google.maps.importLibrary("maps");
-                await google.maps.importLibrary("marker");
-                const { PlacesService } = await google.maps.importLibrary("places");
+        const request = {
+            location: userCenter,
+            radius: getSelectedRadiusMeters(),
+            keyword: lastSearchQuery
+        };
 
-                map = new Map(document.getElementById("map"), {
-                    center: userCenter,
-                    zoom: 12,
-                    mapTypeControl: false,
-                    streetViewControl: false,
-                    fullscreenControl: true
+        placesService.nearbySearch(request, (results, status) => {
+            if (status !== google.maps.places.PlacesServiceStatus.OK || !results || !results.length) {
+                renderPlaces([], "No nearby results found. Try another category or a larger radius.");
+                return;
+            }
+
+            const filteredResults = filterResultsByRadius(results);
+
+            if (!filteredResults.length) {
+                renderPlaces([], "No results were found inside your selected radius.");
+                return;
+            }
+
+            renderPlaces(filteredResults, "No nearby results found.");
+        });
+    }
+
+    function runTextSearch(textQuery) {
+        if (!placesService || !map) {
+            setStatus("Map not ready yet. Try again in a second.");
+            return;
+        }
+
+        if (!textQuery || !textQuery.trim()) {
+            setStatus("Enter something to search for.");
+            return;
+        }
+
+        lastSearchMode = "text";
+        lastSearchQuery = textQuery.trim();
+
+        const miles = getSelectedRadiusMiles();
+        setLiveStatus(`Searching for: ${lastSearchQuery} within ${miles} mile(s)...`);
+
+        const request = {
+            query: lastSearchQuery,
+            location: userCenter,
+            radius: getSelectedRadiusMeters()
+        };
+
+        placesService.textSearch(request, (results, status) => {
+            if (status !== google.maps.places.PlacesServiceStatus.OK || !results || !results.length) {
+                renderPlaces([], "No results found. Try another search or a larger radius.");
+                return;
+            }
+
+            const filteredResults = filterResultsByRadius(results);
+
+            if (!filteredResults.length) {
+                renderPlaces([], "No results were found inside your selected radius.");
+                return;
+            }
+
+            renderPlaces(filteredResults, "No results found.");
+        });
+    }
+
+    async function initMap() {
+        try {
+            const { Map, InfoWindow } = await google.maps.importLibrary("maps");
+            await google.maps.importLibrary("marker");
+            const { PlacesService } = await google.maps.importLibrary("places");
+
+            map = new Map(document.getElementById("map"), {
+                center: userCenter,
+                zoom: 12,
+                mapTypeControl: false,
+                streetViewControl: false,
+                fullscreenControl: true
+            });
+
+            infoWindow = new InfoWindow();
+            placesService = new PlacesService(map);
+
+            addUserMarker();
+            drawRadiusCircle();
+            setStatus("Getting your location...");
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        userCenter = {
+                            lat: pos.coords.latitude,
+                            lng: pos.coords.longitude
+                        };
+
+                        map.setCenter(userCenter);
+                        map.setZoom(13);
+                        addUserMarker();
+                        drawRadiusCircle();
+
+                        if (!restoreCachedResults(cachedMapState)) {
+                            setLiveStatus("Ready. Search for any place or use a quick button.");
+                        }
+                    },
+                    () => {
+                        drawRadiusCircle();
+
+                        if (!restoreCachedResults(cachedMapState)) {
+                            setLiveStatus("Location blocked. Using default center. You can still search.");
+                        }
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 8000
+                    }
+                );
+            } else {
+                drawRadiusCircle();
+
+                if (!restoreCachedResults(cachedMapState)) {
+                    setLiveStatus("Geolocation not supported. Using default center.");
+                }
+            }
+
+            document.querySelectorAll(".search-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    runNearbySearch(btn.dataset.query);
+                });
+            });
+
+            searchBtn.addEventListener("click", () => {
+                runTextSearch(searchInput.value);
+            });
+
+            searchInput.addEventListener("input", () => {
+                writeMapCache({
+                    searchText: searchInput.value
+                });
+            });
+
+            searchInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    runTextSearch(searchInput.value);
+                }
+            });
+
+            radiusSelect.addEventListener("change", () => {
+                drawRadiusCircle();
+
+                writeMapCache({
+                    radiusMiles: getSelectedRadiusMiles()
                 });
 
-                infoWindow = new InfoWindow();
-                placesService = new PlacesService(map);
-
-                addUserMarker();
-                drawRadiusCircle();
-                setStatus("Getting your location...");
-
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                            userCenter = {
-                                lat: pos.coords.latitude,
-                                lng: pos.coords.longitude
-                            };
-
-                            map.setCenter(userCenter);
-                            map.setZoom(13);
-                            addUserMarker();
-                            drawRadiusCircle();
-
-                            if (!restoreCachedResults(cachedMapState)) {
-                                setLiveStatus("Ready. Search for any place or use a quick button.");
-                            }
-                        },
-                        () => {
-                            drawRadiusCircle();
-
-                            if (!restoreCachedResults(cachedMapState)) {
-                                setLiveStatus("Location blocked. Using default center. You can still search.");
-                            }
-                        },
-                        {
-                            enableHighAccuracy: true,
-                            timeout: 8000
-                        }
-                    );
-                } else {
-                    drawRadiusCircle();
-
-                    if (!restoreCachedResults(cachedMapState)) {
-                        setLiveStatus("Geolocation not supported. Using default center.");
-                    }
+                if (!lastSearchQuery) {
+                    return;
                 }
 
-                document.querySelectorAll(".search-btn").forEach(btn => {
-                    btn.addEventListener("click", () => {
-                        runNearbySearch(btn.dataset.query);
-                    });
-                });
+                if (lastSearchMode === "nearby") {
+                    runNearbySearch(lastSearchQuery);
+                    return;
+                }
 
-                searchBtn.addEventListener("click", () => {
-                    runTextSearch(searchInput.value);
-                });
+                if (lastSearchMode === "text") {
+                    runTextSearch(lastSearchQuery);
+                }
+            });
 
-                searchInput.addEventListener("input", () => {
-                    writeMapCache({
-                        searchText: searchInput.value
-                    });
-                });
-
-                searchInput.addEventListener("keydown", (e) => {
-                    if (e.key === "Enter") {
-                        e.preventDefault();
-                        runTextSearch(searchInput.value);
-                    }
-                });
-
-                radiusSelect.addEventListener("change", () => {
-                    drawRadiusCircle();
-
-                    writeMapCache({
-                        radiusMiles: getSelectedRadiusMiles()
-                    });
-
-                    if (!lastSearchQuery) {
-                        return;
-                    }
-
-                    if (lastSearchMode === "nearby") {
-                        runNearbySearch(lastSearchQuery);
-                        return;
-                    }
-
-                    if (lastSearchMode === "text") {
-                        runTextSearch(lastSearchQuery);
-                    }
-                });
-
-            } catch (err) {
-                console.error(err);
-                setStatus("Map failed to load. Check your API key and enabled Google Maps APIs.");
-            }
+        } catch (err) {
+            console.error(err);
+            setStatus("Map failed to load. Check your API key and enabled Google Maps APIs.");
         }
+    }
 
-        initMap();
-    </script>
+    initMap();
+</script>
 {% endblock %}
