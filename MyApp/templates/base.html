@@ -38,7 +38,7 @@
                 <li><a href="{% url 'find_help' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'find_help' %}active{% endif %}">Find Help</a></li>
 
             {% elif user|role_name == "admin" %}
-                <li><a href="#" class="{% if request.resolver_match and request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">Admin Dashboard</a></li>
+                <li><a href="{% url 'admin_dashboard' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">Admin Dashboard</a></li>
                 <li><a href="#">Manage Users</a></li>
                 <li><a href="{% url 'map' %}" class="{% if request.resolver_match and request.resolver_match.url_name == 'map' %}active{% endif %}">Map</a></li>
 
