@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}History | Helping Connections{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+
+    <div class="dashboard-header">
+        <h1>Your History</h1>
+        <p>Completed requests and offers you've been involved in.</p>
+    </div>
+
+    <!-- Completed Requests -->
+    <section class="dashboard-section">
+        <h2 class="dashboard-section-title">Completed Requests</h2>
+
+        {% if completed_requests %}
+            <div class="dashboard-grid">
+                {% for req in completed_requests %}
+                    <div class="offer-compact-card">
+                        <div class="offer-card-main">
+                            <div class="offer-compact-content">
+                                <h3>{{ req.title }}</h3>
+                                <p><strong>Category:</strong> {{ req.get_category_display }}</p>
+                                <p><strong>City:</strong> {{ req.city }}</p>
+                                <p><strong>Status:</strong> {{ req.get_status_display }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="dashboard-empty">No completed requests yet.</div>
+        {% endif %}
+    </section>
+
+    <!-- Completed Offers -->
+    <section class="dashboard-section">
+        <h2 class="dashboard-section-title">Completed Offers</h2>
+
+        {% if completed_offers %}
+            <div class="dashboard-grid">
+                {% for offer in completed_offers %}
+                    <div class="offer-compact-card">
+                        <div class="offer-card-main">
+                            <div class="offer-compact-content">
+                                <h3>{{ offer.title }}</h3>
+                                <p><strong>Category:</strong> {{ offer.get_category_display }}</p>
+                                <p><strong>City:</strong> {{ offer.city }}</p>
+                                <p><strong>Status:</strong> {{ offer.get_status_display }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="dashboard-empty">No completed offers yet.</div>
+        {% endif %}
+    </section>
+
+</div>
+{% endblock %}
