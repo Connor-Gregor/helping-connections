@@ -13,6 +13,9 @@ from datetime import timedelta
 from django.urls import reverse
 from django.core.paginator import Paginator
 from messaging.services import send_system_dm
+from .models import FavoriteLocation
+from django.http import JsonResponse
+import json
 
 from .forms import (
     RegisterForm,
@@ -1676,3 +1679,92 @@ def admin_dashboard(request):
         "query": query,
         "suggestions": suggestions,
     })
+
+@login_required
+@require_POST
+def save_favorite(request):
+    try:
+        data = json.loads(request.body)
+        profile = request.user.profile
+
+        place_id = data.get("place_id")
+        name = data.get("name")
+        address = data.get("address", "")
+        lat = data.get("lat")
+        lng = data.get("lng")
+        category = data.get("category", "")
+
+        if not place_id or not name or lat is None or lng is None:
+            return JsonResponse(
+                {"success": False, "error": "Missing required fields"},
+                status=400
+            )
+
+        favorite, created = FavoriteLocation.objects.get_or_create(
+            user=profile,
+            place_id=place_id,
+            defaults={
+                "name": name,
+                "address": address,
+                "lat": lat,
+                "lng": lng,
+                "category": category,
+            }
+        )
+
+        if not created:
+            return JsonResponse(
+                {"success": False, "error": "Already saved"},
+                status=400
+            )
+
+        return JsonResponse({"success": True, "message": "Location saved"})
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+
+@login_required
+@require_POST
+def remove_favorite(request):
+    try:
+        data = json.loads(request.body)
+        profile = request.user.profile
+        place_id = data.get("place_id")
+
+        favorite = FavoriteLocation.objects.filter(user=profile, place_id=place_id)
+
+        if not favorite.exists():
+            return JsonResponse(
+                {"success": False, "error": "Favorite not found"},
+                status=404
+            )
+
+        favorite.delete()
+        return JsonResponse({"success": True, "message": "Location removed"})
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+
+@login_required
+def favorite_locations(request):
+    favorites = FavoriteLocation.objects.filter(user=request.user.profile)
+    return render(request, "favorites.html", {"favorites": favorites})
+
+@login_required
+def get_favorites(request):
+    favorites = FavoriteLocation.objects.filter(user=request.user.profile).order_by("-created_at")
+
+    data = []
+    for favorite in favorites:
+        data.append({
+            "place_id": favorite.place_id,
+            "name": favorite.name,
+            "address": favorite.address,
+            "lat": favorite.lat,
+            "lng": favorite.lng,
+            "category": favorite.category,
+        })
+
+    return JsonResponse({"favorites": data})
