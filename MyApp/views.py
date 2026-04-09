@@ -745,6 +745,29 @@ def dashboard_redirect(request):
 
     return redirect("home")
 
+@login_required
+def history_view(request):
+    profile = request.user.profile
+
+    # Completed Requests (both roles)
+    completed_requests = Request.objects.filter(
+        status=Request.STATUS_FULFILLED
+    ).filter(
+        Q(requester=profile) | Q(claimed_by=profile)
+    ).order_by("-updated_at")
+
+    # Completed Offers (both roles)
+    completed_offers = Offer.objects.filter(
+        status=Offer.STATUS_FULFILLED
+    ).filter(
+        Q(offered_by=profile) | Q(claimed_by=profile)
+    ).prefetch_related("images").order_by("-updated_at")
+
+    return render(request, "history.html", {
+        "completed_requests": completed_requests,
+        "completed_offers": completed_offers,
+    })
+
 
 @login_required
 def delete_account(request):
@@ -1552,6 +1575,7 @@ def verify_request(request, request_id):
         messages.success(request, "Request marked as fulfilled.")
 
     return redirect("unhoused")
+
 
 
 @login_required

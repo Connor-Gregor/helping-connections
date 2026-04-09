@@ -85,6 +85,7 @@ urlpatterns = [
     path("admin-dashboard/", views.admin_dashboard, name="admin_dashboard"),
     path("dashboard/", dashboard_redirect, name="dashboard_redirect"),
     path("map/", map, name="map"),
+    
 
     # REQUESTS
     path("requests/create/", create_request, name="create_request"),
@@ -103,7 +104,8 @@ urlpatterns = [
     path("offers/<int:offer_id>/delete/", delete_offer, name="delete_offer"),
     path("offers/<int:offer_id>/verify/", views.verify_offer, name="verify_offer"),
     path("offers/mine/", my_offers, name="my_offers"),
-
+    path("history/", views.history_view, name="history"), 
+       
     # REPORT
     path("offers/report/", views.create_offer_report, name="create_offer_report"),
     path("reports/requests/create/", views.create_request_report, name="create_request_report"),
