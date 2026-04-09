@@ -12,7 +12,7 @@ from .views import (
     volunteer_requests, claim_request,
     about, create_offer, available_offers, claim_offer, my_offers,
     update_offer, delete_offer,
-    VerifyEmailView, resend_verification_code, admin_dashboard,
+    VerifyEmailView, resend_verification_code, admin_dashboard, save_favorite, remove_favorite, favorite_locations, get_favorites
 )
 
 urlpatterns = [
@@ -85,6 +85,7 @@ urlpatterns = [
     path("admin-dashboard/", views.admin_dashboard, name="admin_dashboard"),
     path("dashboard/", dashboard_redirect, name="dashboard_redirect"),
     path("map/", map, name="map"),
+    
 
     # REQUESTS
     path("requests/create/", create_request, name="create_request"),
@@ -103,8 +104,14 @@ urlpatterns = [
     path("offers/<int:offer_id>/delete/", delete_offer, name="delete_offer"),
     path("offers/<int:offer_id>/verify/", views.verify_offer, name="verify_offer"),
     path("offers/mine/", my_offers, name="my_offers"),
-
+    path("history/", views.history_view, name="history"), 
+       
     # REPORT
     path("offers/report/", views.create_offer_report, name="create_offer_report"),
     path("reports/requests/create/", views.create_request_report, name="create_request_report"),
+    
+    path("favorites/save/", save_favorite, name="save_favorite"),
+    path("favorites/remove/", remove_favorite, name="remove_favorite"),
+    path("favorites/", favorite_locations, name="favorite_locations"),
+    path("favorites/list/", get_favorites, name="get_favorites"),
 ]
