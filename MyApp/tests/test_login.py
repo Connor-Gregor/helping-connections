@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 
 from MyApp.models import Profile, Role
-
+from MyApp.models import EmailVerificationCode
 
 class LoginSecurityTests(TestCase):
     def setUp(self):
@@ -96,3 +96,32 @@ class LoginSecurityTests(TestCase):
         # Raw password should not be stored
         self.assertNotEqual(u.password, self.password)
         self.assertTrue(u.check_password(self.password))
+
+    #Inactive user redirected to email verification
+    def test_inactive_user_redirects_to_verify_email(self):
+        self.user.is_active = False
+        self.user.save()
+
+        resp = self.client.post(reverse("login"), {
+            "email": self.email,
+            "password": self.password,
+        })
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertRedirects(resp, reverse("verify_email"))
+
+    #inactive user sets session verification ID
+    def test_inactive_user_sets_pending_verification_session_key(self):
+        self.user.is_active = False
+        self.user.save()
+
+        self.client.post(reverse("login"), {
+            "email": self.email,
+            "password": self.password,
+        })
+
+        self.assertEqual(
+            self.client.session.get("pending_verification_user_id"),
+            self.user.id
+        )
+    
