@@ -126,6 +126,7 @@ class Request(models.Model):
         default=STATUS_OPEN
     )
 
+    is_flagged = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -174,6 +175,7 @@ class Offer(models.Model):
     STATUS_CLAIMED = "claimed"
     STATUS_FULFILLED = "fulfilled"
     STATUS_CANCELLED = "cancelled"
+
 
     STATUS_CHOICES = [
         (STATUS_OPEN, "Open"),
@@ -224,6 +226,7 @@ class Offer(models.Model):
         default=STATUS_OPEN
     )
 
+    is_flagged = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

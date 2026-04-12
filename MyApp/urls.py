@@ -85,7 +85,9 @@ urlpatterns = [
     path("admin-dashboard/", views.admin_dashboard, name="admin_dashboard"),
     path("dashboard/", dashboard_redirect, name="dashboard_redirect"),
     path("map/", map, name="map"),
-    
+    path("dashboard-admin/offers/", views.admin_offers, name="admin_offers"),
+    path("dashboard-admin/requests/", views.admin_requests, name="admin_requests"),
+    path("dashboard-admin/reports/", views.admin_reports, name="admin_reports"),
 
     # REQUESTS
     path("requests/create/", create_request, name="create_request"),
@@ -114,4 +116,21 @@ urlpatterns = [
     path("favorites/remove/", remove_favorite, name="remove_favorite"),
     path("favorites/", favorite_locations, name="favorite_locations"),
     path("favorites/list/", get_favorites, name="get_favorites"),
+
+    # ADMIN REPORT ACTIONS
+    path("dashboard-admin/reports/", views.admin_reports, name="admin_reports"),
+
+    path("dashboard-admin/reports/offers/<int:report_id>/resolve/", views.admin_resolve_offer_report, name="admin_resolve_offer_report"),
+    path("dashboard-admin/reports/offers/<int:report_id>/dismiss/", views.admin_dismiss_offer_report, name="admin_dismiss_offer_report"),
+    path("dashboard-admin/reports/offers/<int:report_id>/warn/", views.admin_warn_offer_user, name="admin_warn_offer_user"),
+
+    path("dashboard-admin/reports/requests/<int:report_id>/resolve/", views.admin_resolve_request_report, name="admin_resolve_request_report"),
+    path("dashboard-admin/reports/requests/<int:report_id>/dismiss/", views.admin_dismiss_request_report, name="admin_dismiss_request_report"),
+    path("dashboard-admin/reports/requests/<int:report_id>/warn/", views.admin_warn_request_user, name="admin_warn_request_user"),
+
+    # ADMIN ITEM ACTIONS
+    path("dashboard-admin/offers/<int:offer_id>/update/", views.admin_update_offer, name="admin_update_offer"),
+    path("dashboard-admin/offers/<int:offer_id>/delete/", views.admin_delete_offer, name="admin_delete_offer"),
+    path("dashboard-admin/requests/<int:request_id>/update/", views.admin_update_request, name="admin_update_request"),
+    path("dashboard-admin/requests/<int:request_id>/delete/", views.admin_delete_request, name="admin_delete_request"),
 ]
