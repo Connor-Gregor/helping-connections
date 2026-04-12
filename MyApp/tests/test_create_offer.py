@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from MyApp.models import Profile, Role, Offer
 from django.core.files.uploadedfile import SimpleUploadedFile
-
+from MyApp.models import Offer, OfferImage
 
 class CreateOfferTests(TestCase):
 
@@ -106,3 +106,37 @@ class CreateOfferTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Offer.objects.count(), 1)
+        
+    #Offer linked to correct volunteer
+    def test_create_offer_sets_offered_by_correctly(self):
+        self.client.login(username="test@user.com", password="password123")
+
+        data = {
+            "title": "Offer clothes",
+            "description": "Jackets and socks",
+            "category": "clothing",
+            "city": "Milwaukee",
+            "location_details": "Community center",
+        }
+
+        self.client.post(self.url, data)
+
+        offer = Offer.objects.get()
+        self.assertEqual(offer.offered_by, self.profile)
+
+    #Offer created with OPEN status
+    def test_create_offer_sets_status_open(self):
+        self.client.login(username="test@user.com", password="password123")
+
+        data = {
+            "title": "Offer bedding",
+            "description": "Blankets available",
+            "category": "blankets",
+            "city": "Milwaukee",
+            "location_details": "Church parking lot",
+        }
+
+        self.client.post(self.url, data)
+
+        offer = Offer.objects.get()
+        self.assertEqual(offer.status, Offer.STATUS_OPEN)

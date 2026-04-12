@@ -78,3 +78,38 @@ class CreateRequestTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Request.objects.count(), 0)
+        
+    #Request linked to correct requester
+    def test_create_request_sets_requester_correctly(self):
+        self.client.login(username="test@user.com", password="password123")
+
+        data = {
+            "title": "Need blankets",
+            "description": "Need blankets for cold weather",
+            "category": "blankets",
+            "city": "Milwaukee",
+            "location_details": "Near shelter",
+        }
+
+        self.client.post(self.url, data)
+
+        req = Request.objects.get()
+        self.assertEqual(req.requester, self.profile)
+
+    #Request created with OPEN status
+    def test_create_request_sets_status_open(self):
+        self.client.login(username="test@user.com", password="password123")
+
+        data = {
+            "title": "Need hygiene kit",
+            "description": "Soap and toothpaste",
+            "category": "hygiene",
+            "city": "Milwaukee",
+            "location_details": "Library area",
+        }
+
+        self.client.post(self.url, data)
+
+        req = Request.objects.get()
+        self.assertEqual(req.status, Request.STATUS_OPEN)    
+    
