@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% load static %}
+{% load user_extras %}
+
+{% block title %}Admin Requests | Helping Connections{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/item_modal.css' %}">
+{% endblock %}
+
+{% block content %}
+    <style>
+        .requests-wrapper {
+            max-width: 1280px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .requests-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .requests-header h2 {
+            font-size: 2rem;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .requests-header p {
+            color: #555;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        .requests-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 24px;
+            justify-items: center;
+            align-items: start;
+        }
+
+        .request-card {
+            width: 100%;
+            max-width: 380px;
+            background: #ffffff;
+            border: 1px solid #d6dbe1;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 18px;
+            box-sizing: border-box;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .request-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+        }
+
+        .request-card-title {
+            font-size: 1.08rem;
+            color: #2c3e50;
+            margin: 0 0 10px;
+            line-height: 1.25;
+            font-weight: 700;
+            word-break: break-word;
+        }
+
+        .request-card-details p {
+            margin: 6px 0;
+            color: #333;
+            line-height: 1.4;
+            font-size: 0.95rem;
+        }
+
+        .request-card-details strong {
+            color: #1f3b4d;
+        }
+
+        .request-footer {
+            margin-top: 14px;
+            padding: 8px 12px;
+            background: #f4f6f8;
+            border-left: 4px solid #1abc9c;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            color: #1f3f30;
+        }
+
+        .empty-state {
+            max-width: 700px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #d6dbe1;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 32px;
+            text-align: center;
+        }
+
+        .empty-state p {
+            color: #555;
+            font-size: 1rem;
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 1180px) {
+            .requests-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 760px) {
+            .requests-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .request-card {
+                max-width: 100%;
+            }
+        }
+    </style>
+
+    <div class="requests-wrapper">
+        <div class="requests-header">
+            <h2>All Requests</h2>
+            <p>Review, edit, and remove unhoused user requests across the platform.</p>
+        </div>
+
+        {% if requests %}
+            <div class="requests-grid">
+                {% for req in requests %}
+                    <div
+                        id="item-card-{{ req.id }}"
+                        class="request-card js-item-card"
+                        data-item-id="{{ req.id }}"
+                        data-current-user-id="{{ request.user.id }}"
+                        data-owner-id="{{ req.requester.user.id }}"
+                        data-owner-report-id="{{ req.requester.user.id }}"
+                        data-owner-name="{{ req.requester.display_username|default:req.requester.user.username|escape }}"
+                        data-owner-initials="{{ req.requester.user|initials|escape }}"
+                        {% if req.requester.profile_photo %}
+                            data-owner-photo="{{ req.requester.profile_photo.url }}"
+                        {% endif %}
+                        data-title="{{ req.title|escape }}"
+                        data-category="{{ req.get_category_display|escape }}"
+                        data-category-value="{{ req.category }}"
+                        data-city="{{ req.city|escape }}"
+                        data-status="{{ req.get_status_display|escape }}"
+                        data-description="{{ req.description|default:'No description provided.'|escape }}"
+                        data-location="{{ req.location_details|default:'N/A'|escape }}"
+                        data-created="{{ req.created_at|date:'c' }}"
+                        data-claimed-by="{% if req.claimed_by %}{{ req.claimed_by.display_username|default:req.claimed_by.user.username|escape }}{% endif %}"
+                        data-claimed-at="{{ req.claimed_at|date:'c' }}"
+                        data-claimer-id="{% if req.claimed_by %}{{ req.claimed_by.user.id }}{% endif %}"
+                        data-images="[]"
+                        data-action-mode="request_open"
+                        data-edit-url="{% url 'update_request' req.id %}"
+                        data-delete-url="{% url 'delete_request' req.id %}"
+                    >
+                        <h3 class="request-card-title">{{ req.title }}</h3>
+
+                        <div class="request-card-details">
+                            <p><strong>Category:</strong> {{ req.get_category_display }}</p>
+                            <p><strong>Description:</strong> {{ req.description|default:"No description provided." }}</p>
+                            <p><strong>City:</strong> {{ req.city }}</p>
+                            <p><strong>Location Details:</strong> {{ req.location_details|default:"N/A" }}</p>
+                            <p><strong>Status:</strong> {{ req.get_status_display }}</p>
+                        </div>
+
+                        <div class="request-footer">
+                            <strong>Posted By:</strong>
+                            {{ req.requester.display_username|default:req.requester.user.username }}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>No requests found.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    {% include "components/item_modal.html" %}
+{% endblock %}
+
+{% block extra_scripts %}
+    <script src="{% static 'js/item_modal.js' %}"></script>
+{% endblock %}

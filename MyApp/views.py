@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 from django.contrib.auth.models import User
@@ -13,7 +13,7 @@ from datetime import timedelta
 from django.urls import reverse
 from django.core.paginator import Paginator
 from messaging.services import send_system_dm
-from .models import FavoriteLocation
+from .models import FavoriteLocation, Offer, Request, OfferReport, RequestReport
 from django.http import JsonResponse
 import json
 
@@ -1175,7 +1175,10 @@ def volunteer_requests(request):
     category = request.GET.get("category", "").strip()
     city = request.GET.get("city", "").strip()
 
-    requests_qs = Request.objects.filter(status=Request.STATUS_OPEN)
+    requests_qs = Request.objects.filter(
+        status=Request.STATUS_OPEN,
+        is_flagged=False
+    )
 
     if category:
         requests_qs = requests_qs.filter(category=category)
@@ -1329,7 +1332,8 @@ def available_offers(request):
         return redirect("home")
 
     offers_list = Offer.objects.filter(
-        status=Offer.STATUS_OPEN
+        status=Offer.STATUS_OPEN,
+        is_flagged=False
     ).prefetch_related("images")
 
     paginator = Paginator(offers_list, 18)   # show 6 offers per page
@@ -1426,6 +1430,8 @@ def create_offer_report(request):
         reason=reason,
         details=details,
     )
+    offer.is_flagged = True
+    offer.save(update_fields=["is_flagged"])
 
     messages.success(request, "Your report was submitted successfully.")
     return redirect(return_to or "available_offers")
@@ -1473,6 +1479,9 @@ def create_request_report(request):
         reason=reason,
         details=details,
     )
+
+    request.is_flagged = True
+    request.save(update_fields=["is_flagged"])
 
     messages.success(request, "Your report was submitted successfully.")
     return redirect(return_to or "volunteer_requests")
@@ -1653,6 +1662,18 @@ def is_admin(user):
     except Profile.DoesNotExist:
         return False
 
+def refresh_offer_flag(offer):
+    has_open_reports = offer.reports.filter(status=OfferReport.STATUS_OPEN).exists()
+    if offer.is_flagged != has_open_reports:
+        offer.is_flagged = has_open_reports
+        offer.save(update_fields=["is_flagged"])
+
+
+def refresh_request_flag(request_item):
+    has_open_reports = request_item.reports.filter(status=RequestReport.STATUS_OPEN).exists()
+    if request_item.is_flagged != has_open_reports:
+        request_item.is_flagged = has_open_reports
+        request_item.save(update_fields=["is_flagged"])
 
 @login_required
 def admin_dashboard(request):
@@ -1776,3 +1797,252 @@ def get_favorites(request):
         })
 
     return JsonResponse({"favorites": data})
+
+def admin_offers(request):
+    if not request.user.is_staff:
+        return redirect("home")
+
+    offers = Offer.objects.all().order_by("-created_at")
+
+    return render(request, "admin_offers.html", {
+        "offers": offers
+    })
+
+
+def admin_requests(request):
+    if not request.user.is_staff:
+        return redirect("home")
+
+    requests_qs = Request.objects.all().order_by("-created_at")
+
+    return render(request, "admin_requests.html", {
+        "requests": requests_qs
+    })
+
+
+@login_required
+def admin_reports(request):
+    if not is_admin(request.user):
+        messages.error(request, "Only admins can view that page.")
+        return redirect("home")
+
+    offer_reports = (
+        OfferReport.objects
+        .select_related("reporter__user", "reported_user__user", "offer", "offer__offered_by__user")
+        .annotate(report_count=Count("offer__reports"))
+        .order_by("-report_count", "-created_at")
+    )
+
+    request_reports = (
+        RequestReport.objects
+        .select_related("reporter__user", "reported_user__user", "request_item", "request_item__requester__user")
+        .annotate(report_count=Count("request_item__reports"))
+        .order_by("-report_count", "-created_at")
+    )
+
+    return render(request, "admin_reports.html", {
+        "offer_reports": offer_reports,
+        "request_reports": request_reports,
+    })
+
+@login_required
+@require_POST
+def admin_resolve_offer_report(request, report_id):
+    if not is_admin(request.user):
+        messages.error(request, "Only admins can do that.")
+        return redirect("home")
+
+    report = get_object_or_404(OfferReport, id=report_id)
+    report.status = OfferReport.STATUS_REVIEWED
+    report.save(update_fields=["status"])
+
+    refresh_offer_flag(report.offer)
+
+    messages.success(request, "Offer report marked as resolved.")
+    return redirect("admin_reports")
+
+
+@login_required
+@require_POST
+def admin_dismiss_offer_report(request, report_id):
+    if not is_admin(request.user):
+        messages.error(request, "Only admins can do that.")
+        return redirect("home")
+
+    report = get_object_or_404(OfferReport, id=report_id)
+    report.status = OfferReport.STATUS_DISMISSED
+    report.save(update_fields=["status"])
+
+    refresh_offer_flag(report.offer)
+
+    messages.success(request, "Offer report dismissed.")
+    return redirect("admin_reports")
+
+
+@login_required
+@require_POST
+def admin_resolve_request_report(request, report_id):
+    if not is_admin(request.user):
+        messages.error(request, "Only admins can do that.")
+        return redirect("home")
+
+    report = get_object_or_404(RequestReport, id=report_id)
+    report.status = RequestReport.STATUS_REVIEWED
+    report.save(update_fields=["status"])
+
+    refresh_request_flag(report.request_item)
+
+    messages.success(request, "Request report marked as resolved.")
+    return redirect("admin_reports")
+
+
+@login_required
+@require_POST
+def admin_dismiss_request_report(request, report_id):
+    if not is_admin(request.user):
+        messages.error(request, "Only admins can do that.")
+        return redirect("home")
+
+    report = get_object_or_404(RequestReport, id=report_id)
+    report.status = RequestReport.STATUS_DISMISSED
+    report.save(update_fields=["status"])
+
+    refresh_request_flag(report.request_item)
+
+    messages.success(request, "Request report dismissed.")
+    return redirect("admin_reports")
+
+@login_required
+@require_POST
+def admin_update_offer(request, offer_id):
+    if not is_admin(request.user):
+        messages.error(request, "Only admins can update offers.")
+        return redirect("home")
+
+    offer = get_object_or_404(Offer, id=offer_id)
+    form = OfferForm(request.POST, instance=offer)
+
+    if form.is_valid():
+        updated_offer = form.save(commit=False)
+        updated_offer.offered_by = offer.offered_by
+        updated_offer.save()
+        messages.success(request, "Offer updated successfully.")
+    else:
+        messages.error(request, "Failed to update offer. Please check the form.")
+
+    return redirect("admin_reports")
+
+
+@login_required
+@require_POST
+def admin_delete_offer(request, offer_id):
+    if not is_admin(request.user):
+        messages.error(request, "Only admins can delete offers.")
+        return redirect("home")
+
+    offer = get_object_or_404(Offer, id=offer_id)
+    owner_user = offer.offered_by.user
+    offer_title = offer.title
+
+    offer.delete()
+
+    if owner_user != request.user:
+        send_system_dm(
+            sender=request.user,
+            recipient=owner_user,
+            body=f'An admin removed your offer "{offer_title}" after review.'
+        )
+
+    messages.success(request, "Offer deleted successfully.")
+    return redirect("admin_reports")
+
+@login_required
+@require_POST
+def admin_update_request(request, request_id):
+    if not is_admin(request.user):
+        messages.error(request, "Only admins can update requests.")
+        return redirect("home")
+
+    req = get_object_or_404(Request, id=request_id)
+    form = RequestForm(request.POST, instance=req)
+
+    if form.is_valid():
+        updated_request = form.save(commit=False)
+        updated_request.requester = req.requester
+        updated_request.save()
+        messages.success(request, "Request updated successfully.")
+    else:
+        messages.error(request, "Failed to update request. Please check the form.")
+
+    return redirect("admin_reports")
+
+
+@login_required
+@require_POST
+def admin_delete_request(request, request_id):
+    if not is_admin(request.user):
+        messages.error(request, "Only admins can delete requests.")
+        return redirect("home")
+
+    req = get_object_or_404(Request, id=request_id)
+    owner_user = req.requester.user
+    request_title = req.title
+
+    req.delete()
+
+    if owner_user != request.user:
+        send_system_dm(
+            sender=request.user,
+            recipient=owner_user,
+            body=f'An admin removed your request "{request_title}" after review.'
+        )
+
+    messages.success(request, "Request deleted successfully.")
+    return redirect("admin_reports")
+
+@login_required
+@require_POST
+def admin_warn_offer_user(request, report_id):
+    if not is_admin(request.user):
+        messages.error(request, "Only admins can do that.")
+        return redirect("home")
+
+    report = get_object_or_404(OfferReport, id=report_id)
+    warning_text = (request.POST.get("warning_text") or "").strip()
+
+    if not warning_text:
+        messages.error(request, "Warning message cannot be empty.")
+        return redirect("admin_reports")
+
+    send_system_dm(
+        sender=request.user,
+        recipient=report.reported_user.user,
+        body=f'Admin warning regarding your offer "{report.offer.title}": {warning_text}'
+    )
+
+    messages.success(request, "Warning message sent to the offer owner.")
+    return redirect("admin_reports")
+
+
+@login_required
+@require_POST
+def admin_warn_request_user(request, report_id):
+    if not is_admin(request.user):
+        messages.error(request, "Only admins can do that.")
+        return redirect("home")
+
+    report = get_object_or_404(RequestReport, id=report_id)
+    warning_text = (request.POST.get("warning_text") or "").strip()
+
+    if not warning_text:
+        messages.error(request, "Warning message cannot be empty.")
+        return redirect("admin_reports")
+
+    send_system_dm(
+        sender=request.user,
+        recipient=report.reported_user.user,
+        body=f'Admin warning regarding your request "{report.request_item.title}": {warning_text}'
+    )
+
+    messages.success(request, "Warning message sent to the request owner.")
+    return redirect("admin_reports")
