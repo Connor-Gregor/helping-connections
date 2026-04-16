@@ -686,26 +686,46 @@ def unhoused(request):
     role = getattr(request.user.profile, "role", None)
     if role and role.name == "unhoused":
         profile = request.user.profile
+        active_tab = request.GET.get("tab", "open-tab")
 
-        open_requests = Request.objects.filter(
+        open_requests_list = Request.objects.filter(
             requester=profile,
             status=Request.STATUS_OPEN
         ).order_by("-created_at")
 
-        processing_requests = Request.objects.filter(
+        open_requests_total = open_requests_list.count()
+        open_requests_paginator = Paginator(open_requests_list, 9)
+        open_requests_page_number = request.GET.get("open_page")
+        open_requests = open_requests_paginator.get_page(open_requests_page_number)
+
+        processing_requests_list = Request.objects.filter(
             requester=profile,
             status=Request.STATUS_CLAIMED
         ).order_by("-claimed_at", "-created_at")
 
-        completed_requests = Request.objects.filter(
+        processing_requests_total = processing_requests_list.count()
+        processing_requests_paginator = Paginator(processing_requests_list, 9)
+        processing_requests_page_number = request.GET.get("processing_page")
+        processing_requests = processing_requests_paginator.get_page(processing_requests_page_number)
+
+        completed_requests_list = Request.objects.filter(
             requester=profile,
             status=Request.STATUS_FULFILLED
         ).order_by("-created_at")
 
+        completed_requests_total = completed_requests_list.count()
+        completed_requests_paginator = Paginator(completed_requests_list, 9)
+        completed_requests_page_number = request.GET.get("completed_page")
+        completed_requests = completed_requests_paginator.get_page(completed_requests_page_number)
+
         return render(request, "unhoused_dash.html", {
+            "active_tab": active_tab,
             "open_requests": open_requests,
+            "open_requests_total": open_requests_total,
             "processing_requests": processing_requests,
+            "processing_requests_total": processing_requests_total,
             "completed_requests": completed_requests,
+            "completed_requests_total": completed_requests_total,
         })
 
     return redirect("home")
@@ -1045,13 +1065,30 @@ def create_request(request):
         "form": form,
     })
 
+
+def get_unhoused_dashboard_redirect(request):
+    tab = request.GET.get("tab") or request.POST.get("tab") or "open-tab"
+    open_page = request.GET.get("open_page") or request.POST.get("open_page")
+    processing_page = request.GET.get("processing_page") or request.POST.get("processing_page")
+    completed_page = request.GET.get("completed_page") or request.POST.get("completed_page")
+
+    query_parts = [f"tab={tab}"]
+
+    if open_page:
+        query_parts.append(f"open_page={open_page}")
+    if processing_page:
+        query_parts.append(f"processing_page={processing_page}")
+    if completed_page:
+        query_parts.append(f"completed_page={completed_page}")
+
+    return f"{reverse('unhoused')}?{'&'.join(query_parts)}"
+
 # Updates an existing request.
 #
 # Special behavior:
 # - If request was already claimed → resets it back to OPEN
 # - Clears claimed_by and claimed_at
 # - Notifies user that volunteer will be affected
-
 
 @login_required
 @require_POST
@@ -1068,7 +1105,7 @@ def update_request(request, request_id):
 
     if not form.is_valid():
         messages.error(request, "Please check your request form and try again.")
-        if return_query:
+        if return_query and "tab=" in return_query:
             return redirect(f"{reverse('unhoused')}?{return_query}")
         return redirect("unhoused")
 
@@ -1108,7 +1145,7 @@ def update_request(request, request_id):
     else:
         messages.success(request, "Your request was updated successfully.")
 
-    if return_query:
+    if return_query and "tab=" in return_query:
         return redirect(f"{reverse('unhoused')}?{return_query}")
 
     return redirect("unhoused")
@@ -1122,6 +1159,7 @@ def update_request(request, request_id):
 @require_POST
 def delete_request(request, request_id):
     profile = request.user.profile
+    return_query = (request.POST.get("return_query") or "").strip()
 
     if profile.role is None or profile.role.name.lower() != "unhoused":
         messages.error(request, "Only unhoused users can delete requests.")
@@ -1156,6 +1194,9 @@ def delete_request(request, request_id):
         )
     else:
         messages.success(request, "Your request was deleted successfully.")
+
+    if return_query and "tab=" in return_query:
+        return redirect(f"{reverse('unhoused')}?{return_query}")
 
     return redirect("unhoused")
 
@@ -1198,10 +1239,12 @@ def volunteer_requests(request):
 # Allows volunteers to claim a request.
 # Updates status and tracks claimer + timestamp.
 
+
 @login_required
 @require_POST
 def claim_request(request, request_id):
     profile = request.user.profile
+    return_query = (request.POST.get("return_query") or "").strip()
 
     if profile.role is None or profile.role.name.lower() != "volunteer":
         messages.error(request, "Only volunteers can claim requests.")
@@ -1211,6 +1254,8 @@ def claim_request(request, request_id):
 
     if req.status != Request.STATUS_OPEN:
         messages.error(request, "This request has already been claimed.")
+        if return_query and "tab=" in return_query:
+            return redirect(f"{reverse('volunteer')}?{return_query}")
         return redirect("volunteer_requests")
 
     req.status = Request.STATUS_CLAIMED
@@ -1219,12 +1264,17 @@ def claim_request(request, request_id):
     req.save()
 
     messages.success(request, "You have claimed this request.")
+
+    if return_query and "tab=" in return_query:
+        return redirect(f"{reverse('volunteer')}?{return_query}")
     return redirect("volunteer_requests")
+
 
 @login_required
 @require_POST
 def withdraw_claimed_request(request, request_id):
     profile = request.user.profile
+    return_query = (request.POST.get("return_query") or "").strip()
 
     if profile.role is None or profile.role.name.lower() != "volunteer":
         messages.error(request, "Only volunteers can remove themselves from accepted requests.")
@@ -1234,6 +1284,8 @@ def withdraw_claimed_request(request, request_id):
 
     if req.status != Request.STATUS_CLAIMED:
         messages.error(request, "Only accepted requests can be removed from your dashboard.")
+        if return_query and "tab=" in return_query:
+            return redirect(f"{reverse('volunteer')}?{return_query}")
         return redirect("volunteer")
 
     requester_profile = req.requester
@@ -1264,6 +1316,10 @@ def withdraw_claimed_request(request, request_id):
         request,
         "You removed yourself from the request. The unhoused user was notified and the request is open again."
     )
+
+    if return_query and "tab=" in return_query:
+        return redirect(f"{reverse('volunteer')}?{return_query}")
+
     return redirect("volunteer")
 
 # Allows volunteers to create offers.
@@ -1271,6 +1327,7 @@ def withdraw_claimed_request(request, request_id):
 # Supports:
 # - Multiple image uploads
 # - Assigning images via OfferImage model
+
 
 @login_required
 def create_offer(request):
@@ -1319,6 +1376,7 @@ def create_offer(request):
 # Displays all OPEN offers for unhoused users.
 # Uses pagination (18 per page).
 
+
 @login_required
 def available_offers(request):
     try:
@@ -1347,10 +1405,12 @@ def available_offers(request):
 # Allows unhoused users to claim an offer.
 # Changes status to CLAIMED and stores who claimed it.
 
+
 @login_required
 @require_POST
 def claim_offer(request, offer_id):
     profile = request.user.profile
+    return_query = (request.POST.get("return_query") or "").strip()
 
     if profile.role is None or profile.role.name.lower() != "unhoused":
         messages.error(request, "Only unhoused users can claim offers.")
@@ -1360,6 +1420,8 @@ def claim_offer(request, offer_id):
 
     if offer.status != Offer.STATUS_OPEN:
         messages.error(request, "This offer has already been claimed.")
+        if return_query and "tab=" in return_query:
+            return redirect(f"{reverse('unhoused')}?{return_query}")
         return redirect("available_offers")
 
     offer.status = Offer.STATUS_CLAIMED
@@ -1368,10 +1430,14 @@ def claim_offer(request, offer_id):
     offer.save()
 
     messages.success(request, "You have claimed this offer.")
+
+    if return_query and "tab=" in return_query:
+        return redirect(f"{reverse('unhoused')}?{return_query}")
     return redirect("available_offers")
 
 # Displays all offers created by the logged-in volunteer.
 # Includes pagination and image prefetching.
+
 
 @login_required
 def my_offers(request):
@@ -1396,6 +1462,7 @@ def my_offers(request):
 # Allows users to report an offer.
 # Prevents self-reporting.
 # Stores reason and optional details.
+
 
 @login_required
 @require_POST
@@ -1440,6 +1507,7 @@ def create_offer_report(request):
 # Validates reason against predefined choices.
 # Prevents self-reporting.
 
+
 @login_required
 @require_POST
 def create_request_report(request):
@@ -1480,8 +1548,8 @@ def create_request_report(request):
         details=details,
     )
 
-    request.is_flagged = True
-    request.save(update_fields=["is_flagged"])
+    request_item.is_flagged = True
+    request_item.save(update_fields=["is_flagged"])
 
     messages.success(request, "Your report was submitted successfully.")
     return redirect(return_to or "volunteer_requests")
@@ -1503,7 +1571,7 @@ def update_offer(request, offer_id):
     # BLOCK EDIT IF CLAIMED
     if offer.status == Offer.STATUS_CLAIMED:
         messages.error(request, "This offer has already been claimed and cannot be edited.")
-        if return_query:
+        if return_query and "tab=" in return_query:
             return redirect(f"{reverse('volunteer')}?{return_query}")
         return redirect(f"{reverse('my_offers')}?page={page_number}")
 
@@ -1518,7 +1586,7 @@ def update_offer(request, offer_id):
     else:
         messages.error(request, "Failed to update offer. Please check your form.")
 
-    if return_query:
+    if return_query and "tab=" in return_query:
         return redirect(f"{reverse('volunteer')}?{return_query}")
 
     return redirect(f"{reverse('my_offers')}?page={page_number}")
@@ -1529,6 +1597,7 @@ def update_offer(request, offer_id):
 def delete_offer(request, offer_id):
     profile = request.user.profile
     page_number = request.POST.get("return_page_number", "1")
+    return_query = (request.POST.get("return_query") or "").strip()
 
     if profile.role is None or profile.role.name.lower() != "volunteer":
         messages.error(request, "Only volunteers can delete offers.")
@@ -1564,6 +1633,9 @@ def delete_offer(request, offer_id):
     else:
         messages.success(request, "Offer deleted successfully.")
 
+    if return_query and "tab=" in return_query:
+        return redirect(f"{reverse('volunteer')}?{return_query}")
+
     return redirect(f"{reverse('my_offers')}?page={page_number}")
 
 
@@ -1571,6 +1643,7 @@ def delete_offer(request, offer_id):
 @require_POST
 def verify_request(request, request_id):
     profile = request.user.profile
+    return_query = (request.POST.get("return_query") or "").strip()
 
     if profile.role is None or profile.role.name.lower() != "unhoused":
         messages.error(request, "Only unhoused users can verify requests.")
@@ -1580,6 +1653,8 @@ def verify_request(request, request_id):
 
     if req.status != Request.STATUS_CLAIMED:
         messages.error(request, "Only processing requests can be marked as fulfilled.")
+        if return_query and "tab=" in return_query:
+            return redirect(f"{reverse('unhoused')}?{return_query}")
         return redirect("unhoused")
 
     previous_claimer = req.claimed_by
@@ -1608,14 +1683,17 @@ def verify_request(request, request_id):
     else:
         messages.success(request, "Request marked as fulfilled.")
 
-    return redirect("unhoused")
+    if return_query and "tab=" in return_query:
+        return redirect(f"{reverse('unhoused')}?{return_query}")
 
+    return redirect("unhoused")
 
 
 @login_required
 @require_POST
 def verify_offer(request, offer_id):
     profile = request.user.profile
+    return_query = (request.POST.get("return_query") or "").strip()
 
     if profile.role is None or profile.role.name.lower() != "volunteer":
         messages.error(request, "Only volunteers can mark offers as fulfilled.")
@@ -1625,6 +1703,8 @@ def verify_offer(request, offer_id):
 
     if offer.status != Offer.STATUS_CLAIMED:
         messages.error(request, "Only claimed offers can be marked as fulfilled.")
+        if return_query and "tab=" in return_query:
+            return redirect(f"{reverse('volunteer')}?{return_query}")
         return redirect("volunteer")
 
     previous_claimer = offer.claimed_by
@@ -1653,6 +1733,9 @@ def verify_offer(request, offer_id):
     else:
         messages.success(request, "Offer marked as fulfilled.")
 
+    if return_query and "tab=" in return_query:
+        return redirect(f"{reverse('volunteer')}?{return_query}")
+
     return redirect("volunteer")
 
 
@@ -1661,6 +1744,7 @@ def is_admin(user):
         return bool(user.profile.role and user.profile.role.name.lower() == "admin")
     except Profile.DoesNotExist:
         return False
+
 
 def refresh_offer_flag(offer):
     has_open_reports = offer.reports.filter(status=OfferReport.STATUS_OPEN).exists()
@@ -1674,6 +1758,7 @@ def refresh_request_flag(request_item):
     if request_item.is_flagged != has_open_reports:
         request_item.is_flagged = has_open_reports
         request_item.save(update_fields=["is_flagged"])
+
 
 @login_required
 def admin_dashboard(request):
@@ -1708,6 +1793,7 @@ def admin_dashboard(request):
         "query": query,
         "suggestions": suggestions,
     })
+
 
 @login_required
 @require_POST
@@ -1828,16 +1914,16 @@ def admin_reports(request):
 
     offer_reports = (
         OfferReport.objects
-        .select_related("reporter__user", "reported_user__user", "offer", "offer__offered_by__user")
-        .annotate(report_count=Count("offer__reports"))
-        .order_by("-report_count", "-created_at")
+            .select_related("reporter__user", "reported_user__user", "offer", "offer__offered_by__user")
+            .annotate(report_count=Count("offer__reports"))
+            .order_by("-report_count", "-created_at")
     )
 
     request_reports = (
         RequestReport.objects
-        .select_related("reporter__user", "reported_user__user", "request_item", "request_item__requester__user")
-        .annotate(report_count=Count("request_item__reports"))
-        .order_by("-report_count", "-created_at")
+            .select_related("reporter__user", "reported_user__user", "request_item", "request_item__requester__user")
+            .annotate(report_count=Count("request_item__reports"))
+            .order_by("-report_count", "-created_at")
     )
 
     return render(request, "admin_reports.html", {
