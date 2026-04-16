@@ -103,6 +103,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const primaryConfirmBtn = document.getElementById("itemPrimaryConfirmBtn");
     const primaryItemId = document.getElementById("itemPrimaryItemId");
     const primaryReturnPageNumber = document.getElementById("itemPrimaryReturnPageNumber");
+    const primaryReturnQuery = document.getElementById("itemPrimaryReturnQuery");
 
     // Message panel
     const messageUserName = document.getElementById("itemMessageUserName");
@@ -168,6 +169,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const deleteForm = document.getElementById("itemDeleteForm");
     const deleteTitle = document.getElementById("itemDeleteTitle");
     const deleteBackBtn = document.getElementById("itemDeleteBackBtn");
+    const deleteReturnQuery = document.getElementById("itemDeleteReturnQuery");
 
     // Admin viewing account stuff
     const itemAccountInfo = document.getElementById("itemAccountInfo");
@@ -793,6 +795,10 @@ document.addEventListener("DOMContentLoaded", function () {
             primaryReturnPageNumber.value = getCurrentPageNumber();
         }
 
+        if (primaryReturnQuery) {
+            primaryReturnQuery.value = getCurrentReturnQuery();
+        }
+
         if (primaryConfirmBtn) {
             primaryConfirmBtn.textContent = item.primaryConfirmLabel || item.primaryLabel || "Confirm";
         }
@@ -824,6 +830,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (primaryReturnPageNumber) {
             primaryReturnPageNumber.value = getCurrentPageNumber();
+        }
+
+        if (primaryReturnQuery) {
+            primaryReturnQuery.value = getCurrentReturnQuery();
         }
 
         if (primaryPanelTitle) {
@@ -870,6 +880,10 @@ document.addEventListener("DOMContentLoaded", function () {
             primaryReturnPageNumber.value = getCurrentPageNumber();
         }
 
+        if (primaryReturnQuery) {
+            primaryReturnQuery.value = getCurrentReturnQuery();
+        }
+
         if (primaryPanelTitle) {
             primaryPanelTitle.textContent = item.verifyPanelTitle || "Verify this item?";
         }
@@ -907,6 +921,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (primaryReturnPageNumber) {
             primaryReturnPageNumber.value = getCurrentPageNumber();
+        }
+
+        if (primaryReturnQuery) {
+            primaryReturnQuery.value = getCurrentReturnQuery();
         }
 
         if (primaryConfirmBtn) {
@@ -1249,6 +1267,10 @@ document.addEventListener("DOMContentLoaded", function () {
         if (deleteForm) {
             deleteForm.action = urls.delete || "";
         }
+
+        if (deleteReturnQuery) {
+            deleteReturnQuery.value = getCurrentReturnQuery();
+        }
     }
 
     // Hides a completed dashboard request locally after the user dismisses it.
@@ -1417,7 +1439,7 @@ document.addEventListener("DOMContentLoaded", function () {
             showElement(itemStandardMetaBlock, "block");
             showElement(itemStandardDescriptionBlock, "block");
             hideElement(itemAccountInfo);
-            showElement(itemModalLeft, "block");
+            showElement(itemModalLeft, "grid");
 
             hideElement(modalEmailRow);
             hideElement(modalPhoneRow);
@@ -1855,6 +1877,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (deleteForm) {
                     const urls = getCurrentUrls();
                     deleteForm.action = urls.delete || "";
+
+                    if (deleteReturnQuery) {
+                        deleteReturnQuery.value = getCurrentReturnQuery();
+                    }
+
                     deleteForm.submit();
                 }
             }
