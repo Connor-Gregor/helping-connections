@@ -52,8 +52,17 @@ def thread_display_name(thread, viewer):
 
     return ", ".join(names) if names else "Just you"
 
+#  For current DM flows, return the first participant who is not the viewer.
+#   This lets templates show a profile photo / fallback avatar for the inbox sidebar.
+def thread_other_user(thread, viewer):
 
-# Inbox view:
+    return (
+        thread.participants
+            .exclude(pk=viewer.pk)
+            .select_related("profile")
+            .first()
+    )
+
 # Shows all threads for the current user along with:
 # - thread display name
 # - unread message count
@@ -61,11 +70,10 @@ def thread_display_name(thread, viewer):
 #
 # Unread count here is message-based within each thread, not just a simple
 # "thread is unread" boolean.
-@login_required
-def inbox(request):
+def build_thread_sidebar_data(viewer):
     threads = (
         Thread.objects
-            .filter(participants=request.user)
+            .filter(participants=viewer)
             .prefetch_related("participants__profile", "messages__sender__profile")
             .order_by("-updated_at")
     )
@@ -73,18 +81,20 @@ def inbox(request):
     thread_data = []
 
     for t in threads:
+
         # Reuse the same display-name logic used elsewhere so the inbox stays
         # consistent with thread detail and DM creation flows.
-        display_name = thread_display_name(t, request.user)
+        display_name = thread_display_name(t, viewer)
+        other_user = thread_other_user(t, viewer)
 
         # Read state tracks the most recent time this user viewed the thread.
         read_state = ThreadReadState.objects.filter(
             thread=t,
-            user=request.user
+            user=viewer
         ).first()
 
         # Only unread messages from OTHER users should count as unread.
-        unread_qs = t.messages.exclude(sender=request.user)
+        unread_qs = t.messages.exclude(sender=viewer)
 
         if read_state:
             unread_qs = unread_qs.filter(created_at__gt=read_state.last_read_at)
@@ -95,12 +105,21 @@ def inbox(request):
         thread_data.append({
             "thread": t,
             "display_name": display_name,
+            "other_user": other_user,
             "unread_count": unread_count,
             "last_message": last_message,
         })
 
+    return thread_data
+
+
+@login_required
+def inbox(request):
+    thread_data = build_thread_sidebar_data(request.user)
+
     return render(request, "messaging/inbox.html", {
-        "thread_data": thread_data
+        "thread_data": thread_data,
+        "selected_thread_id": None,
     })
 
 
@@ -152,11 +171,16 @@ def thread_detail(request, thread_id):
     )
 
     chat_messages = thread.messages.select_related("sender").order_by("created_at")
+    thread_data = build_thread_sidebar_data(request.user)
+    selected_other_user = thread_other_user(thread, request.user)
 
     return render(request, "messaging/thread_detail.html", {
         "thread": thread,
         "chat_messages": chat_messages,
         "display_name": display_name,
+        "thread_data": thread_data,
+        "selected_thread_id": thread.id,
+        "selected_other_user": selected_other_user,
     })
 
 
