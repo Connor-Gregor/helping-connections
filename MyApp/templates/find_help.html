@@ -6,6 +6,11 @@
 
 {% block content %}
 <div class="find-help-container">
+    {% if messages %}
+    {% for message in messages %}
+        <p style="color: green;">{{ message }}</p>
+    {% endfor %}
+{% endif %}
     <h1>Find Help in Milwaukee</h1>
 
     <div class="resource-grid">
@@ -47,10 +52,14 @@
             </ul>
         </div>
 
+        <!-- UPDATED: LEGAL + RIGHTS COMBINED -->
         <div class="resource-card">
-            <h2>Legal Aid</h2>
+            <h2>Legal Help & Your Rights</h2>
             <ul>
                 <li><a href="https://legalaction.org/" target="_blank">Legal Action of Wisconsin</a></li>
+                <li><a href="https://www.aclu-wi.org/en/know-your-rights" target="_blank">ACLU Wisconsin – Know Your Rights</a></li>
+                <li><a href="https://www.nlchp.org/issues/know-your-rights/" target="_blank">National Law Center on Homelessness & Poverty</a></li>
+                <li><a href="https://www.legalclinic.org/" target="_blank">Marquette Legal Clinic</a></li>
             </ul>
         </div>
 
@@ -62,6 +71,40 @@
                 <li><a href="https://www.livingwellhhc.com/home-care-services/personal-hygiene-assistance" target="_blank">Living Well Personal Hygiene Assistance</a></li>
             </ul>
         </div>
+    </div>
+
+    <!-- NEW SECTION -->
+    <div class="resource-grid">
+
+        <!-- REPORT INCIDENT -->
+        <div class="resource-card">
+            <h2>Report Police Interaction</h2>
+            <p>If you experienced harassment or unfair treatment, you can document it here.</p>
+
+            <form method="POST">
+                {% csrf_token %}
+                <label>Description:</label><br>
+                <textarea name="description" rows="3" style="width:100%;" placeholder="What happened?"></textarea>
+
+                <input name="location" type="text" style="width:100%;" placeholder="Where did this happen?">
+
+                <button type="submit">Submit Report</button>
+            </form>
+
+            <p style="font-size: 0.9em; margin-top:10px;">
+                This tool helps track patterns and support advocacy efforts.
+            </p>
+        </div>
+
+        <!-- ADVOCACY GROUPS -->
+        <div class="resource-card">
+            <h2>Advocacy & Support</h2>
+            <ul>
+                <li><a href="https://communityadvocates.net/" target="_blank">Community Advocates</a></li>
+                <li><a href="https://streetangelsmke.org/" target="_blank">Street Angels</a></li>
+            </ul>
+        </div>
+
     </div>
 
     {% if user.is_authenticated %}

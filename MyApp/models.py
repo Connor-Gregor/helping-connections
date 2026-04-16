@@ -410,3 +410,11 @@ class EmailVerificationCode(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.code}"
+
+class PoliceInteractionReport(models.Model):
+    description = models.TextField()
+    location = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Report at {self.location or 'Unknown location'} ({self.created_at})"
