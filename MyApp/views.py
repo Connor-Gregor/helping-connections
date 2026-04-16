@@ -1174,6 +1174,7 @@ def volunteer_requests(request):
 
     category = request.GET.get("category", "").strip()
     city = request.GET.get("city", "").strip()
+    sort = request.GET.get("sort", "newest").strip()
 
     requests_qs = Request.objects.filter(
         status=Request.STATUS_OPEN,
@@ -1185,6 +1186,14 @@ def volunteer_requests(request):
     if city:
         requests_qs = requests_qs.filter(city__icontains=city)
 
+    sort_options = {
+        "newest": "-created_at",
+        "oldest": "created_at",
+        "az": "title",
+        "za": "-title",
+    }
+    requests_qs = requests_qs.order_by(sort_options.get(sort, "-created_at"))
+
     paginator = Paginator(requests_qs, 9)
     page_obj = paginator.get_page(request.GET.get("page"))
 
@@ -1193,6 +1202,7 @@ def volunteer_requests(request):
         "categories": Request.CATEGORY_CHOICES,
         "selected_category": category,
         "selected_city": city,
+        "selected_sort": sort,
     })
 
 # Allows volunteers to claim a request.
@@ -1331,17 +1341,34 @@ def available_offers(request):
         messages.error(request, "Only unhoused users can view offers.")
         return redirect("home")
 
-    offers_list = Offer.objects.filter(
-        status=Offer.STATUS_OPEN,
-        is_flagged=False
-    ).prefetch_related("images")
+    category = request.GET.get("category", "").strip()
+    city = request.GET.get("city", "").strip()
+    sort = request.GET.get("sort", "newest").strip()
 
-    paginator = Paginator(offers_list, 18)   # show 6 offers per page
-    page_number = request.GET.get("page")
-    offers = paginator.get_page(page_number)
+    offers_qs = Offer.objects.filter(status=Offer.STATUS_OPEN, is_flagged=False).prefetch_related("images")
+
+    if category:
+        offers_qs = offers_qs.filter(category=category)
+    if city:
+        offers_qs = offers_qs.filter(city__icontains=city)
+
+    sort_options = {
+        "newest": "-created_at",
+        "oldest": "created_at",
+        "az": "title",
+        "za": "-title",
+    }
+    offers_qs = offers_qs.order_by(sort_options.get(sort, "-created_at"))
+
+    paginator = Paginator(offers_qs, 18)
+    offers = paginator.get_page(request.GET.get("page"))
 
     return render(request, "available_offers.html", {
-        "offers": offers
+        "offers": offers,
+        "categories": Offer.CATEGORY_CHOICES,
+        "selected_category": category,
+        "selected_city": city,
+        "selected_sort": sort,
     })
 
 # Allows unhoused users to claim an offer.
@@ -1381,16 +1408,39 @@ def my_offers(request):
         messages.error(request, "Only volunteers can view their offers.")
         return redirect("home")
 
-    offers_list = Offer.objects.filter(
-        offered_by=profile
-    ).prefetch_related("images")
+    category = request.GET.get("category", "").strip()
+    city = request.GET.get("city", "").strip()
+    status = request.GET.get("status", "").strip()
+    sort = request.GET.get("sort", "newest").strip()
 
-    paginator = Paginator(offers_list, 18)   # show 18 offers per page
-    page_number = request.GET.get("page")
-    offers = paginator.get_page(page_number)
+    offers_qs = Offer.objects.filter(offered_by=profile).prefetch_related("images")
+
+    if category:
+        offers_qs = offers_qs.filter(category=category)
+    if city:
+        offers_qs = offers_qs.filter(city__icontains=city)
+    if status:
+        offers_qs = offers_qs.filter(status=status)
+
+    sort_options = {
+        "newest": "-created_at",
+        "oldest": "created_at",
+        "az": "title",
+        "za": "-title",
+    }
+    offers_qs = offers_qs.order_by(sort_options.get(sort, "-created_at"))
+
+    paginator = Paginator(offers_qs, 18)
+    offers = paginator.get_page(request.GET.get("page"))
 
     return render(request, "my_offers.html", {
-        "offers": offers
+        "offers": offers,
+        "categories": Offer.CATEGORY_CHOICES,
+        "status_choices": Offer.STATUS_CHOICES,
+        "selected_category": category,
+        "selected_city": city,
+        "selected_status": status,
+        "selected_sort": sort,
     })
 
 # Allows users to report an offer.
