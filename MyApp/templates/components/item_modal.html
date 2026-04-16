@@ -148,6 +148,7 @@
                     {% csrf_token %}
                     <input type="hidden" id="itemPrimaryItemId" name="item_id">
                     <input type="hidden" id="itemPrimaryReturnPageNumber" name="return_page_number">
+                    <input type="hidden" id="itemPrimaryReturnQuery" name="return_query">
 
                     <div class="item-primary-actions">
                         <button type="button" id="itemPrimaryBackBtn" class="item-back-btn">Back</button>
@@ -443,6 +444,7 @@
 
                 <form method="post" id="itemDeleteForm" class="item-inline-primary-form">
                     {% csrf_token %}
+                    <input type="hidden" id="itemDeleteReturnQuery" name="return_query">
                     <div class="item-primary-actions">
                         <button type="button" id="itemDeleteBackBtn" class="item-back-btn">Back</button>
                         <button type="submit" class="item-danger-btn">Confirm Delete</button>
