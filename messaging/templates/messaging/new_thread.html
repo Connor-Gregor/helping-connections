@@ -4,113 +4,689 @@
 {% block title %}New Message - Helping Connections{% endblock %}
 
 {% block content %}
-<style>
-.new-thread-page {
-    max-width: 700px;
-    margin: 40px auto;
-    padding: 0 20px;
-}
+    <style>
+        .messaging-page {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
 
-.new-thread-card {
-    background: white;
-    border-radius: 12px;
-    padding: 28px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-}
+        .messaging-shell {
+            display: grid;
+            grid-template-columns: 340px minmax(0, 1fr);
+            min-height: 720px;
+            background: #ffffff;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e6ece8;
+        }
 
-.new-thread-title {
-    font-size: 28px;
-    font-weight: 700;
-    color: #2c3e50;
-    margin-bottom: 20px;
-}
+        .messaging-sidebar {
+            background: #f8fbfa;
+            border-right: 1px solid #e3ebe7;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
 
-.form-group {
-    margin-bottom: 18px;
-}
+        .messaging-sidebar-header {
+            padding: 22px 20px 18px;
+            border-bottom: 1px solid #e3ebe7;
+            background: #ffffff;
+        }
 
-.form-group label {
-    display: block;
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 6px;
-}
+        .messaging-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0 0 14px;
+        }
 
-.form-group select,
-.form-group input,
-.form-group textarea {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    box-sizing: border-box;
-    font-size: 14px;
-}
+        .messaging-subtext {
+            font-size: 14px;
+            color: #6b7a78;
+            margin: 0;
+            line-height: 1.5;
+        }
 
-.error-text {
-    color: #c0392b;
-    font-size: 13px;
-    margin-top: 6px;
-}
+        .recipient-list {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
 
-.start-btn {
-    background: #1abc9c;
-    color: white;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-}
+        .recipient-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            border-bottom: 1px solid #e8efec;
+            min-width: 0;
+            background: transparent;
+            cursor: pointer;
+        }
 
-.start-btn:hover {
-    background: #16a085;
-}
+        .recipient-card.is-selected {
+            background: #eaf7f3;
+            box-shadow: inset 4px 0 0 #1abc9c;
+        }
 
-.back-link {
-    display: inline-block;
-    margin-top: 18px;
-    color: #2c3e50;
-    text-decoration: none;
-    font-weight: 500;
-}
+        .recipient-card:hover {
+            background: #eef8f5;
+        }
 
-.back-link:hover {
-    color: #1abc9c;
-}
-</style>
+        .recipient-card:focus-visible {
+            outline: 2px solid #1abc9c;
+            outline-offset: -2px;
+        }
 
-<div class="new-thread-page">
-    <div class="new-thread-card">
-        <div class="new-thread-title">New Message</div>
+        .recipient-avatar {
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            border-radius: 999px;
+            background: #dff4ee;
+            color: #167c68;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            overflow: hidden;
+            box-shadow: inset 0 0 0 1px rgba(22, 160, 133, 0.12);
+        }
 
-        <form method="post">
-            {% csrf_token %}
+        .recipient-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            border-radius: 999px;
+        }
 
-            {% if form.non_field_errors %}
-                <div class="error-text">{{ form.non_field_errors }}</div>
-            {% endif %}
+        .recipient-content {
+            min-width: 0;
+            flex: 1;
+        }
 
-            <div class="form-group">
-                <label for="{{ form.recipient.id_for_label }}">Send to</label>
-                {{ form.recipient }}
-                {% if form.recipient.errors %}
-                    <div class="error-text">{{ form.recipient.errors }}</div>
-                {% endif %}
-            </div>
+        .recipient-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2c3e50;
+            line-height: 1.3;
+            margin-bottom: 2px;
+            word-break: break-word;
+        }
 
-            <div class="form-group">
-                <label for="{{ form.body.id_for_label }}">Message</label>
-                {{ form.body }}
-                {% if form.body.errors %}
-                    <div class="error-text">{{ form.body.errors }}</div>
-                {% endif %}
-            </div>
+        .recipient-subtext {
+            font-size: 14px;
+            color: #556260;
+            line-height: 1.3;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
 
-            <button class="start-btn" type="submit">Start Conversation</button>
-        </form>
+        .recipient-empty {
+            margin: 18px;
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 22px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+            color: #556260;
+        }
+
+        .recipient-empty h3 {
+            margin: 0 0 8px;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+
+        .recipient-empty p {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .compose-panel {
+            background: linear-gradient(to bottom right, #ffffff, #fbfdfc);
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .compose-header {
+            padding: 22px 24px;
+            border-bottom: 1px solid #e6ece8;
+            background: #ffffff;
+        }
+
+        .compose-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0 0 8px;
+        }
+
+        .compose-subtitle {
+            margin: 0;
+            color: #70817d;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .compose-body {
+            padding: 32px 28px 32px;
+            display: grid;
+            gap: 26px;
+            flex: 1;
+            align-content: start;
+        }
+
+        .compose-card {
+            padding: 4px 2px 10px;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
+
+        .compose-card h3 {
+            margin: 0 0 8px;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+
+        .compose-card p {
+            margin: 0;
+            font-size: 14px;
+            color: #556260;
+            line-height: 1.5;
+        }
+
+        .selected-recipient-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f8fbfa;
+            border: 1px solid #dfe9e5;
+            border-radius: 16px;
+            padding: 14px 16px;
+            box-shadow: none;
+        }
+
+        .selected-recipient-avatar {
+            width: 46px;
+            height: 46px;
+            min-width: 46px;
+            border-radius: 999px;
+            background: #dff4ee;
+            color: #167c68;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: 700;
+            overflow: hidden;
+            box-shadow: inset 0 0 0 1px rgba(22, 160, 133, 0.12);
+        }
+
+        .selected-recipient-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            border-radius: 999px;
+        }
+
+        .selected-recipient-content {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .selected-recipient-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .selected-recipient-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #70817d;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 3px;
+        }
+
+        .selected-recipient-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2c3e50;
+            line-height: 1.3;
+        }
+
+        .selected-recipient-subtext {
+            font-size: 14px;
+            color: #556260;
+            line-height: 1.3;
+            margin-top: 2px;
+        }
+
+        .compose-form {
+            display: grid;
+            gap: 18px;
+        }
+
+        .compose-message-group {
+            gap: 10px;
+        }
+
+        .compose-message-heading h3 {
+            margin: 0 0 4px;
+            font-size: 16px;
+            color: #2c3e50;
+        }
+
+        .compose-message-heading p {
+            margin: 0;
+            font-size: 13px;
+            color: #70817d;
+            line-height: 1.4;
+        }
+
+        .compose-divider {
+            height: 1px;
+            background: #e3ece8;
+            margin: 6px 0 6px;
+        }
+
+        .form-group {
+            display: grid;
+            gap: 8px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #ccd7d2;
+            border-radius: 12px;
+            box-sizing: border-box;
+            font-size: 14px;
+            font-family: inherit;
+            color: #556260;
+            background: #ffffff;
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .form-group textarea {
+            min-height: 150px;
+            resize: vertical;
+            line-height: 1.45;
+            border-radius: 14px;
+            padding: 15px 16px;
+            background: #ffffff;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: #1abc9c;
+            box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.12);
+        }
+
+        .compose-helper-text {
+            font-size: 13px;
+            color: #70817d;
+            line-height: 1.4;
+        }
+
+        .recipient-field-fallback {
+            gap: 6px;
+        }
+
+        .recipient-select-hidden {
+            position: absolute;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
+
+        .error-text {
+            color: #c0392b;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .compose-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .start-btn {
+            background: #dff4ee;
+            color: #167c68;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.15s ease, transform 0.15s ease;
+        }
+
+        .start-btn:hover {
+            background: #cfeee6;
+            transform: translateY(-1px);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #2c3e50;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            color: #1abc9c;
+        }
+
+        @media (max-width: 960px) {
+            .messaging-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .messaging-sidebar {
+                border-right: none;
+                border-bottom: 1px solid #e3ebe7;
+            }
+
+            .recipient-list {
+                max-height: 320px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .messaging-page {
+                margin: 24px auto;
+                padding: 0 12px;
+            }
+
+            .compose-header,
+            .compose-body {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .compose-actions {
+                justify-content: stretch;
+            }
+
+            .start-btn {
+                width: 100%;
+            }
+        }
+    </style>
+
+    <div class="messaging-page">
+        <div class="messaging-shell">
+            <aside class="messaging-sidebar">
+                <div class="messaging-sidebar-header">
+                    <h1 class="messaging-title">New Message</h1>
+                    <p class="messaging-subtext">
+                        Choose someone to message, then start a new conversation from the composer on the right.
+                    </p>
+                </div>
+
+                <div class="recipient-list">
+                    {% with selected_recipient=form.recipient.value %}
+                        {% for user in form.recipient.field.queryset %}
+                            <div
+                                    class="recipient-card {% if selected_recipient|stringformat:'s' == user.pk|stringformat:'s' %}is-selected{% endif %}"
+                                    data-recipient-id="{{ user.pk }}"
+                                    data-recipient-name="{{ user.profile.display_username|default:user.username }}"
+                                    data-recipient-subtext="{{ user.profile.role|title|default:'User' }}"
+                                    data-recipient-photo="{% if user.profile and user.profile.profile_photo %}{{ user.profile.profile_photo.url }}{% endif %}"
+                                    role="button"
+                                    tabindex="0"
+                            >
+                                <div class="recipient-avatar">
+                                    {% if user.profile and user.profile.profile_photo %}
+                                        <img src="{{ user.profile.profile_photo.url }}" alt="{{ user.profile.display_username|default:user.username }}">
+                                    {% else %}
+                                        {{ user.profile.display_username|default:user.username|slice:":1"|upper }}
+                                    {% endif %}
+                                </div>
+
+                                <div class="recipient-content">
+                                    <div class="recipient-name">
+                                        {{ user.profile.display_username|default:user.username }}
+                                    </div>
+                                    <div class="recipient-subtext">
+                                        {{ user.profile.role|title|default:"User" }}
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="recipient-empty">
+                                <h3>No recipients available</h3>
+                                <p>
+                                    There are currently no other users available to message.
+                                </p>
+                            </div>
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+            </aside>
+
+            <section class="compose-panel">
+                <div class="compose-header">
+                    <h2 class="compose-title">Start Conversation</h2>
+                    <p class="compose-subtitle">
+                        Send the first message using your existing messaging flow.
+                    </p>
+                </div>
+
+                <div class="compose-body">
+                    <div class="compose-card">
+                        <h3>New direct message</h3>
+                        <p>
+                            Select a recipient and write the first message below. After sending, the conversation will open in your inbox workspace.
+                        </p>
+                    </div>
+                    <div class="compose-divider"></div>
+
+                    <div class="selected-recipient-card" id="selectedRecipientCard">
+                        <div class="selected-recipient-avatar" id="selectedRecipientAvatar">
+                            {% if form.recipient.value %}
+                                {% for user in form.recipient.field.queryset %}
+                                    {% if form.recipient.value|stringformat:'s' == user.pk|stringformat:'s' %}
+                                        {% if user.profile and user.profile.profile_photo %}
+                                            <img src="{{ user.profile.profile_photo.url }}" alt="{{ user.profile.display_username|default:user.username }}">
+                                        {% else %}
+                                            {{ user.profile.display_username|default:user.username|slice:":1"|upper }}
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                ?
+                            {% endif %}
+                        </div>
+
+                        <div class="selected-recipient-content">
+                            <div class="selected-recipient-name" id="selectedRecipientName">
+                                {% if form.recipient.value %}
+                                    {% for user in form.recipient.field.queryset %}
+                                        {% if form.recipient.value|stringformat:'s' == user.pk|stringformat:'s' %}
+                                            {{ user.profile.display_username|default:user.username }}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    Choose someone from the left
+                                {% endif %}
+                            </div>
+                            <div class="selected-recipient-subtext" id="selectedRecipientSubtext">
+                                {% if form.recipient.value %}
+                                    {% for user in form.recipient.field.queryset %}
+                                        {% if form.recipient.value|stringformat:'s' == user.pk|stringformat:'s' %}
+                                            {{ user.profile.role|title|default:"User" }}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    The person you select will appear here.
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if form.recipient.errors %}
+                        <div class="error-text">{{ form.recipient.errors }}</div>
+                    {% endif %}
+
+                    <form method="post" class="compose-form">
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="error-text">{{ form.non_field_errors }}</div>
+                        {% endif %}
+
+                        <div id="recipientSelectWrapper" class="recipient-select-hidden">
+                            {{ form.recipient }}
+                        </div>
+
+                        <div class="form-group compose-message-group">
+                            <div class="compose-message-heading">
+                                <h3>Write your first message</h3>
+                                <p>Press Enter to send, or Shift+Enter for a new line.</p>
+                            </div>
+
+                            {{ form.body }}
+                            {% if form.body.errors %}
+                                <div class="error-text">{{ form.body.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="compose-actions">
+                            <button class="start-btn" type="submit">Start Conversation</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </div>
 
         <a class="back-link" href="{% url 'messaging:inbox' %}">← Back to Inbox</a>
     </div>
-</div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const recipientCards = document.querySelectorAll(".recipient-card[data-recipient-id]");
+            const recipientSelect = document.getElementById("{{ form.recipient.id_for_label }}");
+            const selectedRecipientAvatar = document.getElementById("selectedRecipientAvatar");
+            const selectedRecipientName = document.getElementById("selectedRecipientName");
+            const selectedRecipientSubtext = document.getElementById("selectedRecipientSubtext");
+            const messageTextarea = document.querySelector('textarea[name="body"]');
+            const composeForm = messageTextarea ? messageTextarea.closest("form") : null;
+
+            if (!recipientCards.length || !recipientSelect) {
+                return;
+            }
+
+            function updateSelectedState(selectedId) {
+                recipientCards.forEach(function (card) {
+                    if (card.dataset.recipientId === String(selectedId)) {
+                        card.classList.add("is-selected");
+                    } else {
+                        card.classList.remove("is-selected");
+                    }
+                });
+            }
+
+            function updateSelectedPreview(card) {
+                if (!card || !selectedRecipientAvatar || !selectedRecipientName || !selectedRecipientSubtext) {
+                    return;
+                }
+
+                const name = card.dataset.recipientName || "Selected user";
+                const subtext = card.dataset.recipientSubtext || "";
+                const photo = card.dataset.recipientPhoto || "";
+
+                selectedRecipientName.textContent = name;
+                selectedRecipientSubtext.textContent = subtext || "No additional details";
+
+                if (photo) {
+                    selectedRecipientAvatar.innerHTML = '<img src="' + photo + '" alt="' + name + '">';
+                } else {
+                    selectedRecipientAvatar.textContent = name.charAt(0).toUpperCase();
+                }
+            }
+
+            recipientCards.forEach(function (card) {
+                function selectRecipient() {
+                    const recipientId = card.dataset.recipientId;
+                    recipientSelect.value = recipientId;
+                    updateSelectedState(recipientId);
+                    updateSelectedPreview(card);
+                    recipientSelect.dispatchEvent(new Event("change", { bubbles: true }));
+
+                    if (messageTextarea) {
+                        messageTextarea.focus();
+                    }
+                }
+
+                card.addEventListener("click", selectRecipient);
+
+                card.addEventListener("keydown", function (event) {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        selectRecipient();
+                    }
+                });
+            });
+
+            if (recipientSelect.value) {
+                const selectedCard = Array.from(recipientCards).find(function (card) {
+                    return card.dataset.recipientId === String(recipientSelect.value);
+                });
+
+                updateSelectedState(recipientSelect.value);
+
+                if (selectedCard) {
+                    updateSelectedPreview(selectedCard);
+                }
+
+                if (messageTextarea) {
+                    messageTextarea.focus();
+                }
+            }
+
+            if (messageTextarea && composeForm) {
+                messageTextarea.addEventListener("keydown", function (event) {
+                    if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+
+                        const value = messageTextarea.value.trim();
+                        if (!value) {
+                            return;
+                        }
+
+                        composeForm.submit();
+                    }
+                });
+            }
+        });
+    </script>
 {% endblock %}
