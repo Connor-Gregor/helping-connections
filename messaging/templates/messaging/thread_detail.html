@@ -470,6 +470,19 @@
             margin: 0;
         }
 
+        .reply-actions > .reply-delete-form,
+        .reply-actions > .action-btn {
+            flex: 1;
+        }
+
+        .reply-actions > .reply-delete-form .action-btn {
+            width: 100%;
+        }
+
+        .reply-actions > .action-btn.reply-btn-fixed {
+            min-width: 0;
+        }
+
         .back-link {
             display: inline-block;
             margin-top: 20px;
@@ -638,7 +651,7 @@
                     </div>
                 </div>
 
-                <div class="conversation-body">
+                <div class="conversation-body" id="conversationBody">
                     {% for m in chat_messages %}
                         {% ifchanged m.created_at|date:"Y-m-d" %}
                             <div class="message-date-divider">
@@ -670,13 +683,13 @@
                 </div>
 
                 <div class="reply-box">
+                    <div class="reply-heading">
+                        <h3>Write a reply</h3>
+                        <p>Send a message to continue this conversation.</p>
+                    </div>
+
                     <form method="post" class="reply-send-form" id="replySendForm">
                         {% csrf_token %}
-
-                        <div class="reply-heading">
-                            <h3>Write a reply</h3>
-                            <p>Send a message to continue this conversation.</p>
-                        </div>
 
                         <textarea
                                 id="replyMessageInput"
@@ -685,24 +698,24 @@
                                 placeholder="Type a message..."
                                 required
                         ></textarea>
-
-                        <div class="reply-actions">
-                            <!-- Delete (left) -->
-                            <form method="post" action="{% url 'messaging:delete_thread' thread.id %}" class="reply-delete-form">
-                                {% csrf_token %}
-                                <button
-                                        type="submit"
-                                        class="action-btn action-btn-red"
-                                        onclick="return confirm('Are you sure you want to delete this conversation from your inbox?');"
-                                >
-                                    Delete
-                                </button>
-                            </form>
-
-                            <!-- Send (right) -->
-                            <button class="action-btn action-btn-green reply-btn-fixed" type="submit">Send</button>
-                        </div>
                     </form>
+
+                    <div class="reply-actions">
+                        <form method="post" action="{% url 'messaging:delete_thread' thread.id %}" class="reply-delete-form">
+                            {% csrf_token %}
+                            <button
+                                    type="submit"
+                                    class="action-btn action-btn-red"
+                                    onclick="return confirm('Are you sure you want to delete this conversation from your inbox?');"
+                            >
+                                Delete
+                            </button>
+                        </form>
+
+                        <button class="action-btn action-btn-green reply-btn-fixed" type="submit" form="replySendForm">
+                            Send
+                        </button>
+                    </div>
                 </div>
             </section>
         </div>
@@ -713,25 +726,54 @@
         document.addEventListener("DOMContentLoaded", function () {
             const replyForm = document.getElementById("replySendForm");
             const replyInput = document.getElementById("replyMessageInput");
+            const conversationBody = document.getElementById("conversationBody");
 
-            if (!replyForm || !replyInput) {
+            if (!replyForm || !replyInput || !conversationBody) {
                 return;
             }
 
-            // Auto-focus when opening the thread page.
+            function isNearBottom(container, threshold = 80) {
+                const distanceFromBottom =
+                    container.scrollHeight - container.scrollTop - container.clientHeight;
+                return distanceFromBottom <= threshold;
+            }
+
+            function scrollToBottom() {
+                conversationBody.scrollTop = conversationBody.scrollHeight;
+            }
+
+            // On first open, land at the newest messages.
+            scrollToBottom();
+
+            // Auto-focus textarea.
             replyInput.focus();
 
-            // Enter sends, Shift+Enter adds a new line.
+            // Track whether the user was already near the bottom before submitting.
+            let shouldStickToBottom = true;
+
             replyInput.addEventListener("keydown", function (event) {
                 if (event.key === "Enter" && !event.shiftKey) {
                     event.preventDefault();
 
-                    // Do not submit empty / whitespace-only messages.
                     if (!replyInput.value.trim()) {
                         return;
                     }
 
+                    shouldStickToBottom = isNearBottom(conversationBody);
+
+                    if (shouldStickToBottom) {
+                        scrollToBottom();
+                    }
+
                     replyForm.submit();
+                }
+            });
+
+            replyForm.addEventListener("submit", function () {
+                shouldStickToBottom = isNearBottom(conversationBody);
+
+                if (shouldStickToBottom) {
+                    scrollToBottom();
                 }
             });
         });
