@@ -5,16 +5,38 @@
 
 {% block content %}
     <style>
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+        }
+
+        .page-content {
+            padding: 0 !important;
+            height: calc(100vh - 72px);
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
         .messaging-page {
+            width: 100%;
             max-width: 1200px;
-            margin: 40px auto;
-            padding: 0 20px;
+            height: 100%;
+            margin: 0 auto;
+            padding: 10px 20px;
+            box-sizing: border-box;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .messaging-shell {
             display: grid;
             grid-template-columns: 340px minmax(0, 1fr);
-            min-height: 720px;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            max-height: 100%;
             background: #ffffff;
             border-radius: 20px;
             overflow: hidden;
@@ -28,6 +50,7 @@
             display: flex;
             flex-direction: column;
             min-width: 0;
+            min-height: 0;
         }
 
         .messaging-sidebar-header {
@@ -54,6 +77,7 @@
             display: flex;
             flex-direction: column;
             flex: 1;
+            min-height: 0;
             overflow-y: auto;
             overflow-x: hidden;
         }
@@ -151,11 +175,39 @@
             line-height: 1.5;
         }
 
+        .sidebar-footer-actions {
+            padding: 16px 18px 18px;
+            border-top: 1px solid #e3ebe7;
+            background: #ffffff;
+        }
+
+        .sidebar-footer-actions .action-btn {
+            width: 100%;
+            min-height: 44px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+
+        .sidebar-footer-actions .action-btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.95;
+        }
+
+        .action-btn-green {
+            background: #dff4ee;
+            color: #118a73;
+        }
+
         .compose-panel {
             background: linear-gradient(to bottom right, #ffffff, #fbfdfc);
             display: flex;
             flex-direction: column;
             min-width: 0;
+            min-height: 0;
         }
 
         .compose-header {
@@ -179,11 +231,13 @@
         }
 
         .compose-body {
-            padding: 32px 28px 32px;
-            display: grid;
+            padding: 32px 28px 24px;
+            display: flex;
+            flex-direction: column;
             gap: 26px;
             flex: 1;
-            align-content: start;
+            min-height: 0;
+            overflow-y: auto;
         }
 
         .compose-card {
@@ -278,6 +332,7 @@
         .compose-form {
             display: grid;
             gap: 18px;
+            margin-top: auto;
         }
 
         .compose-message-group {
@@ -333,7 +388,7 @@
 
         .form-group textarea {
             min-height: 150px;
-            resize: vertical;
+            resize: none;
             line-height: 1.45;
             border-radius: 14px;
             padding: 15px 16px;
@@ -345,6 +400,36 @@
         .form-group textarea:focus {
             border-color: #1abc9c;
             box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.12);
+        }
+
+        .message-input-with-counter {
+            position: relative;
+        }
+
+        .message-input-with-counter textarea {
+            padding-bottom: 34px;
+        }
+
+        .char-counter-inside {
+            position: absolute;
+            right: 14px;
+            bottom: 10px;
+            font-size: 12px;
+            color: #70817d;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2px 6px;
+            border-radius: 999px;
+            pointer-events: none;
+            transition: color 0.15s ease;
+        }
+
+        .char-counter-inside.warning {
+            color: #c67c2e;
+        }
+
+        .char-counter-inside.limit {
+            color: #c0392b;
+            font-weight: 700;
         }
 
         .compose-helper-text {
@@ -391,18 +476,6 @@
         .start-btn:hover {
             background: #cfeee6;
             transform: translateY(-1px);
-        }
-
-        .back-link {
-            display: inline-block;
-            margin-top: 20px;
-            color: #2c3e50;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .back-link:hover {
-            color: #1abc9c;
         }
 
         @media (max-width: 960px) {
@@ -491,14 +564,17 @@
                         {% endfor %}
                     {% endwith %}
                 </div>
+
+                <div class="sidebar-footer-actions">
+                    <a class="action-btn action-btn-green" href="{% url 'messaging:inbox' %}" style="display:flex;align-items:center;justify-content:center;text-decoration:none;">
+                        ← Back to Inbox
+                    </a>
+                </div>
             </aside>
 
             <section class="compose-panel">
                 <div class="compose-header">
                     <h2 class="compose-title">Start Conversation</h2>
-                    <p class="compose-subtitle">
-                        Send the first message using your existing messaging flow.
-                    </p>
                 </div>
 
                 <div class="compose-body">
@@ -574,10 +650,15 @@
                                 <p>Press Enter to send, or Shift+Enter for a new line.</p>
                             </div>
 
-                            {{ form.body }}
+                            <div class="message-input-with-counter">
+                                {{ form.body }}
+                                <span class="char-counter-inside" id="messageCharCounter">0 / 500</span>
+                            </div>
+
                             {% if form.body.errors %}
                                 <div class="error-text">{{ form.body.errors }}</div>
                             {% endif %}
+
                         </div>
 
                         <div class="compose-actions">
@@ -588,23 +669,60 @@
             </section>
         </div>
 
-        <a class="back-link" href="{% url 'messaging:inbox' %}">← Back to Inbox</a>
     </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const recipientCards = document.querySelectorAll(".recipient-card[data-recipient-id]");
             const recipientSelect = document.getElementById("{{ form.recipient.id_for_label }}");
+
             const selectedRecipientAvatar = document.getElementById("selectedRecipientAvatar");
             const selectedRecipientName = document.getElementById("selectedRecipientName");
             const selectedRecipientSubtext = document.getElementById("selectedRecipientSubtext");
+
             const messageTextarea = document.querySelector('textarea[name="body"]');
             const composeForm = messageTextarea ? messageTextarea.closest("form") : null;
 
+            const charCounter = document.getElementById("messageCharCounter");
+            const maxLength = 500;
+
+            if (messageTextarea) {
+                messageTextarea.setAttribute("maxlength", maxLength);
+            }
+
+            // -----------------------------
+            // Character Counter
+            // -----------------------------
+            function updateCharCounter() {
+                if (!messageTextarea || !charCounter) return;
+
+                const length = messageTextarea.value.length;
+                charCounter.textContent = length + " / " + maxLength;
+
+                charCounter.classList.remove("warning", "limit");
+
+                if (length >= maxLength) {
+                    charCounter.classList.add("limit");
+                } else if (length >= maxLength - 50) {
+                    charCounter.classList.add("warning");
+                }
+            }
+
+            if (messageTextarea) {
+                messageTextarea.addEventListener("input", updateCharCounter);
+                updateCharCounter();
+            }
+
+            // -----------------------------
+            // Safety check
+            // -----------------------------
             if (!recipientCards.length || !recipientSelect) {
                 return;
             }
 
+            // -----------------------------
+            // Sidebar selection state
+            // -----------------------------
             function updateSelectedState(selectedId) {
                 recipientCards.forEach(function (card) {
                     if (card.dataset.recipientId === String(selectedId)) {
@@ -615,6 +733,9 @@
                 });
             }
 
+            // -----------------------------
+            // Preview panel update
+            // -----------------------------
             function updateSelectedPreview(card) {
                 if (!card || !selectedRecipientAvatar || !selectedRecipientName || !selectedRecipientSubtext) {
                     return;
@@ -634,12 +755,18 @@
                 }
             }
 
+            // -----------------------------
+            // Click / keyboard select
+            // -----------------------------
             recipientCards.forEach(function (card) {
                 function selectRecipient() {
                     const recipientId = card.dataset.recipientId;
+
                     recipientSelect.value = recipientId;
+
                     updateSelectedState(recipientId);
                     updateSelectedPreview(card);
+
                     recipientSelect.dispatchEvent(new Event("change", { bubbles: true }));
 
                     if (messageTextarea) {
@@ -657,6 +784,9 @@
                 });
             });
 
+            // -----------------------------
+            // Restore selected state on load
+            // -----------------------------
             if (recipientSelect.value) {
                 const selectedCard = Array.from(recipientCards).find(function (card) {
                     return card.dataset.recipientId === String(recipientSelect.value);
@@ -673,15 +803,16 @@
                 }
             }
 
+            // -----------------------------
+            // Enter to send (Shift+Enter = newline)
+            // -----------------------------
             if (messageTextarea && composeForm) {
                 messageTextarea.addEventListener("keydown", function (event) {
                     if (event.key === "Enter" && !event.shiftKey) {
                         event.preventDefault();
 
                         const value = messageTextarea.value.trim();
-                        if (!value) {
-                            return;
-                        }
+                        if (!value) return;
 
                         composeForm.submit();
                     }
