@@ -1,22 +1,46 @@
 {% extends "base.html" %}
 {% load static %}
+{% load user_extras %}
 
 {% block title %}Conversation - Helping Connections{% endblock %}
 
 {% block content %}
     <style>
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+        }
+
+        body {
+            overflow: hidden;
+        }
+
+        .page-content {
+            padding: 0 !important;
+            height: calc(100vh - 72px);
+            overflow: hidden;
+            box-sizing: border-box;
+        }
         .messaging-page {
+            width: 100%;
             max-width: 1200px;
-            margin: 40px auto;
-            padding: 0 20px;
+            height: 100%;
+            margin: 0 auto;
+            padding: 10px 20px;
+            box-sizing: border-box;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .messaging-shell {
             display: grid;
             grid-template-columns: 340px minmax(0, 1fr);
-            height: calc(100vh - 170px);
-            min-height: 680px;
-            max-height: 820px;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            max-height: 100%;
             background: #ffffff;
             border-radius: 20px;
             overflow: hidden;
@@ -94,6 +118,79 @@
             color: #2f4f49;
         }
 
+        .thread-hover-zone {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 72px;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .thread-card {
+            position: relative;
+            padding: 0;
+            border-bottom: 1px solid #e8efec;
+            background: transparent;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .thread-main {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 18px 12px 18px;
+            text-decoration: none;
+            color: inherit;
+            transition: background 0.15s ease;
+            min-width: 0;
+        }
+
+        .thread-delete-form {
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%;
+            margin: 0;
+            z-index: 3;
+        }
+
+        .thread-delete-btn {
+            width: 56px;
+            height: 100%;
+            border: none;
+            background: #f9dfdc;
+            color: #b03a2e;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: translateX(100%);
+            opacity: 0;
+            transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease;
+            pointer-events: auto;
+        }
+
+        .thread-hover-zone:hover + .thread-delete-form .thread-delete-btn,
+        .thread-delete-form:hover .thread-delete-btn {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .thread-hover-zone:hover ~ .thread-main .thread-time,
+        .thread-delete-form:hover ~ .thread-main .thread-time {
+            transform: translateX(-48px);
+        }
+
+        .thread-card:focus-within .thread-main {
+            background: #eef8f5;
+        }
+
+        .thread-delete-btn:hover {
+            background: #f3c9c3;
+        }
+
         .thread-main {
             display: flex;
             align-items: center;
@@ -163,6 +260,8 @@
             white-space: nowrap;
             flex-shrink: 0;
             margin-top: 2px;
+            transform: translateX(0);
+            transition: transform 0.18s ease, opacity 0.18s ease;
         }
 
         .thread-preview-row {
@@ -301,6 +400,7 @@
         }
 
         .conversation-body {
+            position: relative;
             padding: 24px;
             flex: 1;
             min-height: 0;
@@ -309,26 +409,37 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            background: #f7fbf9;
+            background:
+                    linear-gradient(rgba(247, 251, 249, 0.85), rgba(247, 251, 249, 0.85)),
+                    url("{% static 'Hero.jpg' %}") center / cover no-repeat;
         }
 
         .message-date-divider {
             display: flex;
-            justify-content: center;
-            margin: 10px 0 4px;
+            align-items: center;
+            gap: 12px;
+            margin: 12px 0 8px;
+        }
+
+        .message-date-divider::before,
+        .message-date-divider::after {
+            content: "";
+            flex: 1;
+            height: 1.5px;
+            background: #cfdcd7;
         }
 
         .message-date-divider span {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 6px 12px;
-            border-radius: 999px;
-            background: #e9f3ef;
-            color: #4f6661;
+            display: inline-block;
+            padding: 0;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            color: #5f6f6b;
             font-size: 12px;
             font-weight: 700;
-            border: 1px solid #d8e6e1;
+            line-height: 1.3;
+            white-space: nowrap;
         }
 
         .message-row {
@@ -372,7 +483,22 @@
 
         .message-time {
             font-size: 11px;
+            opacity: 0;
+            max-height: 0;
+            margin-top: 0;
+            overflow: hidden;
+            transition: opacity 0.15s ease, max-height 0.15s ease, margin-top 0.15s ease;
+            pointer-events: none;
+        }
+
+        .message-row.show-time .message-time {
             opacity: 0.72;
+            max-height: 18px;
+            margin-top: 6px;
+        }
+
+        .message-row.show-time .message-card {
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
         }
 
         .empty-message {
@@ -404,11 +530,6 @@
             flex-shrink: 0;
             display: grid;
             gap: 12px;
-        }
-
-        .reply-actions-bar {
-            display: flex;
-            justify-content: flex-end;
         }
 
         .reply-send-form {
@@ -456,43 +577,74 @@
             box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.12);
         }
 
-        .reply-actions {
-            display: flex;
-            gap: 12px;
-            align-items: center;
+
+        .reply-send-form {
+            display: block;
         }
 
-        .reply-actions-right-only {
-            justify-content: flex-end;
+        .reply-input-wrap {
+            position: relative;
         }
 
-        .reply-delete-form {
-            margin: 0;
+        .char-counter-left {
+            position: absolute;
+            left: 14px;
+            bottom: 10px;
+            font-size: 12px;
+            color: #70817d;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2px 6px;
+            border-radius: 999px;
+            pointer-events: none;
+            transition: color 0.15s ease;
         }
 
-        .reply-actions > .reply-delete-form,
-        .reply-actions > .action-btn {
-            flex: 1;
+        .char-counter-left.warning {
+            color: #c67c2e;
         }
 
-        .reply-actions > .reply-delete-form .action-btn {
+        .char-counter-left.limit {
+            color: #c0392b;
+            font-weight: 700;
+        }
+
+        .reply-box textarea {
             width: 100%;
+            min-height: 132px;
+            padding: 16px 58px 32px 16px;
+            border: 1px solid #ccd7d2;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.45;
+            font-family: inherit;
+            color: #556260;
+            background: #ffffff;
+            box-sizing: border-box;
+            resize: none;
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
 
-        .reply-actions > .action-btn.reply-btn-fixed {
-            min-width: 0;
+        .reply-send-icon-btn {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            width: 38px;
+            height: 38px;
+            border: none;
+            border-radius: 999px;
+            background: #1abc9c;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.15s ease, background 0.15s ease;
         }
 
-        .back-link {
-            display: inline-block;
-            margin-top: 20px;
-            color: #2c3e50;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .back-link:hover {
-            color: #1abc9c;
+        .reply-send-icon-btn:hover {
+            background: #16a085;
+            transform: translateY(-1px);
         }
 
         @media (max-width: 960px) {
@@ -536,19 +688,6 @@
                 padding-left: 16px;
                 padding-right: 16px;
             }
-
-            .reply-actions-bar,
-            .reply-actions,
-            .reply-actions-right-only {
-                width: 100%;
-            }
-
-            .reply-actions-bar .action-btn,
-            .reply-actions .action-btn,
-            .reply-actions-right-only .action-btn {
-                width: 100%;
-                min-width: 0;
-            }
         }
     </style>
 
@@ -566,6 +705,18 @@
                 <div class="thread-list">
                     {% for item in thread_data %}
                         <div class="thread-card {% if selected_thread_id == item.thread.id %}is-active{% endif %} {% if item.unread_count > 0 %}is-unread{% endif %}">
+                            <div class="thread-hover-zone"></div>
+
+                            <form method="post"
+                                  action="{% url 'messaging:delete_thread' item.thread.id %}"
+                                  class="thread-delete-form"
+                                  onsubmit="return confirm('Are you sure you want to delete this conversation from your inbox?');">
+                                {% csrf_token %}
+                                <button type="submit" class="thread-delete-btn" aria-label="Delete conversation">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+
                             <a class="thread-main" href="{% url 'messaging:thread_detail' item.thread.id %}">
                                 <div class="thread-avatar">
                                     {% if item.other_user and item.other_user.profile and item.other_user.profile.profile_photo %}
@@ -618,6 +769,10 @@
                 </div>
 
                 <div class="sidebar-footer-actions">
+                    <a class="action-btn action-btn-green" href="{% url 'messaging:new_thread' %}" style="display:flex;align-items:center;justify-content:center;text-decoration:none;">
+                        + New Message
+                    </a>
+
                     <form method="post" action="{% url 'messaging:delete_all_threads' %}">
                         {% csrf_token %}
                         <button
@@ -628,10 +783,6 @@
                             Delete All
                         </button>
                     </form>
-
-                    <a class="action-btn action-btn-green" href="{% url 'messaging:new_thread' %}" style="display:flex;align-items:center;justify-content:center;text-decoration:none;">
-                        + New Message
-                    </a>
                 </div>
             </aside>
 
@@ -647,7 +798,9 @@
 
                     <div class="conversation-meta">
                         <h2 class="conversation-title">{{ display_name }}</h2>
-                        <p class="conversation-subtitle">Reply below to continue this conversation.</p>
+                        <p class="conversation-subtitle">
+                            {{ selected_other_user|role_name|default:"user"|title }}
+                        </p>
                     </div>
                 </div>
 
@@ -685,48 +838,75 @@
                 <div class="reply-box">
                     <div class="reply-heading">
                         <h3>Write a reply</h3>
-                        <p>Send a message to continue this conversation.</p>
+                        <p>Press Enter to send, or Shift+Enter for a new line.</p>
                     </div>
 
                     <form method="post" class="reply-send-form" id="replySendForm">
                         {% csrf_token %}
 
-                        <textarea
-                                id="replyMessageInput"
-                                name="body"
-                                rows="3"
-                                placeholder="Type a message..."
-                                required
-                        ></textarea>
-                    </form>
+                        <div class="reply-input-wrap">
+    <textarea
+            id="replyMessageInput"
+            name="body"
+            rows="4"
+            placeholder="Type a message..."
+            required
+    ></textarea>
 
-                    <div class="reply-actions">
-                        <form method="post" action="{% url 'messaging:delete_thread' thread.id %}" class="reply-delete-form">
-                            {% csrf_token %}
-                            <button
-                                    type="submit"
-                                    class="action-btn action-btn-red"
-                                    onclick="return confirm('Are you sure you want to delete this conversation from your inbox?');"
-                            >
-                                Delete
+                            <span class="char-counter-left" id="replyCharCounter">0 / 500</span>
+
+                            <button class="reply-send-icon-btn" type="submit" aria-label="Send message">
+                                <i class="fa-solid fa-paper-plane"></i>
                             </button>
-                        </form>
-
-                        <button class="action-btn action-btn-green reply-btn-fixed" type="submit" form="replySendForm">
-                            Send
-                        </button>
-                    </div>
+                        </div>
+                    </form>
                 </div>
             </section>
         </div>
 
-        <a class="back-link" href="{% url 'dashboard_redirect' %}">← Back to dashboard</a>
     </div>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const replyForm = document.getElementById("replySendForm");
             const replyInput = document.getElementById("replyMessageInput");
             const conversationBody = document.getElementById("conversationBody");
+
+            const replyCharCounter = document.getElementById("replyCharCounter");
+            const maxLength = 500;
+
+            if (replyInput) {
+                replyInput.setAttribute("maxlength", maxLength);
+
+                function updateReplyCounter() {
+                    if (!replyCharCounter) return;
+
+                    let value = replyInput.value;
+
+                    if (value.length > maxLength) {
+                        value = value.substring(0, maxLength);
+                        replyInput.value = value;
+                    }
+
+                    const length = value.length;
+                    replyCharCounter.textContent = length + " / " + maxLength;
+
+                    replyCharCounter.classList.remove("warning", "limit");
+
+                    if (length >= maxLength) {
+                        replyCharCounter.classList.add("limit");
+                    } else if (length >= maxLength - 50) {
+                        replyCharCounter.classList.add("warning");
+                    }
+                }
+
+                replyInput.addEventListener("input", updateReplyCounter);
+
+                replyInput.addEventListener("paste", function () {
+                    setTimeout(updateReplyCounter, 0);
+                });
+
+                updateReplyCounter();
+            }
 
             if (!replyForm || !replyInput || !conversationBody) {
                 return;
@@ -774,6 +954,28 @@
 
                 if (shouldStickToBottom) {
                     scrollToBottom();
+                }
+            });
+            // Toggle message timestamp on click
+            const messageRows = document.querySelectorAll(".message-row");
+
+            messageRows.forEach(row => {
+                row.addEventListener("click", function (e) {
+                    if (e.target.closest("button, a")) return;
+
+                    messageRows.forEach(r => {
+                        if (r !== row) {
+                            r.classList.remove("show-time");
+                        }
+                    });
+
+                    row.classList.toggle("show-time");
+                });
+            });
+
+            document.addEventListener("click", function (e) {
+                if (!e.target.closest(".message-row")) {
+                    messageRows.forEach(r => r.classList.remove("show-time"));
                 }
             });
         });
