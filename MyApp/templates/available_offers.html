@@ -199,6 +199,72 @@
             cursor: default;
         }
 
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 16px;
+            background: #ffffff;
+            border: 1px solid #e6ece8;
+            border-radius: 14px;
+            padding: 18px 20px;
+            margin-bottom: 28px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .filter-bar label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .filter-bar select,
+        .filter-bar input[type="text"] {
+            padding: 9px 12px;
+            border: 1px solid #d6dbe1;
+            border-radius: 9px;
+            font-size: 0.95rem;
+            color: #2c3e50;
+            background: #f9fafb;
+            outline: none;
+            min-width: 160px;
+        }
+
+        .filter-bar select:focus,
+        .filter-bar input[type="text"]:focus {
+            border-color: #1abc9c;
+        }
+
+        .filter-btn {
+            padding: 10px 22px;
+            background: #1abc9c;
+            color: #fff;
+            border: none;
+            border-radius: 9px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .filter-btn:hover { background: #17a589; }
+
+        .filter-clear {
+            padding: 10px 18px;
+            background: #f4f6f8;
+            color: #555;
+            border: 1px solid #d6dbe1;
+            border-radius: 9px;
+            font-size: 0.92rem;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.2s ease;
+        }
+
+        .filter-clear:hover { background: #e8ecef; color: #2c3e50; }
+
     </style>
 
     <div class="offers-wrapper">
@@ -206,6 +272,35 @@
             <h2>Available Offers</h2>
             <p>Browse items that volunteers have offered.</p>
         </div>
+
+        <form method="get" class="filter-bar">
+            <div>
+                <label for="category">Category</label>
+                <select name="category" id="category">
+                    <option value="">All Categories</option>
+                    {% for value, label in categories %}
+                        <option value="{{ value }}" {% if selected_category == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="city">City</label>
+                <input type="text" name="city" id="city" placeholder="e.g. Milwaukee" value="{{ selected_city }}">
+            </div>
+            <div>
+                <label for="sort">Sort By</label>
+                <select name="sort" id="sort">
+                    <option value="newest" {% if selected_sort == "newest" %}selected{% endif %}>Newest First</option>
+                    <option value="oldest" {% if selected_sort == "oldest" %}selected{% endif %}>Oldest First</option>
+                    <option value="az" {% if selected_sort == "az" %}selected{% endif %}>Title A–Z</option>
+                    <option value="za" {% if selected_sort == "za" %}selected{% endif %}>Title Z–A</option>
+                </select>
+            </div>
+            <button type="submit" class="filter-btn">Filter</button>
+            {% if selected_category or selected_city or selected_sort and selected_sort != "newest" %}
+                <a href="{% url 'available_offers' %}" class="filter-clear">Clear</a>
+            {% endif %}
+        </form>
 
         {% if offers %}
             <div class="offers-grid">
@@ -286,7 +381,7 @@
             {% if offers.has_other_pages %}
                 <div class="offers-pagination">
                     {% if offers.has_previous %}
-                        <a href="?page={{ offers.previous_page_number }}" class="pagination-btn">Previous</a>
+                        <a href="?page={{ offers.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}" class="pagination-btn">Previous</a>
                     {% else %}
                         <span class="pagination-btn disabled">Previous</span>
                     {% endif %}
@@ -296,13 +391,13 @@
                             {% if offers.number == num %}
                                 <span class="pagination-number active">{{ num }}</span>
                             {% else %}
-                                <a href="?page={{ num }}" class="pagination-number">{{ num }}</a>
+                                <a href="?page={{ num }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}" class="pagination-number">{{ num }}</a>
                             {% endif %}
                         {% endfor %}
                     </div>
 
                     {% if offers.has_next %}
-                        <a href="?page={{ offers.next_page_number }}" class="pagination-btn">Next</a>
+                        <a href="?page={{ offers.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}" class="pagination-btn">Next</a>
                     {% else %}
                         <span class="pagination-btn disabled">Next</span>
                     {% endif %}
