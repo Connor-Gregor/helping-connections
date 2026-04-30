@@ -10,74 +10,217 @@
 
 {% block content %}
     <style>
-        .dashboard-wrapper {
-            max-width: 1280px;
+        .dashboard-shell {
+            max-width: 1380px;
             margin: 40px auto;
             padding: 0 20px;
+            display: grid;
+            grid-template-columns: 260px minmax(0, 1fr);
+            gap: 28px;
+            align-items: start;
         }
 
-        .dashboard-header {
-            text-align: center;
-            margin-bottom: 30px;
+        .dashboard-sidebar {
+            background: #ffffff;
+            border-radius: 14px;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+            padding: 18px 14px;
+            position: sticky;
+            top: 96px;
         }
 
-        .dashboard-header h1 {
-            margin: 0;
-            font-size: 2.35rem;
-            font-weight: 700;
+        .dashboard-sidebar h2 {
+            margin: 0 0 16px;
+            font-size: 28px;
             color: #2c3e50;
+        }
+
+        .settings-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .settings-tab-btn {
+            width: 100%;
+            text-align: left;
+            border: none;
+            background: transparent;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #2c3e50;
+            cursor: pointer;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .settings-tab-btn:hover {
+            background: #f2f6f8;
+        }
+
+        .settings-tab-btn.active {
+            background: #e8f8f4;
+            color: #15967d;
+        }
+
+        .settings-tab-btn-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .settings-tab-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 26px;
+            height: 26px;
+            padding: 0 8px;
+            border-radius: 999px;
+            background: #eef3f6;
+            color: #2c3e50;
+            font-size: 0.82rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .settings-tab-btn.active .settings-tab-count {
+            background: #d7f2ea;
+            color: #15967d;
+        }
+
+        .dashboard-main {
+            min-width: 0;
+        }
+
+        .dashboard-panel {
+            background: #ffffff;
+            border: 1px solid #d6dbe1;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 30px 34px;
+        }
+
+        .dashboard-tab-panel {
+            display: none;
+        }
+
+        .dashboard-tab-panel.active {
+            display: block;
+        }
+
+        .dashboard-panel-title {
+            margin: 0 0 8px;
+            font-size: 1.75rem;
+            color: #2c3e50;
+        }
+
+        .dashboard-panel-subtext {
+            margin: 0 0 24px;
+            color: #555;
+            font-size: 1rem;
+        }
+
+        .dashboard-summary {
+            margin-bottom: 30px;
+            padding: 18px 20px;
+            background: #f8fafb;
+            border: 1px solid #d6dbe1;
+            border-radius: 16px;
+        }
+
+        .dashboard-summary-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1f3b4d;
+            margin: 0 0 14px;
+        }
+
+        .dashboard-counter {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 180px;
+            padding: 14px 24px;
+            background: #ffffff;
+            border: 1px solid #d6dbe1;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        .dashboard-counter-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1abc9c;
+            line-height: 1;
+        }
+
+        .dashboard-counter-label {
+            margin-top: 6px;
+            font-size: 0.95rem;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .dashboard-section {
+            margin-bottom: 42px;
+        }
+
+        .dashboard-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .dashboard-section-title {
+            font-size: 1.4rem;
+            color: #1f3b4d;
+            margin: 0 0 18px;
         }
 
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 24px;
+            justify-items: center;
             align-items: start;
         }
 
-        .dashboard-column {
-            background: #ffffff;
-            border: 1px solid #e6ece8;
-            border-radius: 18px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-            padding: 22px;
-        }
-
-        .dashboard-column h2 {
-            margin: 0 0 18px;
-            font-size: 1.7rem;
-            color: #2c3e50;
-        }
-
-        .dashboard-list {
+        .request-compact-card {
+            width: 100%;
+            max-width: 420px;
             display: flex;
             flex-direction: column;
-            gap: 18px;
-        }
-
-        .item-card {
-            width: 100%;
-            display: flex;
-            gap: 12px;
-            align-items: center;
             background: #ffffff;
-            border: 1px solid #e6ece8;
+            border: 1px solid #d6dbe1;
             border-radius: 18px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-            padding: 10px;
             box-sizing: border-box;
             cursor: pointer;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            overflow: hidden;
         }
 
-        .item-card:hover {
+        .request-compact-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
         }
 
-        .item-card-photo {
-            width: 104px;
-            height: 104px;
+        .request-card-main {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            padding: 14px 14px 10px;
+            min-height: 170px;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .request-compact-photo {
+            width: 120px;
+            height: 120px;
             object-fit: cover;
             border-radius: 12px;
             border: 1px solid #d6dbe1;
@@ -86,29 +229,35 @@
             background: #f4f6f8;
         }
 
-        .item-card-content {
+        .request-compact-content {
             flex: 1;
             min-width: 0;
         }
 
-        .item-card-title {
+        .request-compact-title {
             font-size: 1.05rem;
             color: #2c3e50;
             margin: 0 0 8px;
             line-height: 1.25;
             font-weight: 700;
-            word-break: break-word;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            height: 1.3em;
         }
 
-        .item-card-details p {
-            margin: 6px 0;
-            color: #2c3e50;
-            line-height: 1.4;
+        .request-compact-details p {
+            margin: 4px 0;
+            color: #333;
+            line-height: 1.35;
             font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .item-card-details strong {
-            color: #2c3e50;
+        .request-compact-details strong {
+            color: #1f3b4d;
         }
 
         .request-description-line {
@@ -126,207 +275,492 @@
             text-overflow: ellipsis;
         }
 
-        .empty-state {
+        .request-state-footer {
+            margin: 0 14px 14px;
+            padding: 8px 12px;
+            background: #f4f6f8;
+            border-left: 4px solid #1abc9c;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            color: #1f3f30;
+        }
+
+        .dashboard-empty {
             background: #ffffff;
-            border: 1px solid #e6ece8;
-            border-radius: 14px;
-            padding: 18px;
+            border: 1px solid #d6dbe1;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 24px;
             color: #555;
+            text-align: center;
+        }
+
+        .dashboard-pagination {
+            margin-top: 24px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .pagination-list {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .pagination-list li {
+            list-style: none;
+        }
+
+        .pagination-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 40px;
+            padding: 0 14px;
+            border-radius: 10px;
+            border: 1px solid #d6dbe1;
+            background: #ffffff;
+            color: #2c3e50;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        .pagination-link:hover {
+            background: #f4f8fa;
+            border-color: #bfc8d2;
+        }
+
+        .pagination-link.active {
+            background: #e8f8f4;
+            border-color: #b8e9dc;
+            color: #15967d;
+        }
+
+        .pagination-link.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            cursor: default;
         }
 
         @media (max-width: 1180px) {
             .dashboard-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 960px) {
+            .dashboard-shell {
                 grid-template-columns: 1fr;
+            }
+
+            .dashboard-sidebar {
+                position: static;
+                top: auto;
             }
         }
 
         @media (max-width: 760px) {
-            .item-card {
-                flex-direction: column;
-                align-items: flex-start;
+            .dashboard-panel {
+                padding: 20px;
             }
 
-            .item-card-photo {
-                width: 100%;
-                height: 220px;
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .request-compact-card {
+                max-width: 100%;
+            }
+
+            .request-card-main {
+                align-items: flex-start;
             }
         }
     </style>
 
-    <div class="dashboard-wrapper">
-        <div class="dashboard-header">
-            <h1>Unhoused Dashboard</h1>
-        </div>
+    <div class="dashboard-shell">
+        <aside class="dashboard-sidebar">
+            <h2>Dashboard</h2>
 
-        <div class="dashboard-grid">
-            <section class="dashboard-column">
-                <h2>Open Requests</h2>
+            <nav class="settings-nav" aria-label="Unhoused dashboard sections">
+                <button class="settings-tab-btn" type="button" data-tab="open-tab">
+                    <span class="settings-tab-btn-content">
+                        <span>Open Requests</span>
+                        <span class="settings-tab-count">{{ open_requests_total }}</span>
+                    </span>
+                </button>
 
-                {% if open_requests %}
-                    <div class="dashboard-list">
-                        {% for req in open_requests %}
-                            <div
-                                    id="item-card-{{ req.id }}"
-                                    class="item-card js-item-card"
-                                    data-item-id="{{ req.id }}"
-                                    data-title="{{ req.title|escape }}"
-                                    data-category="{{ req.get_category_display|escape }}"
-                                    data-category-value="{{ req.category }}"
-                                    data-city="{{ req.city|escape }}"
-                                    data-status="{{ req.get_status_display|escape }}"
-                                    data-description="{{ req.description|default:'No description provided.'|escape }}"
-                                    data-location="{{ req.location_details|default:'N/A'|escape }}"
-                                    data-owner-id="{{ req.requester.user.id }}"
-                                    data-owner-name="{{ req.requester.display_username|default:req.requester.user.username|escape }}"
-                                    data-owner-initials="{{ req.requester.user|initials|escape }}"
-                                    data-owner-photo="{% if req.requester.profile_photo %}{{ req.requester.profile_photo.url }}{% endif %}"
-                                    data-created="{{ req.created_at|date:'c' }}"
-                                    data-images="[]"
-                                    data-action-mode="request_open"
-                                    data-edit-url="{% url 'update_request' req.id %}"
-                                    data-delete-url="{% url 'delete_request' req.id %}"
-                                    data-claimer-id=""
-                                    data-claimer-name=""
-                                    data-claimed-at=""
-                            >
-                                <img src="{% if req.category == 'food' %}{% static 'images/food.jpg' %}{% elif req.category == 'clothing' %}{% static 'images/clothes.jpg' %}{% elif req.category == 'blankets' %}{% static 'images/blanket.jpg' %}{% elif req.category == 'hygiene' %}{% static 'images/hygiene.jpg' %}{% elif req.category == 'transport' %}{% static 'images/transportation.jpg' %}{% elif req.category == 'medical' %}{% static 'images/medical.jpg' %}{% else %}{% static 'images/food.jpg' %}{% endif %}" alt="{{ req.title }}" class="item-card-photo">
+                <button class="settings-tab-btn" type="button" data-tab="processing-tab">
+                    <span class="settings-tab-btn-content">
+                        <span>Processing</span>
+                        <span class="settings-tab-count">{{ processing_requests_total }}</span>
+                    </span>
+                </button>
 
-                                <div class="item-card-content">
-                                    <h3 class="item-card-title">{{ req.title }}</h3>
+                <button class="settings-tab-btn" type="button" data-tab="completed-tab">
+                    <span class="settings-tab-btn-content">
+                        <span>Completed</span>
+                        <span class="settings-tab-count">{{ completed_requests_total }}</span>
+                    </span>
+                </button>
+            </nav>
+        </aside>
 
-                                    <div class="item-card-details">
-                                        <p><strong>Category:</strong> {{ req.get_category_display }}</p>
+        <main class="dashboard-main">
+            <div class="dashboard-panel">
+                <div id="open-tab" class="dashboard-tab-panel">
+                    <h1 class="dashboard-panel-title">Open Requests</h1>
+                    <p class="dashboard-panel-subtext">
+                        These are your active requests that are still waiting to be claimed.
+                    </p>
 
-                                        <p class="request-description-line">
-                                            <strong>Description:</strong>
-                                            <span class="request-description-text">
-                                            {{ req.description|default:"No description provided." }}
-                                        </span>
-                                        </p>
-
-                                        <p><strong>City:</strong> {{ req.city }}</p>
-                                        <p><strong>Status:</strong> {{ req.get_status_display }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
+                    <div class="dashboard-summary">
+                        <p class="dashboard-summary-title">Current Request Status</p>
+                        <div class="dashboard-counter">
+                            <span class="dashboard-counter-number">{{ open_requests_total }}</span>
+                            <span class="dashboard-counter-label">Open Requests</span>
+                        </div>
                     </div>
-                {% else %}
-                    <div class="empty-state">No open requests.</div>
-                {% endif %}
-            </section>
 
-            <section class="dashboard-column">
-                <h2>Processing Requests</h2>
+                    <section class="dashboard-section">
+                        <h2 class="dashboard-section-title">Open Requests ({{ open_requests_total }})</h2>
 
-                {% if processing_requests %}
-                    <div class="dashboard-list">
-                        {% for req in processing_requests %}
-                            <div
-                                    id="item-card-processing-{{ req.id }}"
-                                    class="item-card js-item-card"
-                                    data-item-id="{{ req.id }}"
-                                    data-title="{{ req.title|escape }}"
-                                    data-category="{{ req.get_category_display|escape }}"
-                                    data-category-value="{{ req.category }}"
-                                    data-city="{{ req.city|escape }}"
-                                    data-status="{{ req.get_status_display|escape }}"
-                                    data-description="{{ req.description|default:'No description provided.'|escape }}"
-                                    data-location="{{ req.location_details|default:'N/A'|escape }}"
-                                    data-owner-id="{{ req.requester.user.id }}"
-                                    data-owner-name="{{ req.requester.display_username|default:req.requester.user.username|escape }}"
-                                    data-owner-initials="{{ req.requester.user|initials|escape }}"
-                                    data-owner-photo="{% if req.requester.profile_photo %}{{ req.requester.profile_photo.url }}{% endif %}"
-                                    data-created="{{ req.created_at|date:'c' }}"
-                                    data-images="[]"
-                                    data-action-mode="request_processing"
-                                    data-edit-url="{% url 'update_request' req.id %}"
-                                    data-delete-url="{% url 'delete_request' req.id %}"
-                                    data-claimer-id="{% if req.claimed_by %}{{ req.claimed_by.user.id }}{% endif %}"
-                                    data-claimed-by="{% if req.claimed_by %}{{ req.claimed_by.display_username|default:req.claimed_by.user.username|escape }}{% endif %}"
-                                    data-claimed-at="{% if req.claimed_at %}{{ req.claimed_at|date:'c' }}{% endif %}"
-                            >
-                                <img src="{% if req.category == 'food' %}{% static 'images/food.jpg' %}{% elif req.category == 'clothing' %}{% static 'images/clothes.jpg' %}{% elif req.category == 'blankets' %}{% static 'images/blanket.jpg' %}{% elif req.category == 'hygiene' %}{% static 'images/hygiene.jpg' %}{% elif req.category == 'transport' %}{% static 'images/transportation.jpg' %}{% elif req.category == 'medical' %}{% static 'images/medical.jpg' %}{% else %}{% static 'images/food.jpg' %}{% endif %}" alt="{{ req.title }}" class="item-card-photo">
+                        {% if open_requests %}
+                            <div class="dashboard-grid">
+                                {% for req in open_requests %}
+                                    <div
+                                            id="item-card-{{ req.id }}"
+                                            class="request-compact-card js-item-card"
+                                            data-item-id="{{ req.id }}"
+                                            data-title="{{ req.title|escape }}"
+                                            data-category="{{ req.get_category_display|escape }}"
+                                            data-category-value="{{ req.category }}"
+                                            data-city="{{ req.city|escape }}"
+                                            data-status="{{ req.get_status_display|escape }}"
+                                            data-description="{{ req.description|default:'No description provided.'|escape }}"
+                                            data-location="{{ req.location_details|default:'N/A'|escape }}"
+                                            data-owner-id="{{ req.requester.user.id }}"
+                                            data-owner-name="{{ req.requester.display_username|default:req.requester.user.username|escape }}"
+                                            data-owner-initials="{{ req.requester.user|initials|escape }}"
+                                            data-owner-photo="{% if req.requester.profile_photo %}{{ req.requester.profile_photo.url }}{% endif %}"
+                                            data-created="{{ req.created_at|date:'c' }}"
+                                            data-images="[]"
+                                            data-action-mode="request_open"
+                                            data-edit-url="{% url 'update_request' req.id %}?return_to=unhoused&tab=open-tab&open_page={{ open_requests.number }}"
+                                            data-delete-url="{% url 'delete_request' req.id %}?return_to=unhoused&tab=open-tab&open_page={{ open_requests.number }}"
+                                            data-claimer-id=""
+                                            data-claimer-name=""
+                                            data-claimed-at=""
+                                    >
+                                        <div class="request-card-main">
+                                            <img src="{% if req.category == 'food' %}{% static 'images/food.jpg' %}{% elif req.category == 'clothing' %}{% static 'images/clothes.jpg' %}{% elif req.category == 'blankets' %}{% static 'images/blanket.jpg' %}{% elif req.category == 'hygiene' %}{% static 'images/hygiene.jpg' %}{% elif req.category == 'transport' %}{% static 'images/transportation.jpg' %}{% elif req.category == 'medical' %}{% static 'images/medical.jpg' %}{% else %}{% static 'images/food.jpg' %}{% endif %}" alt="{{ req.title }}" class="request-compact-photo">
 
-                                <div class="item-card-content">
-                                    <h3 class="item-card-title">{{ req.title }}</h3>
+                                            <div class="request-compact-content">
+                                                <h3 class="request-compact-title">{{ req.title }}</h3>
 
-                                    <div class="item-card-details">
-                                        <p><strong>Category:</strong> {{ req.get_category_display }}</p>
-
-                                        <p class="request-description-line">
-                                            <strong>Description:</strong>
-                                            <span class="request-description-text">
-                                            {{ req.description|default:"No description provided." }}
-                                        </span>
-                                        </p>
-
-                                        <p><strong>City:</strong> {{ req.city }}</p>
-                                        <p><strong>Status:</strong> {{ req.get_status_display }}</p>
+                                                <div class="request-compact-details">
+                                                    <p><strong>Category:</strong> {{ req.get_category_display }}</p>
+                                                    <p><strong>City:</strong> {{ req.city }}</p>
+                                                    <p><strong>Status:</strong> {{ req.get_status_display }}</p>
+                                                    <p class="request-description-line">
+                                                        <strong>Description:</strong>
+                                                        <span class="request-description-text">
+                                                            {{ req.description|default:"No description provided." }}
+                                                        </span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                {% endfor %}
                             </div>
-                        {% endfor %}
+
+                            {% if open_requests.paginator.num_pages > 1 %}
+                                <nav class="dashboard-pagination" aria-label="Open requests pagination">
+                                    <ul class="pagination-list">
+                                        {% if open_requests.has_previous %}
+                                            <li>
+                                                <a class="pagination-link" href="?tab=open-tab&open_page={{ open_requests.previous_page_number }}">Previous</a>
+                                            </li>
+                                        {% else %}
+                                            <li>
+                                                <span class="pagination-link disabled">Previous</span>
+                                            </li>
+                                        {% endif %}
+
+                                        {% for num in open_requests.paginator.page_range %}
+                                            {% if open_requests.number == num %}
+                                                <li>
+                                                    <span class="pagination-link active">{{ num }}</span>
+                                                </li>
+                                            {% else %}
+                                                <li>
+                                                    <a class="pagination-link" href="?tab=open-tab&open_page={{ num }}">{{ num }}</a>
+                                                </li>
+                                            {% endif %}
+                                        {% endfor %}
+
+                                        {% if open_requests.has_next %}
+                                            <li>
+                                                <a class="pagination-link" href="?tab=open-tab&open_page={{ open_requests.next_page_number }}">Next</a>
+                                            </li>
+                                        {% else %}
+                                            <li>
+                                                <span class="pagination-link disabled">Next</span>
+                                            </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                            {% endif %}
+                        {% else %}
+                            <div class="dashboard-empty">
+                                No open requests.
+                            </div>
+                        {% endif %}
+                    </section>
+                </div>
+
+                <div id="processing-tab" class="dashboard-tab-panel">
+                    <h1 class="dashboard-panel-title">Processing Requests</h1>
+                    <p class="dashboard-panel-subtext">
+                        These requests have already been claimed and are currently being worked on.
+                    </p>
+
+                    <div class="dashboard-summary">
+                        <p class="dashboard-summary-title">Current Request Status</p>
+                        <div class="dashboard-counter">
+                            <span class="dashboard-counter-number">{{ processing_requests_total }}</span>
+                            <span class="dashboard-counter-label">Processing Requests</span>
+                        </div>
                     </div>
-                {% else %}
-                    <div class="empty-state">No requests are currently being processed.</div>
-                {% endif %}
-            </section>
 
-            <section class="dashboard-column">
-                <h2>Completed Requests</h2>
+                    <section class="dashboard-section">
+                        <h2 class="dashboard-section-title">Processing Requests ({{ processing_requests_total }})</h2>
 
-                {% if completed_requests %}
-                    <div class="dashboard-list">
-                        {% for req in completed_requests %}
-                            <div
-                                    id="item-card-completed-{{ req.id }}"
-                                    class="item-card js-item-card"
-                                    data-item-id="{{ req.id }}"
-                                    data-title="{{ req.title|escape }}"
-                                    data-category="{{ req.get_category_display|escape }}"
-                                    data-category-value="{{ req.category }}"
-                                    data-city="{{ req.city|escape }}"
-                                    data-status="{{ req.get_status_display|escape }}"
-                                    data-description="{{ req.description|default:'No description provided.'|escape }}"
-                                    data-location="{{ req.location_details|default:'N/A'|escape }}"
-                                    data-owner-id="{{ req.requester.user.id }}"
-                                    data-owner-name="{{ req.requester.display_username|default:req.requester.user.username|escape }}"
-                                    data-owner-initials="{{ req.requester.user|initials|escape }}"
-                                    data-owner-photo="{% if req.requester.profile_photo %}{{ req.requester.profile_photo.url }}{% endif %}"
-                                    data-created="{{ req.created_at|date:'c' }}"
-                                    data-images="[]"
-                                    data-action-mode="request_completed"
-                                    data-claimer-id="{% if req.claimed_by %}{{ req.claimed_by.user.id }}{% endif %}"
-                                    data-claimed-at="{% if req.claimed_at %}{{ req.claimed_at|date:'c' }}{% endif %}"
-                            >
-                                <img src="{% if req.category == 'food' %}{% static 'images/food.jpg' %}{% elif req.category == 'clothing' %}{% static 'images/clothes.jpg' %}{% elif req.category == 'blankets' %}{% static 'images/blanket.jpg' %}{% elif req.category == 'hygiene' %}{% static 'images/hygiene.jpg' %}{% elif req.category == 'transport' %}{% static 'images/transportation.jpg' %}{% elif req.category == 'medical' %}{% static 'images/medical.jpg' %}{% else %}{% static 'images/food.jpg' %}{% endif %}" alt="{{ req.title }}" class="item-card-photo">
+                        {% if processing_requests %}
+                            <div class="dashboard-grid">
+                                {% for req in processing_requests %}
+                                    <div
+                                            id="item-card-processing-{{ req.id }}"
+                                            class="request-compact-card js-item-card"
+                                            data-item-id="{{ req.id }}"
+                                            data-title="{{ req.title|escape }}"
+                                            data-category="{{ req.get_category_display|escape }}"
+                                            data-category-value="{{ req.category }}"
+                                            data-city="{{ req.city|escape }}"
+                                            data-status="{{ req.get_status_display|escape }}"
+                                            data-description="{{ req.description|default:'No description provided.'|escape }}"
+                                            data-location="{{ req.location_details|default:'N/A'|escape }}"
+                                            data-owner-id="{{ req.requester.user.id }}"
+                                            data-owner-name="{{ req.requester.display_username|default:req.requester.user.username|escape }}"
+                                            data-owner-initials="{{ req.requester.user|initials|escape }}"
+                                            data-owner-photo="{% if req.requester.profile_photo %}{{ req.requester.profile_photo.url }}{% endif %}"
+                                            data-created="{{ req.created_at|date:'c' }}"
+                                            data-images="[]"
+                                            data-action-mode="request_processing"
+                                            data-edit-url="{% url 'update_request' req.id %}?return_to=unhoused&tab=processing-tab&processing_page={{ processing_requests.number }}"
+                                            data-delete-url="{% url 'delete_request' req.id %}?return_to=unhoused&tab=processing-tab&processing_page={{ processing_requests.number }}"
+                                            data-claimer-id="{% if req.claimed_by %}{{ req.claimed_by.user.id }}{% endif %}"
+                                            data-claimed-by="{% if req.claimed_by %}{{ req.claimed_by.display_username|default:req.claimed_by.user.username|escape }}{% endif %}"
+                                            data-claimed-at="{% if req.claimed_at %}{{ req.claimed_at|date:'c' }}{% endif %}"
+                                    >
+                                        <div class="request-card-main">
+                                            <img src="{% if req.category == 'food' %}{% static 'images/food.jpg' %}{% elif req.category == 'clothing' %}{% static 'images/clothes.jpg' %}{% elif req.category == 'blankets' %}{% static 'images/blanket.jpg' %}{% elif req.category == 'hygiene' %}{% static 'images/hygiene.jpg' %}{% elif req.category == 'transport' %}{% static 'images/transportation.jpg' %}{% elif req.category == 'medical' %}{% static 'images/medical.jpg' %}{% else %}{% static 'images/food.jpg' %}{% endif %}" alt="{{ req.title }}" class="request-compact-photo">
 
-                                <div class="item-card-content">
-                                    <h3 class="item-card-title">{{ req.title }}</h3>
+                                            <div class="request-compact-content">
+                                                <h3 class="request-compact-title">{{ req.title }}</h3>
 
-                                    <div class="item-card-details">
-                                        <p><strong>Category:</strong> {{ req.get_category_display }}</p>
+                                                <div class="request-compact-details">
+                                                    <p><strong>Category:</strong> {{ req.get_category_display }}</p>
+                                                    <p><strong>City:</strong> {{ req.city }}</p>
+                                                    <p><strong>Status:</strong> {{ req.get_status_display }}</p>
+                                                    <p class="request-description-line">
+                                                        <strong>Description:</strong>
+                                                        <span class="request-description-text">
+                                                            {{ req.description|default:"No description provided." }}
+                                                        </span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                        <p class="request-description-line">
-                                            <strong>Description:</strong>
-                                            <span class="request-description-text">
-                                            {{ req.description|default:"No description provided." }}
-                                        </span>
-                                        </p>
-
-                                        <p><strong>City:</strong> {{ req.city }}</p>
-                                        <p><strong>Status:</strong> {{ req.get_status_display }}</p>
+                                        <div class="request-state-footer">
+                                            <strong>Claimed By:</strong>
+                                            {% if req.claimed_by %}
+                                                {{ req.claimed_by.display_username|default:req.claimed_by.user.username }}
+                                            {% else %}
+                                                Volunteer assigned
+                                            {% endif %}
+                                        </div>
                                     </div>
-                                </div>
+                                {% endfor %}
                             </div>
-                        {% endfor %}
+
+                            {% if processing_requests.paginator.num_pages > 1 %}
+                                <nav class="dashboard-pagination" aria-label="Processing requests pagination">
+                                    <ul class="pagination-list">
+                                        {% if processing_requests.has_previous %}
+                                            <li>
+                                                <a class="pagination-link" href="?tab=processing-tab&processing_page={{ processing_requests.previous_page_number }}">Previous</a>
+                                            </li>
+                                        {% else %}
+                                            <li>
+                                                <span class="pagination-link disabled">Previous</span>
+                                            </li>
+                                        {% endif %}
+
+                                        {% for num in processing_requests.paginator.page_range %}
+                                            {% if processing_requests.number == num %}
+                                                <li>
+                                                    <span class="pagination-link active">{{ num }}</span>
+                                                </li>
+                                            {% else %}
+                                                <li>
+                                                    <a class="pagination-link" href="?tab=processing-tab&processing_page={{ num }}">{{ num }}</a>
+                                                </li>
+                                            {% endif %}
+                                        {% endfor %}
+
+                                        {% if processing_requests.has_next %}
+                                            <li>
+                                                <a class="pagination-link" href="?tab=processing-tab&processing_page={{ processing_requests.next_page_number }}">Next</a>
+                                            </li>
+                                        {% else %}
+                                            <li>
+                                                <span class="pagination-link disabled">Next</span>
+                                            </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                            {% endif %}
+                        {% else %}
+                            <div class="dashboard-empty">
+                                No requests are currently being processed.
+                            </div>
+                        {% endif %}
+                    </section>
+                </div>
+
+                <div id="completed-tab" class="dashboard-tab-panel">
+                    <h1 class="dashboard-panel-title">Completed Requests</h1>
+                    <p class="dashboard-panel-subtext">
+                        These requests have already been fulfilled.
+                    </p>
+
+                    <div class="dashboard-summary">
+                        <p class="dashboard-summary-title">Current Request Status</p>
+                        <div class="dashboard-counter">
+                            <span class="dashboard-counter-number">{{ completed_requests_total }}</span>
+                            <span class="dashboard-counter-label">Completed Requests</span>
+                        </div>
                     </div>
-                {% else %}
-                    <div class="empty-state">No completed requests.</div>
-                {% endif %}
-            </section>
-        </div>
+
+                    <section class="dashboard-section">
+                        <h2 class="dashboard-section-title">Completed Requests ({{ completed_requests_total }})</h2>
+
+                        {% if completed_requests %}
+                            <div class="dashboard-grid">
+                                {% for req in completed_requests %}
+                                    <div
+                                            id="item-card-completed-{{ req.id }}"
+                                            class="request-compact-card js-item-card"
+                                            data-item-id="{{ req.id }}"
+                                            data-title="{{ req.title|escape }}"
+                                            data-category="{{ req.get_category_display|escape }}"
+                                            data-category-value="{{ req.category }}"
+                                            data-city="{{ req.city|escape }}"
+                                            data-status="{{ req.get_status_display|escape }}"
+                                            data-description="{{ req.description|default:'No description provided.'|escape }}"
+                                            data-location="{{ req.location_details|default:'N/A'|escape }}"
+                                            data-owner-id="{{ req.requester.user.id }}"
+                                            data-owner-name="{{ req.requester.display_username|default:req.requester.user.username|escape }}"
+                                            data-owner-initials="{{ req.requester.user|initials|escape }}"
+                                            data-owner-photo="{% if req.requester.profile_photo %}{{ req.requester.profile_photo.url }}{% endif %}"
+                                            data-created="{{ req.created_at|date:'c' }}"
+                                            data-images="[]"
+                                            data-action-mode="request_completed"
+                                            data-claimer-id="{% if req.claimed_by %}{{ req.claimed_by.user.id }}{% endif %}"
+                                            data-claimed-at="{% if req.claimed_at %}{{ req.claimed_at|date:'c' }}{% endif %}"
+                                    >
+                                        <div class="request-card-main">
+                                            <img src="{% if req.category == 'food' %}{% static 'images/food.jpg' %}{% elif req.category == 'clothing' %}{% static 'images/clothes.jpg' %}{% elif req.category == 'blankets' %}{% static 'images/blanket.jpg' %}{% elif req.category == 'hygiene' %}{% static 'images/hygiene.jpg' %}{% elif req.category == 'transport' %}{% static 'images/transportation.jpg' %}{% elif req.category == 'medical' %}{% static 'images/medical.jpg' %}{% else %}{% static 'images/food.jpg' %}{% endif %}" alt="{{ req.title }}" class="request-compact-photo">
+
+                                            <div class="request-compact-content">
+                                                <h3 class="request-compact-title">{{ req.title }}</h3>
+
+                                                <div class="request-compact-details">
+                                                    <p><strong>Category:</strong> {{ req.get_category_display }}</p>
+                                                    <p><strong>City:</strong> {{ req.city }}</p>
+                                                    <p><strong>Status:</strong> {{ req.get_status_display }}</p>
+                                                    <p class="request-description-line">
+                                                        <strong>Description:</strong>
+                                                        <span class="request-description-text">
+                                                            {{ req.description|default:"No description provided." }}
+                                                        </span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="request-state-footer">
+                                            <strong>Status:</strong> Fulfilled
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            {% if completed_requests.paginator.num_pages > 1 %}
+                                <nav class="dashboard-pagination" aria-label="Completed requests pagination">
+                                    <ul class="pagination-list">
+                                        {% if completed_requests.has_previous %}
+                                            <li>
+                                                <a class="pagination-link" href="?tab=completed-tab&completed_page={{ completed_requests.previous_page_number }}">Previous</a>
+                                            </li>
+                                        {% else %}
+                                            <li>
+                                                <span class="pagination-link disabled">Previous</span>
+                                            </li>
+                                        {% endif %}
+
+                                        {% for num in completed_requests.paginator.page_range %}
+                                            {% if completed_requests.number == num %}
+                                                <li>
+                                                    <span class="pagination-link active">{{ num }}</span>
+                                                </li>
+                                            {% else %}
+                                                <li>
+                                                    <a class="pagination-link" href="?tab=completed-tab&completed_page={{ num }}">{{ num }}</a>
+                                                </li>
+                                            {% endif %}
+                                        {% endfor %}
+
+                                        {% if completed_requests.has_next %}
+                                            <li>
+                                                <a class="pagination-link" href="?tab=completed-tab&completed_page={{ completed_requests.next_page_number }}">Next</a>
+                                            </li>
+                                        {% else %}
+                                            <li>
+                                                <span class="pagination-link disabled">Next</span>
+                                            </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                            {% endif %}
+                        {% else %}
+                            <div class="dashboard-empty">
+                                No completed requests.
+                            </div>
+                        {% endif %}
+                    </section>
+                </div>
+            </div>
+        </main>
     </div>
 
     {% include "components/item_modal.html" %}
@@ -334,4 +768,54 @@
 
 {% block extra_scripts %}
     <script src="{% static 'js/item_modal.js' %}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const dashboardTabButtons = document.querySelectorAll(".settings-tab-btn[data-tab]");
+            const dashboardPanels = document.querySelectorAll(".dashboard-tab-panel");
+
+            function syncDashboardUrl(tabId) {
+                const url = new URL(window.location.href);
+                const params = url.searchParams;
+
+                params.set("tab", tabId);
+
+                if (tabId !== "open-tab") {
+                    params.delete("open_page");
+                }
+
+                if (tabId !== "processing-tab") {
+                    params.delete("processing_page");
+                }
+
+                if (tabId !== "completed-tab") {
+                    params.delete("completed_page");
+                }
+
+                url.search = params.toString();
+                window.history.replaceState({}, "", url.toString());
+            }
+
+            function activateDashboardTab(tabId, updateUrl = true) {
+                dashboardTabButtons.forEach(button => {
+                    button.classList.toggle("active", button.dataset.tab === tabId);
+                });
+
+                dashboardPanels.forEach(panel => {
+                    panel.classList.toggle("active", panel.id === tabId);
+                });
+
+                if (updateUrl) {
+                    syncDashboardUrl(tabId);
+                }
+            }
+
+            dashboardTabButtons.forEach(button => {
+                button.addEventListener("click", function () {
+                    activateDashboardTab(this.dataset.tab, true);
+                });
+            });
+
+            activateDashboardTab("{{ active_tab|default:'open-tab' }}", false);
+        });
+    </script>
 {% endblock %}
