@@ -4,28 +4,47 @@
 {% block title %}History | Helping Connections{% endblock %}
 
 {% block content %}
-<div class="dashboard-wrapper">
+<div class="dashboard-wrapper history-page">
 
-    <div class="dashboard-header">
-        <h1>Your History</h1>
+    <!-- Header -->
+    <div class="dashboard-header history-header">
+        <h1><i class="fa fa-clock"></i> Your History</h1>
         <p>Completed requests and offers you've been involved in.</p>
     </div>
 
     <!-- Completed Requests -->
     <section class="dashboard-section">
-        <h2 class="dashboard-section-title">Completed Requests</h2>
+        <h2 class="dashboard-section-title">
+            <i class="fa fa-hand-holding-heart"></i> Completed Requests
+        </h2>
 
         {% if completed_requests %}
             <div class="dashboard-grid">
                 {% for req in completed_requests %}
-                    <div class="offer-compact-card">
-                        <div class="offer-card-main">
-                            <div class="offer-compact-content">
-                                <h3>{{ req.title }}</h3>
-                                <p><strong>Category:</strong> {{ req.get_category_display }}</p>
-                                <p><strong>City:</strong> {{ req.city }}</p>
-                                <p><strong>Status:</strong> {{ req.get_status_display }}</p>
-                            </div>
+                    <div class="history-card">
+                        <div class="history-card-header">
+                            <h3>{{ req.title }}</h3>
+                            <span class="status-badge success">
+                                <i class="fa fa-check-circle"></i>
+                                {{ req.get_status_display }}
+                            </span>
+                        </div>
+
+                        <div class="history-card-body">
+                            <p><strong>Category:</strong> {{ req.get_category_display }}</p>
+                            <p><strong>City:</strong> {{ req.city }}</p>
+
+                            {% if req.description %}
+                                <p class="description">
+                                    {{ req.description|truncatechars:100 }}
+                                </p>
+                            {% endif %}
+                        </div>
+
+                        <div class="history-card-footer">
+                            <span>
+                                {{ req.created_at|date:"M d, Y" }}
+                            </span>
                         </div>
                     </div>
                 {% endfor %}
@@ -37,19 +56,37 @@
 
     <!-- Completed Offers -->
     <section class="dashboard-section">
-        <h2 class="dashboard-section-title">Completed Offers</h2>
+        <h2 class="dashboard-section-title">
+            <i class="fa fa-gift"></i> Completed Offers
+        </h2>
 
         {% if completed_offers %}
             <div class="dashboard-grid">
                 {% for offer in completed_offers %}
-                    <div class="offer-compact-card">
-                        <div class="offer-card-main">
-                            <div class="offer-compact-content">
-                                <h3>{{ offer.title }}</h3>
-                                <p><strong>Category:</strong> {{ offer.get_category_display }}</p>
-                                <p><strong>City:</strong> {{ offer.city }}</p>
-                                <p><strong>Status:</strong> {{ offer.get_status_display }}</p>
-                            </div>
+                    <div class="history-card">
+                        <div class="history-card-header">
+                            <h3>{{ offer.title }}</h3>
+                            <span class="status-badge success">
+                                <i class="fa fa-check-circle"></i>
+                                {{ offer.get_status_display }}
+                            </span>
+                        </div>
+
+                        <div class="history-card-body">
+                            <p><strong>Category:</strong> {{ offer.get_category_display }}</p>
+                            <p><strong>City:</strong> {{ offer.city }}</p>
+
+                            {% if offer.description %}
+                                <p class="description">
+                                    {{ offer.description|truncatechars:100 }}
+                                </p>
+                            {% endif %}
+                        </div>
+
+                        <div class="history-card-footer">
+                            <span>
+                                {{ offer.created_at|date:"M d, Y" }}
+                            </span>
                         </div>
                     </div>
                 {% endfor %}
