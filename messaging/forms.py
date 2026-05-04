@@ -27,9 +27,15 @@ class NewThreadForm(forms.Form):
     # Text area for the message body
     body = forms.CharField(
         label="Message",
+        max_length=500,
+        error_messages={
+            "max_length": "Messages cannot be longer than 500 characters.",
+            "required": "Please enter a message.",
+        },
         widget=forms.Textarea(attrs={
             "rows": 5,
-            "placeholder": "Type your message here..."
+            "placeholder": "Type your message here...",
+            "maxlength": "500",
         })
     )
 
