@@ -69,6 +69,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const modalOwnerName = document.getElementById("itemModalOwnerName");
     const modalOwnerTime = document.getElementById("itemModalOwnerTime");
     const modalCategory = document.getElementById("itemModalCategory");
+    const modalCategoryIcon = document.getElementById("itemModalCategoryIcon");
     const modalCity = document.getElementById("itemModalCity");
     const modalLocation = document.getElementById("itemModalLocation");
     const modalStatus = document.getElementById("itemModalStatus");
@@ -110,6 +111,21 @@ document.addEventListener("DOMContentLoaded", function () {
     const messageItemTitle = document.getElementById("itemMessageTitle");
     const messageRecipientId = document.getElementById("itemMessageRecipientId");
     const messageBody = document.getElementById("itemMessageBody");
+    const messageCount = document.getElementById("itemMessageCount");
+    if (messageBody && messageCount && window.updateCharCount) {
+        const maxLength = 500;
+
+        // enforce max length
+        messageBody.setAttribute("maxlength", maxLength);
+
+        // initialize count
+        window.updateCharCount(messageBody, messageCount, maxLength);
+
+        // update on typing
+        messageBody.addEventListener("input", function () {
+            window.updateCharCount(messageBody, messageCount, maxLength);
+        });
+    }
     const messageBackBtn = document.getElementById("itemMessageBackBtn");
     const messageForm = document.getElementById("itemMessageForm");
     const messageReturnQuery = document.getElementById("itemMessageReturnQuery");
@@ -236,6 +252,29 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 0);
     }
 
+    function updateFooterActionLayout() {
+        const actionButtons = [
+            primaryBtn,
+            messageBtn,
+            reportBtn,
+            editBtn,
+            deleteBtn,
+            messageClaimerBtn,
+            verifyBtn,
+            hideBtn
+        ];
+
+        const visibleCount = actionButtons.filter(button => {
+            return button && button.style.display !== "none";
+        }).length;
+
+        const actionsBar = document.querySelector(".item-modal-actions");
+
+        if (actionsBar) {
+            actionsBar.classList.toggle("has-many-actions", visibleCount >= 4);
+        }
+    }
+
     // Safely parse a card's image JSON into an array of image URLs.
     function parseImages(imagesValue) {
         if (!imagesValue) return [];
@@ -268,6 +307,25 @@ document.addEventListener("DOMContentLoaded", function () {
         };
 
         return categoryMap[rawCategory] || "/static/images/food.jpg";
+    }
+
+    function getCategoryIconClass(categoryValue, categoryLabel) {
+        const rawCategory = (categoryValue || categoryLabel || "").trim().toLowerCase();
+
+        const iconMap = {
+            food: "fa-utensils",
+            clothing: "fa-shirt",
+            blankets: "fa-bed",
+            "blankets / bedding": "fa-bed",
+            hygiene: "fa-basket-shopping",
+            "hygiene items": "fa-basket-shopping",
+            transport: "fa-bus",
+            transportation: "fa-bus",
+            medical: "fa-kit-medical",
+            "medical supplies": "fa-kit-medical"
+        };
+
+        return iconMap[rawCategory] || "fa-box-open";
     }
 
     // Returns extra context for the currently active panel.
@@ -375,6 +433,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (messageBody) {
             messageBody.value = "";
+        }
+        if (messageBody && messageCount && window.updateCharCount) {
+            window.updateCharCount(messageBody, messageCount, 500);
         }
     }
 
@@ -1348,6 +1409,8 @@ document.addEventListener("DOMContentLoaded", function () {
         if (actions.showHide && hideBtn) {
             showElement(hideBtn, "inline-flex");
         }
+
+        updateFooterActionLayout();
     }
 
     // Main detail render step for the active modal item.
@@ -1391,11 +1454,24 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (modalCategory) modalCategory.textContent = item.categoryLabel || "";
+        if (modalCategoryIcon) {
+            modalCategoryIcon.className =
+                `fa-solid ${getCategoryIconClass(item.categoryValue, item.category)} item-modal-meta-icon`;
+        }
         if (modalCity) modalCity.textContent = item.city || "";
         if (modalLocation) modalLocation.textContent = item.location || "";
 
         if (modalStatus) {
-            modalStatus.textContent = getCurrentStatus()?.displayText || "";
+            modalStatus.textContent =
+                item.status?.displayText || item.status?.label || "";
+
+            modalStatus.className = "hc-status-pill";
+
+            const statusValue = (item.status?.code || "").toLowerCase();
+
+            if (statusValue) {
+                modalStatus.classList.add(`hc-status-${statusValue}`);
+            }
         }
 
         if (modalDescription) modalDescription.textContent = item.description || "";
@@ -1467,6 +1543,8 @@ document.addEventListener("DOMContentLoaded", function () {
     function buildCardData(card) {
         const parsedImages = parseImages(card.dataset.images);
 
+        const actionMode = card.dataset.actionMode || "";
+
         const rawStatusLabel = card.dataset.status || "";
         const claimedBy = card.dataset.claimedBy || "";
         const normalizedStatusCode = rawStatusLabel.trim().toLowerCase();
@@ -1479,10 +1557,16 @@ document.addEventListener("DOMContentLoaded", function () {
         };
 
         if (claimedBy) {
-            status.displayText = `${rawStatusLabel} by ${claimedBy}`;
+            if (
+                normalizedStatusCode === "fulfilled" &&
+                actionMode === "volunteer_offer_completed"
+            ) {
+                status.displayText = `FULFILLED FOR ${claimedBy}`;
+            } else {
+                status.displayText = `${rawStatusLabel} by ${claimedBy}`;
+            }
         }
 
-        const actionMode = card.dataset.actionMode || "";
         const isAdminAccount = actionMode === "admin_account";
         const hasClaimer = !!(card.dataset.claimerId || "");
 
@@ -1528,6 +1612,9 @@ document.addEventListener("DOMContentLoaded", function () {
             actions.showMessageClaimer = hasClaimer;
             actions.showVerify = true;
             actions.showDelete = true;
+        } else if (actionMode === "volunteer_offer_completed") {
+            actions.showMessageClaimer = hasClaimer;
+            actions.showHide = true;
         } else if (actionMode === "request_completed") {
             actions.showMessageClaimer = hasClaimer;
             actions.showHide = true;

@@ -1,0 +1,185 @@
+{% load static %}
+{% load user_extras %}
+
+<div
+        id="{{ card_id }}"
+        class="hc-item-card js-item-card"
+
+        data-item-id="{{ item.id }}"
+        data-title="{{ item.title|escape }}"
+        data-category="{{ item.get_category_display|escape }}"
+        data-category-value="{{ item.category }}"
+        data-city="{{ item.city|escape }}"
+        data-location="{{ item.location_details|default:'N/A'|escape }}"
+        data-description="{{ item.description|default:'No description provided.'|escape }}"
+        data-status="{{ item.get_status_display|escape }}"
+        data-created="{{ item.created_at|date:'c' }}"
+
+        data-owner-id="{{ owner_profile.user.id }}"
+        data-owner-name="{{ owner_profile.display_username|default:owner_profile.user.username|escape }}"
+        data-owner-initials="{{ owner_profile.user|initials|escape }}"
+        {% if owner_profile.profile_photo %}
+        data-owner-photo="{{ owner_profile.profile_photo.url }}"
+        {% endif %}
+
+        {% if primary_url %}
+        data-primary-url="{{ primary_url }}"
+        {% endif %}
+
+        data-action-mode="{{ action_mode }}"
+
+        {% if current_user_id %}
+        data-current-user-id="{{ current_user_id }}"
+        {% endif %}
+
+        {% if owner_report_id %}
+        data-owner-report-id="{{ owner_report_id }}"
+        {% endif %}
+
+        {% if claimer_id %}
+        data-claimer-id="{{ claimer_id }}"
+        {% endif %}
+
+        {% if claimed_by %}
+        data-claimed-by="{{ claimed_by|escape }}"
+        {% endif %}
+
+        {% if claimed_at %}
+        data-claimed-at="{{ claimed_at|date:'c' }}"
+        {% endif %}
+
+        {% if edit_url %}
+        data-edit-url="{{ edit_url }}"
+        {% endif %}
+
+        {% if delete_url %}
+        data-delete-url="{{ delete_url }}"
+        {% endif %}
+
+        {% if primary_label %}
+        data-primary-label="{{ primary_label }}"
+        {% endif %}
+
+        {% if message_label %}
+        data-message-label="{{ message_label }}"
+        {% endif %}
+
+        {% if report_label %}
+        data-report-label="{{ report_label }}"
+        {% endif %}
+
+        {% if primary_panel_title %}
+        data-primary-panel-title="{{ primary_panel_title }}"
+        {% endif %}
+
+        {% if primary_confirm_label %}
+        data-primary-confirm-label="{{ primary_confirm_label }}"
+        {% endif %}
+
+        {% if primary_note %}
+        data-primary-note="{{ primary_note }}"
+        {% endif %}
+
+        {% if item_images %}
+        data-images='[{% for image in item_images %}"{{ image.image.url }}"{% if not forloop.last %},{% endif %}{% endfor %}]'
+        {% elif item.category == "food" %}
+        data-images='["{% static "images/food.jpg" %}"]'
+        {% elif item.category == "clothing" %}
+        data-images='["{% static "images/clothes.jpg" %}"]'
+        {% elif item.category == "blankets" %}
+        data-images='["{% static "images/blanket.jpg" %}"]'
+        {% elif item.category == "hygiene" %}
+        data-images='["{% static "images/hygiene.jpg" %}"]'
+        {% elif item.category == "transport" %}
+        data-images='["{% static "images/transportation.jpg" %}"]'
+        {% elif item.category == "medical" %}
+        data-images='["{% static "images/medical.jpg" %}"]'
+        {% else %}
+        data-images='["{% static "images/food.jpg" %}"]'
+        {% endif %}
+>
+    {% if first_image %}
+        <img src="{{ first_image.image.url }}" alt="{{ item.title }}" class="hc-item-card-image">
+    {% elif item.category == "food" %}
+        <img src="{% static 'images/food.jpg' %}" alt="{{ item.title }}" class="hc-item-card-image">
+    {% elif item.category == "clothing" %}
+        <img src="{% static 'images/clothes.jpg' %}" alt="{{ item.title }}" class="hc-item-card-image">
+    {% elif item.category == "blankets" %}
+        <img src="{% static 'images/blanket.jpg' %}" alt="{{ item.title }}" class="hc-item-card-image">
+    {% elif item.category == "hygiene" %}
+        <img src="{% static 'images/hygiene.jpg' %}" alt="{{ item.title }}" class="hc-item-card-image">
+    {% elif item.category == "transport" %}
+        <img src="{% static 'images/transportation.jpg' %}" alt="{{ item.title }}" class="hc-item-card-image">
+    {% elif item.category == "medical" %}
+        <img src="{% static 'images/medical.jpg' %}" alt="{{ item.title }}" class="hc-item-card-image">
+    {% else %}
+        <img src="{% static 'images/food.jpg' %}" alt="{{ item.title }}" class="hc-item-card-image">
+    {% endif %}
+
+    <div class="hc-item-card-body">
+        <h3 class="hc-item-card-title">{{ item.title }}</h3>
+
+        <div class="hc-item-card-meta">
+            <div class="hc-item-card-meta-row">
+                <i class="fa-solid fa-user"></i>
+                <span>
+                    {{ owner_profile.display_username|default:owner_profile.user.email }}
+                </span>
+            </div>
+
+            <div class="hc-item-card-meta-row">
+                <i class="fa-solid fa-location-dot"></i>
+                <span>{{ item.city }}</span>
+            </div>
+
+            {% if date_label and date_value %}
+                <div class="hc-item-card-meta-row">
+                    <i class="fa-solid fa-calendar-check"></i>
+                    <span>
+            {{ date_label }} {{ date_value|date:"M d, Y" }}
+        </span>
+                </div>
+            {% else %}
+                <div class="hc-item-card-meta-row">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>{{ item.created_at|date:"M d, Y" }}</span>
+                </div>
+            {% endif %}
+
+            {% if extra_meta_label and extra_meta_value %}
+                <div class="hc-item-card-meta-row">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>
+            {{ extra_meta_label }}
+            {{ extra_meta_value }}
+        </span>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="hc-item-card-divider"></div>
+
+        <div class="hc-item-card-footer">
+            <span class="hc-status-pill hc-status-{{ item.status }}">
+                {{ item.get_status_display }}
+            </span>
+
+            <span class="hc-category-chip">
+                {% if item.category == "food" %}
+                    <i class="fa-solid fa-utensils"></i>
+                {% elif item.category == "clothing" %}
+                    <i class="fa-solid fa-shirt"></i>
+                {% elif item.category == "blankets" %}
+                    <i class="fa-solid fa-bed"></i>
+                {% elif item.category == "hygiene" %}
+                    <i class="fa-solid fa-basket-shopping"></i>
+                {% elif item.category == "transport" %}
+                    <i class="fa-solid fa-bus"></i>
+                {% elif item.category == "medical" %}
+                    <i class="fa-solid fa-kit-medical"></i>
+                {% endif %}
+                {{ item.get_category_display }}
+            </span>
+        </div>
+    </div>
+</div>
