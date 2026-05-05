@@ -5,6 +5,7 @@
 {% block title %}Unhoused Dashboard - Helping Connections{% endblock %}
 
 {% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/item_card.css' %}">
     <link rel="stylesheet" href="{% static 'css/item_modal.css' %}">
 {% endblock %}
 
@@ -23,22 +24,27 @@
         .dashboard-sidebar {
             background: #ffffff;
             border-radius: 14px;
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
-            padding: 18px 14px;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+            padding: 0;
             position: sticky;
             top: 96px;
+            overflow: hidden;
         }
 
         .dashboard-sidebar h2 {
-            margin: 0 0 16px;
+            margin: 0;
+            padding: 20px 18px;
             font-size: 28px;
-            color: #2c3e50;
+            color: #ffffff;
+            background: #1f3b4d;
+            border-bottom: 3px solid #1abc9c;
         }
 
         .settings-nav {
             display: flex;
             flex-direction: column;
             gap: 8px;
+            padding: 16px 14px 18px;
         }
 
         .settings-tab-btn {
@@ -102,6 +108,7 @@
             border-radius: 18px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
             padding: 30px 34px;
+            overflow: hidden;
         }
 
         .dashboard-tab-panel {
@@ -113,15 +120,20 @@
         }
 
         .dashboard-panel-title {
-            margin: 0 0 8px;
+            margin: -30px -34px 0;
+            padding: 28px 34px 6px;
             font-size: 1.75rem;
-            color: #2c3e50;
+            color: #ffffff;
+            background: #1f3b4d;
         }
 
         .dashboard-panel-subtext {
-            margin: 0 0 24px;
-            color: #555;
+            margin: 0 -34px 28px;
+            padding: 0 34px 24px;
+            color: #dcecf2;
             font-size: 1rem;
+            background: #1f3b4d;
+            border-bottom: 3px solid #1abc9c;
         }
 
         .dashboard-summary {
@@ -186,103 +198,6 @@
             gap: 24px;
             justify-items: center;
             align-items: start;
-        }
-
-        .request-compact-card {
-            width: 100%;
-            max-width: 420px;
-            display: flex;
-            flex-direction: column;
-            background: #ffffff;
-            border: 1px solid #d6dbe1;
-            border-radius: 18px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-            box-sizing: border-box;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            overflow: hidden;
-        }
-
-        .request-compact-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
-        }
-
-        .request-card-main {
-            display: flex;
-            gap: 14px;
-            align-items: center;
-            padding: 14px 14px 10px;
-            min-height: 170px;
-            box-sizing: border-box;
-            overflow: hidden;
-        }
-
-        .request-compact-photo {
-            width: 120px;
-            height: 120px;
-            object-fit: cover;
-            border-radius: 12px;
-            border: 1px solid #d6dbe1;
-            flex-shrink: 0;
-            display: block;
-            background: #f4f6f8;
-        }
-
-        .request-compact-content {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .request-compact-title {
-            font-size: 1.05rem;
-            color: #2c3e50;
-            margin: 0 0 8px;
-            line-height: 1.25;
-            font-weight: 700;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            height: 1.3em;
-        }
-
-        .request-compact-details p {
-            margin: 4px 0;
-            color: #333;
-            line-height: 1.35;
-            font-size: 0.95rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .request-compact-details strong {
-            color: #1f3b4d;
-        }
-
-        .request-description-line {
-            display: flex;
-            gap: 6px;
-            align-items: flex-start;
-        }
-
-        .request-description-text {
-            flex: 1;
-            min-width: 0;
-            display: block;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .request-state-footer {
-            margin: 0 14px 14px;
-            padding: 8px 12px;
-            background: #f4f6f8;
-            border-left: 4px solid #1abc9c;
-            border-radius: 10px;
-            font-size: 0.92rem;
-            color: #1f3f30;
         }
 
         .dashboard-empty {
@@ -370,16 +285,18 @@
                 padding: 20px;
             }
 
+            .dashboard-panel-title {
+                margin: -20px -20px 0;
+                padding: 24px 20px 6px;
+            }
+
+            .dashboard-panel-subtext {
+                margin: 0 -20px 24px;
+                padding: 0 20px 22px;
+            }
+
             .dashboard-grid {
                 grid-template-columns: 1fr;
-            }
-
-            .request-compact-card {
-                max-width: 100%;
-            }
-
-            .request-card-main {
-                align-items: flex-start;
             }
         }
     </style>
@@ -434,50 +351,12 @@
                         {% if open_requests %}
                             <div class="dashboard-grid">
                                 {% for req in open_requests %}
-                                    <div
-                                            id="item-card-{{ req.id }}"
-                                            class="request-compact-card js-item-card"
-                                            data-item-id="{{ req.id }}"
-                                            data-title="{{ req.title|escape }}"
-                                            data-category="{{ req.get_category_display|escape }}"
-                                            data-category-value="{{ req.category }}"
-                                            data-city="{{ req.city|escape }}"
-                                            data-status="{{ req.get_status_display|escape }}"
-                                            data-description="{{ req.description|default:'No description provided.'|escape }}"
-                                            data-location="{{ req.location_details|default:'N/A'|escape }}"
-                                            data-owner-id="{{ req.requester.user.id }}"
-                                            data-owner-name="{{ req.requester.display_username|default:req.requester.user.username|escape }}"
-                                            data-owner-initials="{{ req.requester.user|initials|escape }}"
-                                            data-owner-photo="{% if req.requester.profile_photo %}{{ req.requester.profile_photo.url }}{% endif %}"
-                                            data-created="{{ req.created_at|date:'c' }}"
-                                            data-images="[]"
-                                            data-action-mode="request_open"
-                                            data-edit-url="{% url 'update_request' req.id %}?return_to=unhoused&tab=open-tab&open_page={{ open_requests.number }}"
-                                            data-delete-url="{% url 'delete_request' req.id %}?return_to=unhoused&tab=open-tab&open_page={{ open_requests.number }}"
-                                            data-claimer-id=""
-                                            data-claimer-name=""
-                                            data-claimed-at=""
-                                    >
-                                        <div class="request-card-main">
-                                            <img src="{% if req.category == 'food' %}{% static 'images/food.jpg' %}{% elif req.category == 'clothing' %}{% static 'images/clothes.jpg' %}{% elif req.category == 'blankets' %}{% static 'images/blanket.jpg' %}{% elif req.category == 'hygiene' %}{% static 'images/hygiene.jpg' %}{% elif req.category == 'transport' %}{% static 'images/transportation.jpg' %}{% elif req.category == 'medical' %}{% static 'images/medical.jpg' %}{% else %}{% static 'images/food.jpg' %}{% endif %}" alt="{{ req.title }}" class="request-compact-photo">
+                                    {% url 'update_request' req.id as update_request_url %}
+                                    {% url 'delete_request' req.id as delete_request_url %}
 
-                                            <div class="request-compact-content">
-                                                <h3 class="request-compact-title">{{ req.title }}</h3>
-
-                                                <div class="request-compact-details">
-                                                    <p><strong>Category:</strong> {{ req.get_category_display }}</p>
-                                                    <p><strong>City:</strong> {{ req.city }}</p>
-                                                    <p><strong>Status:</strong> {{ req.get_status_display }}</p>
-                                                    <p class="request-description-line">
-                                                        <strong>Description:</strong>
-                                                        <span class="request-description-text">
-                                                            {{ req.description|default:"No description provided." }}
-                                                        </span>
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    {% with card_id_prefix="item-card-" %}
+                                        {% include "components/item_card.html" with item=req owner_profile=req.requester card_id=card_id_prefix|add:req.id action_mode="request_open" current_user_id=request.user.id owner_report_id=req.requester.user.id edit_url=update_request_url delete_url=delete_request_url %}
+                                    {% endwith %}
                                 {% endfor %}
                             </div>
 
@@ -546,59 +425,12 @@
                         {% if processing_requests %}
                             <div class="dashboard-grid">
                                 {% for req in processing_requests %}
-                                    <div
-                                            id="item-card-processing-{{ req.id }}"
-                                            class="request-compact-card js-item-card"
-                                            data-item-id="{{ req.id }}"
-                                            data-title="{{ req.title|escape }}"
-                                            data-category="{{ req.get_category_display|escape }}"
-                                            data-category-value="{{ req.category }}"
-                                            data-city="{{ req.city|escape }}"
-                                            data-status="{{ req.get_status_display|escape }}"
-                                            data-description="{{ req.description|default:'No description provided.'|escape }}"
-                                            data-location="{{ req.location_details|default:'N/A'|escape }}"
-                                            data-owner-id="{{ req.requester.user.id }}"
-                                            data-owner-name="{{ req.requester.display_username|default:req.requester.user.username|escape }}"
-                                            data-owner-initials="{{ req.requester.user|initials|escape }}"
-                                            data-owner-photo="{% if req.requester.profile_photo %}{{ req.requester.profile_photo.url }}{% endif %}"
-                                            data-created="{{ req.created_at|date:'c' }}"
-                                            data-images="[]"
-                                            data-action-mode="request_processing"
-                                            data-edit-url="{% url 'update_request' req.id %}?return_to=unhoused&tab=processing-tab&processing_page={{ processing_requests.number }}"
-                                            data-delete-url="{% url 'delete_request' req.id %}?return_to=unhoused&tab=processing-tab&processing_page={{ processing_requests.number }}"
-                                            data-claimer-id="{% if req.claimed_by %}{{ req.claimed_by.user.id }}{% endif %}"
-                                            data-claimed-by="{% if req.claimed_by %}{{ req.claimed_by.display_username|default:req.claimed_by.user.username|escape }}{% endif %}"
-                                            data-claimed-at="{% if req.claimed_at %}{{ req.claimed_at|date:'c' }}{% endif %}"
-                                    >
-                                        <div class="request-card-main">
-                                            <img src="{% if req.category == 'food' %}{% static 'images/food.jpg' %}{% elif req.category == 'clothing' %}{% static 'images/clothes.jpg' %}{% elif req.category == 'blankets' %}{% static 'images/blanket.jpg' %}{% elif req.category == 'hygiene' %}{% static 'images/hygiene.jpg' %}{% elif req.category == 'transport' %}{% static 'images/transportation.jpg' %}{% elif req.category == 'medical' %}{% static 'images/medical.jpg' %}{% else %}{% static 'images/food.jpg' %}{% endif %}" alt="{{ req.title }}" class="request-compact-photo">
+                                    {% url 'update_request' req.id as update_request_url %}
+                                    {% url 'delete_request' req.id as delete_request_url %}
 
-                                            <div class="request-compact-content">
-                                                <h3 class="request-compact-title">{{ req.title }}</h3>
-
-                                                <div class="request-compact-details">
-                                                    <p><strong>Category:</strong> {{ req.get_category_display }}</p>
-                                                    <p><strong>City:</strong> {{ req.city }}</p>
-                                                    <p><strong>Status:</strong> {{ req.get_status_display }}</p>
-                                                    <p class="request-description-line">
-                                                        <strong>Description:</strong>
-                                                        <span class="request-description-text">
-                                                            {{ req.description|default:"No description provided." }}
-                                                        </span>
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="request-state-footer">
-                                            <strong>Claimed By:</strong>
-                                            {% if req.claimed_by %}
-                                                {{ req.claimed_by.display_username|default:req.claimed_by.user.username }}
-                                            {% else %}
-                                                Volunteer assigned
-                                            {% endif %}
-                                        </div>
-                                    </div>
+                                    {% with card_id_prefix="item-card-processing-" %}
+                                        {% include "components/item_card.html" with item=req owner_profile=req.requester card_id=card_id_prefix|add:req.id action_mode="request_processing" current_user_id=request.user.id owner_report_id=req.requester.user.id edit_url=update_request_url delete_url=delete_request_url claimer_id=req.claimed_by.user.id claimed_by=req.claimed_by.display_username|default:req.claimed_by.user.username claimed_at=req.claimed_at extra_meta_label="Claimed by" extra_meta_value=req.claimed_by.display_username|default:req.claimed_by.user.username %}
+                                    {% endwith %}
                                 {% endfor %}
                             </div>
 
@@ -667,51 +499,9 @@
                         {% if completed_requests %}
                             <div class="dashboard-grid">
                                 {% for req in completed_requests %}
-                                    <div
-                                            id="item-card-completed-{{ req.id }}"
-                                            class="request-compact-card js-item-card"
-                                            data-item-id="{{ req.id }}"
-                                            data-title="{{ req.title|escape }}"
-                                            data-category="{{ req.get_category_display|escape }}"
-                                            data-category-value="{{ req.category }}"
-                                            data-city="{{ req.city|escape }}"
-                                            data-status="{{ req.get_status_display|escape }}"
-                                            data-description="{{ req.description|default:'No description provided.'|escape }}"
-                                            data-location="{{ req.location_details|default:'N/A'|escape }}"
-                                            data-owner-id="{{ req.requester.user.id }}"
-                                            data-owner-name="{{ req.requester.display_username|default:req.requester.user.username|escape }}"
-                                            data-owner-initials="{{ req.requester.user|initials|escape }}"
-                                            data-owner-photo="{% if req.requester.profile_photo %}{{ req.requester.profile_photo.url }}{% endif %}"
-                                            data-created="{{ req.created_at|date:'c' }}"
-                                            data-images="[]"
-                                            data-action-mode="request_completed"
-                                            data-claimer-id="{% if req.claimed_by %}{{ req.claimed_by.user.id }}{% endif %}"
-                                            data-claimed-at="{% if req.claimed_at %}{{ req.claimed_at|date:'c' }}{% endif %}"
-                                    >
-                                        <div class="request-card-main">
-                                            <img src="{% if req.category == 'food' %}{% static 'images/food.jpg' %}{% elif req.category == 'clothing' %}{% static 'images/clothes.jpg' %}{% elif req.category == 'blankets' %}{% static 'images/blanket.jpg' %}{% elif req.category == 'hygiene' %}{% static 'images/hygiene.jpg' %}{% elif req.category == 'transport' %}{% static 'images/transportation.jpg' %}{% elif req.category == 'medical' %}{% static 'images/medical.jpg' %}{% else %}{% static 'images/food.jpg' %}{% endif %}" alt="{{ req.title }}" class="request-compact-photo">
-
-                                            <div class="request-compact-content">
-                                                <h3 class="request-compact-title">{{ req.title }}</h3>
-
-                                                <div class="request-compact-details">
-                                                    <p><strong>Category:</strong> {{ req.get_category_display }}</p>
-                                                    <p><strong>City:</strong> {{ req.city }}</p>
-                                                    <p><strong>Status:</strong> {{ req.get_status_display }}</p>
-                                                    <p class="request-description-line">
-                                                        <strong>Description:</strong>
-                                                        <span class="request-description-text">
-                                                            {{ req.description|default:"No description provided." }}
-                                                        </span>
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="request-state-footer">
-                                            <strong>Status:</strong> Fulfilled
-                                        </div>
-                                    </div>
+                                    {% with card_id_prefix="item-card-completed-" %}
+                                        {% include "components/item_card.html" with item=req owner_profile=req.requester card_id=card_id_prefix|add:req.id action_mode="request_completed" current_user_id=request.user.id owner_report_id=req.requester.user.id claimer_id=req.claimed_by.user.id claimed_by=req.claimed_by.display_username|default:req.claimed_by.user.username claimed_at=req.claimed_at date_label="Completed" date_value=req.updated_at %}
+                                    {% endwith %}
                                 {% endfor %}
                             </div>
 

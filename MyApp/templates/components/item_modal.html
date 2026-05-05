@@ -64,36 +64,61 @@
                  ============================================================ -->
             <div id="itemDetailPanel" class="item-detail-panel">
                 <div class="item-detail-scroll">
+                    <div class="item-modal-detail-header">
+                        <h2 id="itemModalTitle" class="item-modal-title"></h2>
 
-                    <h2 id="itemModalTitle" class="item-modal-title"></h2>
+                        <!-- Standard offer/request owner block -->
+                        <div id="itemStandardUserBlock" class="item-modal-user">
+                            <div class="item-modal-user-avatar">
+                                <img id="itemModalOwnerPhoto" class="item-modal-user-photo" alt="User photo" style="display:none;">
+                                <span id="itemModalOwnerInitials" class="item-modal-user-initials"></span>
+                            </div>
 
-                    <!-- Standard offer/request owner block -->
-                    <div id="itemStandardUserBlock" class="item-modal-user">
-                        <div class="item-modal-user-avatar">
-                            <img id="itemModalOwnerPhoto" class="item-modal-user-photo" alt="User photo" style="display:none;">
-                            <span id="itemModalOwnerInitials" class="item-modal-user-initials"></span>
-                        </div>
-
-                        <div class="item-modal-user-info">
-                            <div class="item-modal-user-label">Posted by</div>
-                            <div id="itemModalOwnerName" class="item-modal-user-name"></div>
-                            <div id="itemModalOwnerTime" class="item-modal-user-time"></div>
+                            <div class="item-modal-user-info">
+                                <div class="item-modal-user-label">Posted by</div>
+                                <div id="itemModalOwnerName" class="item-modal-user-name"></div>
+                                <div id="itemModalOwnerTime" class="item-modal-user-time"></div>
+                            </div>
                         </div>
                     </div>
-
                     <!-- Standard offer/request meta block -->
                     <div id="itemStandardMetaBlock" class="item-modal-meta">
-                        <p><strong>Category:</strong> <span id="itemModalCategory"></span></p>
-                        <p><strong>City:</strong> <span id="itemModalCity"></span></p>
-                        <p><strong>Location Details:</strong> <span id="itemModalLocation"></span></p>
-                        <p><strong>Status:</strong> <span id="itemModalStatus"></span></p>
+                        <p class="item-modal-meta-row">
+                            <i id="itemModalCategoryIcon" class="fa-solid fa-shirt item-modal-meta-icon"></i>
+                            <strong>Category</strong>
+                            <span id="itemModalCategory"></span>
+                        </p>
+
+                        <p class="item-modal-meta-row">
+                            <i class="fa-solid fa-location-dot item-modal-meta-icon"></i>
+                            <strong>City</strong>
+                            <span id="itemModalCity"></span>
+                        </p>
+
+                        <p class="item-modal-meta-row">
+                            <i class="fa-solid fa-map-pin item-modal-meta-icon"></i>
+                            <strong>Location Details</strong>
+                            <span id="itemModalLocation"></span>
+                        </p>
+
+                        <p class="item-modal-meta-row">
+                            <i class="fa-solid fa-circle-dot item-modal-meta-icon"></i>
+                            <strong>Status</strong>
+
+                            <span class="item-modal-status-wrapper">
+        <span id="itemModalStatus" class="hc-status-pill"></span>
+
+        <span id="itemModalClaimedAtRow"
+              class="item-modal-claimed-time"
+              style="display:none;">
+            <span id="itemModalClaimedAt"></span>
+        </span>
+    </span>
+                        </p>
                         <p id="itemModalEmailRow" style="display:none;"><strong>Email:</strong> <span id="itemModalEmail"></span></p>
                         <p id="itemModalPhoneRow" style="display:none;"><strong>Phone:</strong> <span id="itemModalPhone"></span></p>
                         <p id="itemModalRoleRow" style="display:none;"><strong>Role:</strong> <span id="itemModalRole"></span></p>
 
-                        <p id="itemModalClaimedAtRow" class="item-modal-user-time" style="display:none;">
-                            <span id="itemModalClaimedAt"></span>
-                        </p>
                     </div>
 
                     <!-- Standard offer/request description block -->
@@ -120,15 +145,41 @@
 
                 <!-- Action buttons -->
                 <div class="item-modal-actions">
-                    <button type="button" id="itemModalPrimaryBtn" class="item-primary-btn">Claim Offer</button>
-                    <button type="button" id="itemModalMessageBtn" class="item-secondary-solid-btn">Message</button>
-                    <button type="button" id="itemModalReportBtn" class="item-danger-outline-btn">Report</button>
+                    <button type="button" id="itemModalPrimaryBtn" class="item-primary-btn">
+                        <i class="fa-solid fa-hand-holding-heart"></i>
+                        <span>Claim Offer</span>
+                    </button>
 
-                    <button type="button" id="itemModalEditBtn" class="item-secondary-solid-btn" style="display:none;">Edit</button>
-                    <button type="button" id="itemModalMessageClaimerBtn" class="item-secondary-solid-btn" style="display:none;">Message</button>
-                    <button type="button" id="itemModalVerifyBtn" class="item-secondary-btn" style="display:none;">Mark Fulfilled</button>
-                    <button type="button" id="itemModalDeleteBtn" class="item-danger-outline-btn" style="display:none;">Delete</button>
-                    <button type="button" id="itemModalHideBtn" class="item-secondary-btn" style="display:none;">Hide</button>
+                    <button type="button" id="itemModalMessageBtn" class="item-secondary-solid-btn">
+                        <i class="fa-solid fa-comments"></i>
+                        <span>Message</span>
+                    </button>
+
+                    <button type="button" id="itemModalReportBtn" class="item-danger-outline-btn">
+                        <i class="fa-solid fa-flag"></i>
+                        <span>Report</span>
+                    </button>
+
+                    <button id="itemModalEditBtn" class="item-secondary-solid-btn">
+                        <i class="fa-solid fa-pen"></i>
+                        <span>Edit</span>
+                    </button>
+                    <button id="itemModalMessageClaimerBtn" class="item-secondary-solid-btn">
+                        <i class="fa-solid fa-comments"></i>
+                        <span>Message</span>
+                    </button>
+                    <button id="itemModalVerifyBtn" class="item-secondary-btn">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Mark Fulfilled</span>
+                    </button>
+                    <button id="itemModalDeleteBtn" class="item-danger-outline-btn">
+                        <i class="fa-solid fa-trash"></i>
+                        <span>Delete</span>
+                    </button>
+                    <button id="itemModalHideBtn" class="item-secondary-btn">
+                        <i class="fa-solid fa-eye-slash"></i>
+                        <span>Hide</span>
+                    </button>
                 </div>
             </div>
 
@@ -187,7 +238,7 @@
                                 rows="7"
                                 placeholder="Type your message here..."
                         ></textarea>
-
+                        <div class="item-char-counter" id="itemMessageCount">0/500</div>
                         <div id="itemMessageError" class="item-form-error">Please enter a message before sending.</div>
                     </form>
                 </div>
@@ -401,7 +452,11 @@
                             <div class="item-edit-divider"></div>
 
                             <label for="itemEditLocation" class="item-field-label">Location Details</label>
-                            <input type="text" id="itemEditLocation" name="location_details" class="item-field-control">
+                            <input type="text" id="itemEditLocation" name="location_details" class="item-field-control" maxlength="50">
+                            <div class="item-field-meta">
+                                <small id="itemEditLocationError" class="live-error"></small>
+                                <small id="itemEditLocationCount" class="char-count"></small>
+                            </div>
 
                             <div class="item-edit-divider"></div>
 

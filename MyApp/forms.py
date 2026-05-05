@@ -655,7 +655,9 @@ class RequestForm(forms.ModelForm):
             }),
             "location_details": forms.TextInput(attrs={
                 "class": "form-control",
-                "placeholder": "Optional: near shelter, library, community center, etc."
+                "placeholder": "Optional: near shelter, library, community center, etc.",
+                "id": "request-location",
+                "maxlength": "50",
             }),
         }
 
@@ -674,6 +676,14 @@ class RequestForm(forms.ModelForm):
             )
 
         return " ".join(word.capitalize() for word in city.split())
+
+    def clean_location_details(self):
+        location = self.cleaned_data.get("location_details", "").strip()
+
+        if len(location) > 50:
+            raise forms.ValidationError("Location details cannot exceed 50 characters.")
+
+        return location
 
 # ModelForm for creating/editing Offers.
 # Includes:
@@ -718,7 +728,9 @@ class OfferForm(forms.ModelForm):
             }),
             "location_details": forms.TextInput(attrs={
                 "class": "form-control",
-                "placeholder": "Optional: shelter, library, church, community center, etc."
+                "placeholder": "Optional: shelter, library, church, community center, etc.",
+                "id": "offer-location",
+                "maxlength": "50",
             }),
         }
 
@@ -765,6 +777,15 @@ class OfferForm(forms.ModelForm):
             raise forms.ValidationError("Title cannot exceed 60 characters.")
 
         return title
+
+    def clean_location_details(self):
+        location = self.cleaned_data.get("location_details", "").strip()
+
+        if len(location) > 50:
+            raise forms.ValidationError("Location details cannot exceed 50 characters.")
+
+        return location
+
 
 class AdminAccountEditForm(forms.Form):
     display_username = forms.CharField(max_length=30, required=True)

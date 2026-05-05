@@ -124,6 +124,11 @@ document.addEventListener("DOMContentLoaded", function () {
         return /^[A-Za-z .'-]+$/.test(value.trim());
     }
 
+    function isValidItemLocation(value, maxLength = 50) {
+        const trimmed = (value || "").trim();
+        return trimmed.length <= maxLength;
+    }
+
 // ============================================================
 // INPUT FORMATTERS
 // Used to normalize user input (e.g., phone numbers)
@@ -522,6 +527,56 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    function attachItemLocationValidation(inputId, errorId, countId, maxLength = 50) {
+        const input = document.getElementById(inputId);
+        const errorEl = document.getElementById(errorId);
+        const countEl = countId ? document.getElementById(countId) : null;
+        if (!input) return;
+
+        let touched = !isSettingsPage;
+
+        function validate(showValid = touched) {
+            if (input.value.length > maxLength) {
+                input.value = input.value.slice(0, maxLength);
+            }
+
+            if (countEl) {
+                updateCharCount(input, countEl, maxLength);
+            }
+
+            input.classList.remove("input-error", "input-valid");
+            if (errorEl) errorEl.textContent = "";
+
+            if (!input.value.trim()) {
+                return;
+            }
+
+            if (!isValidItemLocation(input.value, maxLength)) {
+                setValidityState(
+                    input,
+                    errorEl,
+                    `Location details cannot exceed ${maxLength} characters.`,
+                    false
+                );
+                return;
+            }
+
+            setValidityState(input, errorEl, "", true, showValid);
+        }
+
+        validate(false);
+
+        input.addEventListener("input", function () {
+            touched = true;
+            validate(true);
+        });
+
+        input.addEventListener("blur", function () {
+            touched = true;
+            validate(true);
+        });
+    }
+
 // ============================================================
 // PASSWORD + ADVANCED FORM HELPERS
 // ============================================================
@@ -812,6 +867,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         attachItemTitleValidation("itemEditTitle", "itemEditTitleError", "itemEditTitleCount", 60);
         attachItemCityValidation("itemEditCity", "itemEditCityError", "itemEditCityCount", 25);
+
+        attachItemLocationValidation("offer-location", "offer-location-live-error", "offer-location-count", 50);
+        attachItemLocationValidation("request-location", "request-location-live-error", "request-location-count", 50);
+        attachItemLocationValidation("itemEditLocation", "itemEditLocationError", "itemEditLocationCount", 50);
     }
 
 // ============================================================
@@ -822,4 +881,6 @@ document.addEventListener("DOMContentLoaded", function () {
     window.initializeAuthValidation = initializeAuthValidation;
     window.isValidItemTitle = isValidItemTitle;
     window.isValidItemCity = isValidItemCity;
+    window.isValidItemLocation = isValidItemLocation;
+    window.updateCharCount = updateCharCount;
 });

@@ -653,6 +653,20 @@ def volunteer(request):
 
         fulfilled_requests_count = completed_requests_total
 
+        completed_view = request.GET.get("completed_view", "requests")
+
+        fulfilled_offers_list = Offer.objects.filter(
+            offered_by=profile,
+            status=Offer.STATUS_FULFILLED
+        ).prefetch_related("images").order_by("-updated_at", "-created_at")
+
+        fulfilled_offers_total = fulfilled_offers_list.count()
+        fulfilled_offers_count = fulfilled_offers_total
+
+        fulfilled_offers_paginator = Paginator(fulfilled_offers_list, 9)
+        fulfilled_offers_page_number = request.GET.get("fulfilled_offers_page")
+        fulfilled_offers = fulfilled_offers_paginator.get_page(fulfilled_offers_page_number)
+
         return render(request, "volunteer_dash.html", {
             "active_tab": active_tab,
             "accepted_requests": accepted_requests,
@@ -667,6 +681,10 @@ def volunteer(request):
             "available_requests": available_requests,
             "available_requests_total": available_requests_total,
             "fulfilled_requests_count": fulfilled_requests_count,
+            "completed_view": completed_view,
+            "fulfilled_offers": fulfilled_offers,
+            "fulfilled_offers_total": fulfilled_offers_total,
+            "fulfilled_offers_count": fulfilled_offers_count,
         })
 
     return redirect("home")
@@ -1418,7 +1436,7 @@ def available_offers(request):
     }
     offers_qs = offers_qs.order_by(sort_options.get(sort, "-created_at"))
 
-    paginator = Paginator(offers_qs, 18)
+    paginator = Paginator(offers_qs, 9)
     offers = paginator.get_page(request.GET.get("page"))
 
     return render(request, "available_offers.html", {
@@ -1496,7 +1514,7 @@ def my_offers(request):
     }
     offers_qs = offers_qs.order_by(sort_options.get(sort, "-created_at"))
 
-    paginator = Paginator(offers_qs, 18)
+    paginator = Paginator(offers_qs, 9)
     offers = paginator.get_page(request.GET.get("page"))
 
     return render(request, "my_offers.html", {

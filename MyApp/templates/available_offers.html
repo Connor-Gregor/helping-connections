@@ -5,13 +5,14 @@
 {% block title %}Available Offers | Helping Connections{% endblock %}
 
 {% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/item_card.css' %}">
     <link rel="stylesheet" href="{% static 'css/item_modal.css' %}">
 {% endblock %}
 
 {% block content %}
     <style>
         .offers-wrapper {
-            max-width: 1280px;
+            max-width: 1380px;
             margin: 40px auto;
             padding: 0 20px;
         }
@@ -41,96 +42,6 @@
             align-items: start;
         }
 
-        .item-card {
-            width: 100%;
-            max-width: 380px;
-            display: flex;
-            gap: 14px;
-            align-items: flex-start;
-            background: #ffffff;
-            border: 1px solid #e6ece8;
-            border-radius: 18px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-            padding: 14px;
-            box-sizing: border-box;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .item-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
-        }
-
-        .item-card-photo {
-            width: 104px;
-            height: 104px;
-            object-fit: cover;
-            border-radius: 12px;
-            border: 1px solid #d6dbe1;
-            flex-shrink: 0;
-            display: block;
-            background: #f4f6f8;
-        }
-
-        .item-card-photo-placeholder {
-            width: 104px;
-            height: 104px;
-            border-radius: 12px;
-            border: 1px solid #d6dbe1;
-            flex-shrink: 0;
-            background: #f4f6f8;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #64748b;
-            font-size: 0.95rem;
-            text-align: center;
-        }
-
-        .item-card-content {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-        }
-
-        .item-card-title {
-            font-size: 1.05rem;
-            color: #2c3e50;
-            margin: 0 0 8px;
-            line-height: 1.25;
-            font-weight: 700;
-            word-break: break-word;
-        }
-
-        .item-card-details p {
-            margin: 4px 0;
-            color: #333;
-            line-height: 1.35;
-            font-size: 0.95rem;
-        }
-
-        .item-card-details strong {
-            color: #2c3e50;
-        }
-
-        .offer-description-line {
-            display: flex;
-            gap: 6px;
-            align-items: flex-start;
-        }
-
-        .offer-description-text {
-            flex: 1;
-            min-width: 0;
-            display: block;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
         .empty-offers {
             max-width: 700px;
             margin: 0 auto;
@@ -146,6 +57,31 @@
             color: #555;
             font-size: 1rem;
             margin-bottom: 0;
+        }
+
+        .offers-layout {
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr);
+            gap: 28px;
+            align-items: start;
+        }
+
+        .offers-filter-sidebar {
+            background: #ffffff;
+            border-radius: 14px;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+            overflow: hidden;
+            position: sticky;
+            top: 96px;
+        }
+
+        .offers-filter-title {
+            margin: 0;
+            padding: 20px 18px;
+            font-size: 1.5rem;
+            color: #ffffff;
+            background: #1f3b4d;
+            border-bottom: 3px solid #1abc9c;
         }
 
         .offers-pagination {
@@ -201,14 +137,13 @@
 
         .filter-bar {
             display: flex;
-            flex-wrap: wrap;
-            align-items: flex-end;
-            gap: 16px;
+            flex-direction: column;
+            gap: 18px;
             background: #ffffff;
             border: 1px solid #e6ece8;
             border-radius: 14px;
-            padding: 18px 20px;
-            margin-bottom: 28px;
+            padding: 20px 18px;
+            margin-bottom: 0px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
 
@@ -230,6 +165,8 @@
             background: #f9fafb;
             outline: none;
             min-width: 160px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .filter-bar select:focus,
@@ -237,33 +174,55 @@
             border-color: #1abc9c;
         }
 
-        .filter-btn {
-            padding: 10px 22px;
-            background: #1abc9c;
-            color: #fff;
-            border: none;
-            border-radius: 9px;
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: background 0.2s ease;
-        }
-
-        .filter-btn:hover { background: #17a589; }
-
+        .filter-btn,
         .filter-clear {
-            padding: 10px 18px;
-            background: #f4f6f8;
-            color: #555;
-            border: 1px solid #d6dbe1;
-            border-radius: 9px;
-            font-size: 0.92rem;
-            text-decoration: none;
-            font-weight: 500;
-            transition: background 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            width: 100%;
+            text-align: center;
+
+            padding: 10px 16px;
+            border-radius: 10px;
+
+            font-weight: 700;
+
+            box-sizing: border-box;
+            min-height: 46px;
         }
 
-        .filter-clear:hover { background: #e8ecef; color: #2c3e50; }
+        /* Primary */
+        .filter-btn {
+            background: #1abc9c;
+            color: #ffffff;
+            border: 1px solid #1abc9c;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover {
+            background: #16a085;
+            border-color: #16a085;
+        }
+
+        /* Secondary */
+        .filter-clear {
+            background: #ffffff;
+            color: #2c3e50;
+            text-decoration: none;
+
+            border: 1px solid #d6dbe1;
+
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .filter-clear:hover {
+            background: #f4f6f8;
+            border-color: #1abc9c;
+            color: #1f3b4d;
+        }
 
     </style>
 
@@ -273,141 +232,90 @@
             <p>Browse items that volunteers have offered.</p>
         </div>
 
-        <form method="get" class="filter-bar">
-            <div>
-                <label for="category">Category</label>
-                <select name="category" id="category">
-                    <option value="">All Categories</option>
-                    {% for value, label in categories %}
-                        <option value="{{ value }}" {% if selected_category == value %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <label for="city">City</label>
-                <input type="text" name="city" id="city" placeholder="e.g. Milwaukee" value="{{ selected_city }}">
-            </div>
-            <div>
-                <label for="sort">Sort By</label>
-                <select name="sort" id="sort">
-                    <option value="newest" {% if selected_sort == "newest" %}selected{% endif %}>Newest First</option>
-                    <option value="oldest" {% if selected_sort == "oldest" %}selected{% endif %}>Oldest First</option>
-                    <option value="az" {% if selected_sort == "az" %}selected{% endif %}>Title A–Z</option>
-                    <option value="za" {% if selected_sort == "za" %}selected{% endif %}>Title Z–A</option>
-                </select>
-            </div>
-            <button type="submit" class="filter-btn">Filter</button>
-            {% if selected_category or selected_city or selected_sort and selected_sort != "newest" %}
-                <a href="{% url 'available_offers' %}" class="filter-clear">Clear</a>
-            {% endif %}
-        </form>
+        <div class="offers-layout">
+            <aside class="offers-filter-sidebar">
+                <h2 class="offers-filter-title">Filters</h2>
 
-        {% if offers %}
-            <div class="offers-grid">
-                {% for offer in offers %}
-                    {% with first_image=offer.images.first %}
+                <form method="get" class="filter-bar">
+                    <div>
+                        <label for="category">Category</label>
+                        <select name="category" id="category">
+                            <option value="">All Categories</option>
+                            {% for value, label in categories %}
+                                <option value="{{ value }}" {% if selected_category == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                        <div
-                                id="item-card-{{ offer.id }}"
-                                class="item-card js-item-card"
-                                data-item-id="{{ offer.id }}"
-                                data-owner-report-id="{{ offer.offered_by.user.id }}"
-                                data-title="{{ offer.title|escape }}"
-                                data-category="{{ offer.get_category_display|escape }}"
-                                data-category-value="{{ offer.category }}"
-                                data-city="{{ offer.city|escape }}"
-                                data-status="{{ offer.get_status_display|escape }}"
-                                data-description="{{ offer.description|default:'No description provided.'|escape }}"
-                                data-location="{{ offer.location_details|default:'N/A'|escape }}"
-                                data-primary-url="{% url 'claim_offer' offer.id %}"
-                                data-owner-id="{{ offer.offered_by.user.id }}"
-                                data-owner-name="{{ offer.offered_by.display_username|default:offer.offered_by.user.username|escape }}"
-                                data-owner-initials="{{ offer.offered_by.user|initials|escape }}"
-                                data-owner-photo="{% if offer.offered_by.profile_photo %}{{ offer.offered_by.profile_photo.url }}{% endif %}"
-                                data-created="{{ offer.created_at|date:'c' }}"
-                                data-claimed-by="{% if offer.claimed_by %}{{ offer.claimed_by.display_username|default:offer.claimed_by.user.username|escape }}{% endif %}"
-                                data-images='[{% for photo in offer.images.all %}"{{ photo.image.url|escapejs }}"{% if not forloop.last %}, {% endif %}{% endfor %}]'
-                                data-action-mode="available"
-                                data-primary-label="Claim Offer"
-                                data-message-label="Message"
-                                data-report-label="Report"
-                                data-primary-panel-title="Claim This Offer?"
-                                data-primary-confirm-label="Confirm Claim"
-                                data-primary-note="This will mark the offer as claimed and remove it from other users’ available offers."
-                        >
-                            {% if first_image %}
-                                <img src="{{ first_image.image.url }}" alt="{{ offer.title }}" class="item-card-photo">
-                            {% else %}
-                                {% if offer.category == "food" %}
-                                    <img src="{% static 'images/food.jpg' %}" alt="{{ offer.title }}" class="item-card-photo">
-                                {% elif offer.category == "clothing" %}
-                                    <img src="{% static 'images/clothes.jpg' %}" alt="{{ offer.title }}" class="item-card-photo">
-                                {% elif offer.category == "blankets" %}
-                                    <img src="{% static 'images/blanket.jpg' %}" alt="{{ offer.title }}" class="item-card-photo">
-                                {% elif offer.category == "hygiene" %}
-                                    <img src="{% static 'images/hygiene.jpg' %}" alt="{{ offer.title }}" class="item-card-photo">
-                                {% elif offer.category == "transport" %}
-                                    <img src="{% static 'images/transportation.jpg' %}" alt="{{ offer.title }}" class="item-card-photo">
-                                {% elif offer.category == "medical" %}
-                                    <img src="{% static 'images/medical.jpg' %}" alt="{{ offer.title }}" class="item-card-photo">
-                                {% else %}
-                                    <img src="{% static 'images/food.jpg' %}" alt="{{ offer.title }}" class="item-card-photo">
-                                {% endif %}
-                            {% endif %}
+                    <div>
+                        <label for="city">City</label>
+                        <input type="text" name="city" id="city" placeholder="e.g. Milwaukee" value="{{ selected_city }}">
+                    </div>
 
-                            <div class="item-card-content">
-                                <h3 class="item-card-title">{{ offer.title }}</h3>
+                    <div>
+                        <label for="sort">Sort By</label>
+                        <select name="sort" id="sort">
+                            <option value="newest" {% if selected_sort == "newest" %}selected{% endif %}>Newest First</option>
+                            <option value="oldest" {% if selected_sort == "oldest" %}selected{% endif %}>Oldest First</option>
+                            <option value="az" {% if selected_sort == "az" %}selected{% endif %}>Title A–Z</option>
+                            <option value="za" {% if selected_sort == "za" %}selected{% endif %}>Title Z–A</option>
+                        </select>
+                    </div>
 
-                                <div class="item-card-details">
-                                    <p><strong>Category:</strong> {{ offer.get_category_display }}</p>
+                    <button type="submit" class="filter-btn">Apply Filters</button>
 
-                                    <p class="offer-description-line">
-                                        <strong>Description:</strong>
-                                        <span class="offer-description-text">
-                                        {{ offer.description|default:"No description provided." }}
-                                    </span>
-                                    </p>
-
-                                    <p><strong>City:</strong> {{ offer.city }}</p>
-                                    <p><strong>Location Details:</strong> {{ offer.location_details|default:"N/A" }}</p>
-                                    <p><strong>Status:</strong> {{ offer.get_status_display }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    {% endwith %}
-                {% endfor %}
-            </div>
-
-            {% if offers.has_other_pages %}
-                <div class="offers-pagination">
-                    {% if offers.has_previous %}
-                        <a href="?page={{ offers.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}" class="pagination-btn">Previous</a>
-                    {% else %}
-                        <span class="pagination-btn disabled">Previous</span>
+                    {% if selected_category or selected_city or selected_sort and selected_sort != "newest" %}
+                        <a href="{% url 'available_offers' %}" class="filter-clear">Clear Filters</a>
                     {% endif %}
+                </form>
+            </aside>
 
-                    <div class="pagination-pages">
-                        {% for num in offers.paginator.page_range %}
-                            {% if offers.number == num %}
-                                <span class="pagination-number active">{{ num }}</span>
-                            {% else %}
-                                <a href="?page={{ num }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}" class="pagination-number">{{ num }}</a>
-                            {% endif %}
+            <main class="offers-main">
+                {% if offers %}
+                    <div class="offers-grid">
+                        {% for offer in offers %}
+                            {% with first_image=offer.images.first %}
+                                {% url 'claim_offer' offer.id as claim_offer_url %}
+
+                                {% with card_id_prefix="item-card-" %}
+                                    {% include "components/item_card.html" with item=offer owner_profile=offer.offered_by card_id=card_id_prefix|add:offer.id action_mode="available" current_user_id=request.user.id owner_report_id=offer.offered_by.user.id primary_url=claim_offer_url primary_label="Claim Offer" message_label="Message" report_label="Report" primary_panel_title="Claim This Offer?" primary_confirm_label="Confirm Claim" primary_note="This will mark the offer as claimed and remove it from other users’ available offers." first_image=first_image item_images=offer.images.all %}
+                                {% endwith %}
+                            {% endwith %}
                         {% endfor %}
                     </div>
 
-                    {% if offers.has_next %}
-                        <a href="?page={{ offers.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}" class="pagination-btn">Next</a>
-                    {% else %}
-                        <span class="pagination-btn disabled">Next</span>
+                    {% if offers.has_other_pages %}
+                        <div class="offers-pagination">
+                            {% if offers.has_previous %}
+                                <a href="?page={{ offers.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}" class="pagination-btn">Previous</a>
+                            {% else %}
+                                <span class="pagination-btn disabled">Previous</span>
+                            {% endif %}
+
+                            <div class="pagination-pages">
+                                {% for num in offers.paginator.page_range %}
+                                    {% if offers.number == num %}
+                                        <span class="pagination-number active">{{ num }}</span>
+                                    {% else %}
+                                        <a href="?page={{ num }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}" class="pagination-number">{{ num }}</a>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+
+                            {% if offers.has_next %}
+                                <a href="?page={{ offers.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}" class="pagination-btn">Next</a>
+                            {% else %}
+                                <span class="pagination-btn disabled">Next</span>
+                            {% endif %}
+                        </div>
                     {% endif %}
-                </div>
-            {% endif %}
-        {% else %}
-            <div class="empty-offers">
-                <p>No offers are available right now.</p>
-            </div>
-        {% endif %}
+                {% else %}
+                    <div class="empty-offers">
+                        <p>No offers are available right now.</p>
+                    </div>
+                {% endif %}
+            </main>
+        </div>
     </div>
 
     {% include "components/item_modal.html" %}
