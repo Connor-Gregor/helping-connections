@@ -216,7 +216,11 @@
 
                 <div class="form-field">
                     {{ form.location_details.label_tag }}
-                    {{ form.location_details }}
+                    <div class="input-with-counter">
+                        {{ form.location_details }}
+                        <span id="request-location-count" class="char-count-inside"></span>
+                    </div>
+                    <small id="request-location-live-error" class="live-error"></small>
                     {% if form.location_details.errors %}
                         <div class="field-errors">{{ form.location_details.errors }}</div>
                     {% endif %}

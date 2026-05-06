@@ -811,16 +811,17 @@ INPUT WITH CHARACTER COUNTER
 
 /* Chrome, Edge, Safari */
 ::-webkit-scrollbar {
-    width: 8px;
+    width: 10px;
 }
 
 ::-webkit-scrollbar-track {
-    background: transparent;
+    background: rgba(0, 0, 0, 0.04);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #cfeee6;
+    background: #9fded0;
     border-radius: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.6);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -830,7 +831,7 @@ INPUT WITH CHARACTER COUNTER
 /* Firefox */
 * {
     scrollbar-width: thin;
-    scrollbar-color: #cfeee6 transparent;
+    scrollbar-color: #9fded0 rgba(0, 0, 0, 0.05);
 }
 
 /* =========================
