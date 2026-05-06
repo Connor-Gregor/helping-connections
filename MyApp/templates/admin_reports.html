@@ -114,6 +114,21 @@
         text-decoration: none;
     }
 
+    .warning-btn {
+        padding: 10px 14px;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        background: #f4c542;
+        color: #2c3e50;
+        transition: background 0.2s ease;
+    }
+
+    .warning-btn:hover {
+        background: #ddb132;
+    }
     .action-btn {
         background: #1abc9c;
         color: white;
@@ -233,8 +248,7 @@
 
                         <div class="moderation-actions">
                             <button type="button" class="secondary-btn" onclick="toggleSection('edit-offer-{{ report.id }}')">Edit Offer</button>
-                            <button type="button" class="secondary-btn" onclick="toggleSection('warn-offer-{{ report.id }}')">Send Warning</button>
-
+                            <button type="button" class="warning-btn" onclick="toggleSection('warn-offer-{{ report.id }}')">Send Warning</button>
                             <form method="post" action="{% url 'admin_delete_offer' report.offer.id %}">
                                 {% csrf_token %}
                                 <button type="submit" class="danger-btn">Delete Offer</button>
@@ -329,8 +343,7 @@
 
                         <div class="moderation-actions">
                             <button type="button" class="secondary-btn" onclick="toggleSection('edit-request-{{ report.id }}')">Edit Request</button>
-                            <button type="button" class="secondary-btn" onclick="toggleSection('warn-request-{{ report.id }}')">Send Warning</button>
-
+                            <button type="button" class="warning-btn" onclick="toggleSection('warn-request-{{ report.id }}')">Send Warning</button>
                             <form method="post" action="{% url 'admin_delete_request' report.request_item.id %}">
                                 {% csrf_token %}
                                 <button type="submit" class="danger-btn">Delete Request</button>
