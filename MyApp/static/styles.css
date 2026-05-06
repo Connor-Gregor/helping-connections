@@ -834,3 +834,71 @@ INPUT WITH CHARACTER COUNTER
     scrollbar-color: #9fded0 rgba(0, 0, 0, 0.05);
 }
 
+/* =========================
+   HISTORY PAGE STYLING
+========================= */
+
+.history-header h1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.history-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+}
+
+.history-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+}
+
+/* Header */
+.history-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.history-card-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+/* Body */
+.history-card-body p {
+    margin: 4px 0;
+    font-size: 0.95rem;
+}
+
+.history-card-body .description {
+    margin-top: 8px;
+    color: #666;
+}
+
+/* Footer */
+.history-card-footer {
+    margin-top: 10px;
+    font-size: 0.8rem;
+    color: #999;
+}
+
+/* Status badge */
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.status-badge.success {
+    background-color: #e6f7ec;
+    color: #2e7d32;
+}

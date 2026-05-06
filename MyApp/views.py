@@ -13,7 +13,7 @@ from datetime import timedelta
 from django.urls import reverse
 from django.core.paginator import Paginator
 from messaging.services import send_system_dm
-from .models import FavoriteLocation, Offer, Request, OfferReport, RequestReport
+from .models import FavoriteLocation, Offer, Request, OfferReport, RequestReport, PoliceInteractionReport
 from django.http import JsonResponse
 import json
 
@@ -70,6 +70,18 @@ def map(request):
 
 
 def find_help(request):
+    if request.method == "POST":
+        description = request.POST.get("description")
+        location = request.POST.get("location")
+
+        if description:
+            PoliceInteractionReport.objects.create(
+                description=description,
+                location=location
+            )
+            # OPTIONAL SUCCESS MESSAGE
+            messages.success(request, "Report submitted successfully.")
+
     return render(request, "find_help.html")
 
 
