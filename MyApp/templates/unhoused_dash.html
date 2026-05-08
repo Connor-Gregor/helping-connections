@@ -424,14 +424,14 @@
 
                         {% if processing_requests %}
                             <div class="dashboard-grid">
-                                {% for req in processing_requests %}
-                                    {% url 'update_request' req.id as update_request_url %}
-                                    {% url 'delete_request' req.id as delete_request_url %}
+                            {% for req in processing_requests %}
+                                {% url 'update_request' req.id as update_request_url %}
+                                {% url 'delete_request' req.id as delete_request_url %}
+                                {% url 'verify_request' req.id as verify_request_url %}
 
-                                    {% with card_id_prefix="item-card-processing-" %}
-                                        {% include "components/item_card.html" with item=req owner_profile=req.requester card_id=card_id_prefix|add:req.id action_mode="request_processing" current_user_id=request.user.id owner_report_id=req.requester.user.id edit_url=update_request_url delete_url=delete_request_url claimer_id=req.claimed_by.user.id claimed_by=req.claimed_by.display_username|default:req.claimed_by.user.username claimed_at=req.claimed_at extra_meta_label="Claimed by" extra_meta_value=req.claimed_by.display_username|default:req.claimed_by.user.username %}
-                                    {% endwith %}
-                                {% endfor %}
+                                {% with card_id_prefix="item-card-processing-" %}
+                                {% include "components/item_card.html" with item=req owner_profile=req.requester card_id=card_id_prefix|add:req.id action_mode="request_processing" current_user_id=request.user.id owner_report_id=req.requester.user.id edit_url=update_request_url delete_url=delete_request_url verify_url=verify_request_url claimer_id=req.claimed_by.user.id claimed_by=req.claimed_by.display_username|default:req.claimed_by.user.username claimed_at=req.claimed_at extra_meta_label="Claimed by" extra_meta_value=req.claimed_by.display_username|default:req.claimed_by.user.username %}                                {% endwith %}
+                            {% endfor %}
                             </div>
 
                             {% if processing_requests.paginator.num_pages > 1 %}

@@ -958,7 +958,8 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (primaryForm) {
-            primaryForm.action = item.urls?.verify || "";
+            primaryForm.method = "post";
+            primaryForm.action = item.urls?.verify || `/requests/${item.itemId}/verify/`;
         }
     }
 
@@ -1642,7 +1643,7 @@ document.addEventListener("DOMContentLoaded", function () {
             primary: card.dataset.primaryUrl || "",
             edit: card.dataset.editUrl || "",
             delete: card.dataset.deleteUrl || "",
-            verify: ""
+            verify: card.dataset.verifyUrl || ""
         };
 
         let verifyPanelTitle = "";
@@ -1653,7 +1654,9 @@ document.addEventListener("DOMContentLoaded", function () {
             verifyPanelTitle = "Verify this offer?";
             verifyNote = "Confirm that this offer has been fulfilled.";
         } else if (actionMode === "volunteer_request_claimed" || actionMode === "request_processing") {
-            urls.verify = `/requests/${card.dataset.itemId}/verify/`;
+            if (!urls.verify) {
+                urls.verify = `/requests/${card.dataset.itemId}/verify/`;
+            }
             verifyPanelTitle = "Verify this request?";
             verifyNote = "Confirm that this request has been fulfilled.";
         }
@@ -1941,15 +1944,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (primaryForm) {
         primaryForm.addEventListener("submit", function (e) {
-
             const item = getCurrentItem();
             const pendingAction = getPendingProcessingAction();
 
-            if (!item || !item.actions?.requiresProcessingConfirm) {
+            if (!item) {
                 return;
             }
 
             if (pendingAction === "verify") {
+                if (!primaryForm.action) {
+                    e.preventDefault();
+                    alert("Verify URL is missing.");
+                    return;
+                }
+
+                sessionStorage.setItem("itemModalScrollY", String(window.scrollY));
+                sessionStorage.setItem("itemModalReturnItemId", item?.itemId || "");
+                return;
+            }
+
+            if (!item.actions?.requiresProcessingConfirm) {
                 return;
             }
 
@@ -1973,6 +1987,30 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
         });
+
+        if (primaryConfirmBtn) {
+    primaryConfirmBtn.addEventListener("click", function (e) {
+        const pendingAction = getPendingProcessingAction();
+
+        if (pendingAction !== "verify") {
+            return;
+        }
+
+        e.preventDefault();
+
+        if (!primaryForm || !primaryForm.action) {
+            alert("Verify URL is missing.");
+            return;
+        }
+
+        const item = getCurrentItem();
+
+        sessionStorage.setItem("itemModalScrollY", String(window.scrollY));
+        sessionStorage.setItem("itemModalReturnItemId", item?.itemId || "");
+
+        primaryForm.submit();
+    });
+}
     }
 
     if (primaryBackBtn) primaryBackBtn.addEventListener("click", showDetailPanel);

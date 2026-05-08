@@ -80,6 +80,10 @@
         data-primary-note="{{ primary_note }}"
         {% endif %}
 
+        {% if verify_url %}
+        data-verify-url="{{ verify_url }}"
+        {% endif %}
+
         {% if item_images %}
         data-images='[{% for image in item_images %}"{{ image.image.url }}"{% if not forloop.last %},{% endif %}{% endfor %}]'
         {% elif item.category == "food" %}

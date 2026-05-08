@@ -1126,11 +1126,16 @@ def update_request(request, request_id):
     profile = request.user.profile
     return_query = (request.POST.get("return_query") or "").strip()
 
-    if profile.role is None or profile.role.name.lower() != "unhoused":
-        messages.error(request, "Only unhoused users can update requests.")
+    role = profile.role.name.lower() if profile.role else None
+
+    if role not in ["unhoused", "admin"]:
+        messages.error(request, "Only unhoused users or admins can update requests.")
         return redirect("home")
 
-    req = get_object_or_404(Request, id=request_id, requester=profile)
+    if role == "admin":
+        req = get_object_or_404(Request, id=request_id)
+    else:
+        req = get_object_or_404(Request, id=request_id, requester=profile)
     form = RequestForm(request.POST, instance=req)
 
     if not form.is_valid():
@@ -1149,7 +1154,8 @@ def update_request(request, request_id):
         updated_request.claimed_by = None
         updated_request.claimed_at = None
 
-    updated_request.requester = profile
+    if role != "admin":
+        updated_request.requester = profile
     updated_request.save()
 
     if was_claimed and previous_claimer and previous_claimer.user != request.user:
@@ -1191,11 +1197,17 @@ def delete_request(request, request_id):
     profile = request.user.profile
     return_query = (request.POST.get("return_query") or "").strip()
 
-    if profile.role is None or profile.role.name.lower() != "unhoused":
-        messages.error(request, "Only unhoused users can delete requests.")
+    role = profile.role.name.lower() if profile.role else None
+
+    if role not in ["unhoused", "admin"]:
+        messages.error(request, "Only unhoused users or admins can delete requests.")
         return redirect("home")
 
-    req = get_object_or_404(Request, id=request_id, requester=profile)
+    if role == "admin":
+        req = get_object_or_404(Request, id=request_id)
+    else:
+        req = get_object_or_404(Request, id=request_id, requester=profile)
+
     was_processing = req.status == Request.STATUS_CLAIMED
     previous_claimer = req.claimed_by
     request_title = req.title
@@ -1204,9 +1216,9 @@ def delete_request(request, request_id):
 
     if was_processing and previous_claimer and previous_claimer.user != request.user:
         requester_name = (
-                profile.display_username
-                or request.user.get_full_name().strip()
-                or request.user.username
+            profile.display_username
+            or request.user.get_full_name().strip()
+            or request.user.username
         )
 
         send_system_dm(
@@ -1220,10 +1232,13 @@ def delete_request(request, request_id):
 
         messages.success(
             request,
-            "Your request was deleted. The volunteer was notified that it is no longer needed."
+            "The request was deleted. The volunteer was notified that it is no longer needed."
         )
     else:
-        messages.success(request, "Your request was deleted successfully.")
+        messages.success(request, "The request was deleted successfully.")
+
+    if role == "admin":
+        return redirect("admin_requests")
 
     if return_query and "tab=" in return_query:
         return redirect(f"{reverse('unhoused')}?{return_query}")
@@ -1499,9 +1514,10 @@ def claim_offer(request, offer_id):
 @login_required
 def my_offers(request):
     profile = request.user.profile
+    role = profile.role.name.lower() if profile.role else None
 
-    if profile.role is None or profile.role.name.lower() != "volunteer":
-        messages.error(request, "Only volunteers can view their offers.")
+    if role not in ["volunteer", "admin"]:
+        messages.error(request, "Only volunteers or admins can view offers.")
         return redirect("home")
 
     category = request.GET.get("category", "").strip()
@@ -1509,7 +1525,10 @@ def my_offers(request):
     status = request.GET.get("status", "").strip()
     sort = request.GET.get("sort", "newest").strip()
 
-    offers_qs = Offer.objects.filter(offered_by=profile).prefetch_related("images")
+    if role == "admin":
+        offers_qs = Offer.objects.all().prefetch_related("images")
+    else:
+        offers_qs = Offer.objects.filter(offered_by=profile).prefetch_related("images")
 
     if category:
         offers_qs = offers_qs.filter(category=category)
@@ -1642,15 +1661,21 @@ def update_offer(request, offer_id):
     page_number = request.POST.get("return_page_number", "1")
     return_query = (request.POST.get("return_query") or "").strip()
 
-    if profile.role is None or profile.role.name.lower() != "volunteer":
+    role = profile.role.name.lower() if profile.role else None
+
+    if role not in ["volunteer", "admin"]:
         messages.error(request, "Unauthorized.")
-        return redirect("my_offers")
+        return redirect("home")
 
-    offer = get_object_or_404(Offer, id=offer_id, offered_by=profile)
+    if role == "admin":
+        offer = get_object_or_404(Offer, id=offer_id)
+    else:
+        offer = get_object_or_404(Offer, id=offer_id, offered_by=profile)
 
-    # BLOCK EDIT IF CLAIMED
     if offer.status == Offer.STATUS_CLAIMED:
         messages.error(request, "This offer has already been claimed and cannot be edited.")
+        if role == "admin":
+            return redirect("admin_offers")
         if return_query and "tab=" in return_query:
             return redirect(f"{reverse('volunteer')}?{return_query}")
         return redirect(f"{reverse('my_offers')}?page={page_number}")
@@ -1659,12 +1684,17 @@ def update_offer(request, offer_id):
 
     if form.is_valid():
         updated_offer = form.save(commit=False)
-        updated_offer.offered_by = profile
-        updated_offer.save()
 
+        if role != "admin":
+            updated_offer.offered_by = profile
+
+        updated_offer.save()
         messages.success(request, "Offer updated successfully.")
     else:
         messages.error(request, "Failed to update offer. Please check your form.")
+
+    if role == "admin":
+        return redirect("admin_offers")
 
     if return_query and "tab=" in return_query:
         return redirect(f"{reverse('volunteer')}?{return_query}")
@@ -1679,11 +1709,17 @@ def delete_offer(request, offer_id):
     page_number = request.POST.get("return_page_number", "1")
     return_query = (request.POST.get("return_query") or "").strip()
 
-    if profile.role is None or profile.role.name.lower() != "volunteer":
-        messages.error(request, "Only volunteers can delete offers.")
+    role = profile.role.name.lower() if profile.role else None
+
+    if role not in ["volunteer", "admin"]:
+        messages.error(request, "Only volunteers or admins can delete offers.")
         return redirect("home")
 
-    offer = get_object_or_404(Offer, id=offer_id, offered_by=profile)
+    if role == "admin":
+        offer = get_object_or_404(Offer, id=offer_id)
+    else:
+        offer = get_object_or_404(Offer, id=offer_id, offered_by=profile)
+
     was_claimed = offer.status == Offer.STATUS_CLAIMED
     previous_claimer = offer.claimed_by
     offer_title = offer.title
@@ -1692,9 +1728,9 @@ def delete_offer(request, offer_id):
 
     if was_claimed and previous_claimer and previous_claimer.user != request.user:
         volunteer_name = (
-                profile.display_username
-                or request.user.get_full_name().strip()
-                or request.user.username
+            profile.display_username
+            or request.user.get_full_name().strip()
+            or request.user.username
         )
 
         send_system_dm(
@@ -1708,10 +1744,13 @@ def delete_offer(request, offer_id):
 
         messages.success(
             request,
-            "Your offer was deleted. The unhoused user was notified that it is no longer available."
+            "The offer was deleted. The unhoused user was notified that it is no longer available."
         )
     else:
         messages.success(request, "Offer deleted successfully.")
+
+    if role == "admin":
+        return redirect("admin_offers")
 
     if return_query and "tab=" in return_query:
         return redirect(f"{reverse('volunteer')}?{return_query}")
